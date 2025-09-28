@@ -1,3 +1,7 @@
 {
-  "recommendations": ["Vue.volar"]
+  "recommendations": [
+    "Vue.volar",
+    "octref.vetur",
+    "dbaeumer.vscode-eslint"
+  ]
 }
