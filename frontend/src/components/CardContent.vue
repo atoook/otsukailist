@@ -5,10 +5,6 @@ export default {
       type: String,
       default: 'default',
       validator: (value) => ['default', 'center', 'center-vertical'].includes(value)
-    },
-    minHeight: {
-      type: String,
-      default: 'min-h-96'
     }
   },
   computed: {
