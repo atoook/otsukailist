@@ -1,5 +1,21 @@
-<template>
-  <h1 class="text-3xl font-bold text-center mt-3">OtsukaiList</h1>
-</template>
+<script>
+import Layout from './components/Layout.vue';
+import Header from './components/Header.vue';
+import Footer from './components/Footer.vue';
 
-<style scoped></style>
+export default {
+  components: {
+    Layout,
+    Header,
+    Footer
+  }
+};
+</script>
+
+<template>
+  <Layout>
+    <Header />
+    <router-view />
+    <Footer />
+  </Layout>
+</template>
