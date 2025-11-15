@@ -5,7 +5,7 @@ otsukailist/
 ├── backend/                  # Spring Boot (Java)
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/com/example/otsukailist/
+│   │   │   ├── java/com/atoook/otsukailist/
 │   │   │   │   ├── OtsukaiListApplication.java   # 起動クラス
 │   │   │   │   ├── controller/   # REST + WebSocket Controller
 │   │   │   │   ├── service/      # ビジネスロジック
