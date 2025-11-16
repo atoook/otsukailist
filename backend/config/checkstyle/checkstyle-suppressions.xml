@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+    Checkstyle除外設定
+    Spring Boot や Lombok に関連する警告を適切に除外
+-->
+<suppressions>
+    <!-- 生成されたファイルを除外 -->
+    <suppress files="[\\/]generated[\\/]" checks=".*"/>
+    <suppress files="[\\/]build[\\/]" checks=".*"/>
+    <suppress files="[\\/]target[\\/]" checks=".*"/>
+
+    <!-- テストファイルの設定を緩和 -->
+    <suppress files=".*Test\.java" checks="MagicNumber"/>
+    <suppress files=".*Test\.java" checks="MethodLength"/>
+    <suppress files=".*Test\.java" checks="ClassFanOutComplexity"/>
+    <suppress files=".*Test\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Test\.java" checks="MissingJavadocType"/>
+
+    <!-- DTOクラス（Lombokアノテーション使用）の設定を緩和 -->
+    <suppress files=".*Request\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Response\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Dto\.java" checks="MissingJavadocMethod"/>
+
+    <!-- Entityクラス（JPA/Lombokアノテーション使用）の設定を緩和 -->
+    <suppress files=".*[\\/]model[\\/].*\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*[\\/]entity[\\/].*\.java" checks="MissingJavadocMethod"/>
+
+    <!-- Spring Boot アプリケーションメインクラス -->
+    <suppress files=".*Application\.java" checks="HideUtilityClassConstructor"/>
+    <suppress files=".*Application\.java" checks="MissingJavadocMethod"/>
+
+    <!-- Repositoryインターフェース（Spring Data JPA自動生成メソッド）の設定を緩和 -->
+    <suppress files=".*Repository\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*[\\/]repository[\\/].*\.java" checks="MissingJavadocMethod"/>
+
+    <!-- Mapperクラス（静的メソッド中心）の設定を緩和 -->
+    <suppress files=".*Mapper\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*[\\/]mapper[\\/].*\.java" checks="MissingJavadocMethod"/>
+
+    <!-- 設定クラス -->
+    <suppress files=".*Config\.java" checks="MissingJavadocMethod"/>
+    <suppress files=".*Configuration\.java" checks="MissingJavadocMethod"/>
+</suppressions>

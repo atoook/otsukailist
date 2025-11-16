@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<ruleset name="OtsukaiList PMD Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 
+         https://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+
+    <description>
+        OtsukaiList プロジェクト向けの軽量PMDルール設定
+        Spring Boot アプリケーション用にカスタマイズ
+    </description>
+
+    <!-- ベストプラクティス（軽量版） -->
+    <rule ref="category/java/bestpractices.xml">
+        <!-- JUnit関連の除外 -->
+        <exclude name="JUnitTestContainsTooManyAsserts"/>
+        <exclude name="JUnitAssertionsShouldIncludeMessage"/>
+        <exclude name="JUnitTestsShouldIncludeAssert"/>
+        <exclude name="JUnit4TestShouldUseBeforeAnnotation"/>
+        <exclude name="JUnit4TestShouldUseAfterAnnotation"/>
+        <exclude name="JUnit4TestShouldUseTestAnnotation"/>
+        
+        <!-- Spring Boot関連の除外 -->
+        <exclude name="GuardLogStatement"/>
+        <exclude name="UseVarargs"/>
+        <exclude name="SystemPrintln"/>
+    </rule>
+
+    <!-- 設計（重要なもののみ） -->
+    <rule ref="category/java/design.xml/CyclomaticComplexity">
+        <properties>
+            <property name="methodReportLevel" value="10"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/TooManyMethods">
+        <properties>
+            <property name="maxmethods" value="25"/>
+        </properties>
+    </rule>
+
+    <!-- エラーが起こりやすいパターン（必須のもののみ） -->
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
+    
+    <!-- パフォーマンス（基本的なもののみ） -->
+    <rule ref="category/java/performance.xml/StringInstantiation"/>
+
+    <!-- セキュリティ -->
+    <rule ref="category/java/security.xml"/>
+
+    <!-- 除外パターン -->
+    <exclude-pattern>.*/build/.*</exclude-pattern>
+    <exclude-pattern>.*/target/.*</exclude-pattern>
+    <exclude-pattern>.*/generated/.*</exclude-pattern>
+    
+    <!-- テストファイルの設定を緩和 -->
+    <exclude-pattern>.*Test\.java</exclude-pattern>
+</ruleset>
