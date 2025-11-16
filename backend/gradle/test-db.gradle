@@ -1,0 +1,81 @@
+/**
+ * テスト環境管理用のGradleタスク
+ * テスト実行前にテスト用DBを起動し、テスト後に停止する
+ */
+
+// テスト用DBコンテナ起動タスク
+task startTestDB(type: Exec) {
+    group = 'verification'
+    description = 'Start test database container'
+    workingDir = '../db'
+    commandLine 'docker-compose', '-f', 'docker-compose.test.yml', 'up', '-d'
+    
+    doLast {
+        println 'Waiting for test database to be ready...'
+        sleep(10000)  // 10秒待機
+    }
+}
+
+// テスト用DBコンテナ停止タスク
+task stopTestDB(type: Exec) {
+    group = 'verification'
+    description = 'Stop test database container'
+    workingDir = '../db'
+    commandLine 'docker-compose', '-f', 'docker-compose.test.yml', 'down'
+}
+
+// テスト用DB状態確認タスク
+task checkTestDB(type: Exec) {
+    group = 'verification'
+    description = 'Check test database status'
+    workingDir = '../db'
+    commandLine 'docker-compose', '-f', 'docker-compose.test.yml', 'ps'
+}
+
+// テスト実行前にテスト用DBを起動
+test.dependsOn startTestDB
+
+// テスト実行後にテスト用DBを停止（オプション）
+// 連続してテストを実行する場合はコメントアウト
+// test.finalizedBy stopTestDB
+
+// 統合テスト用のカスタムタスク
+task integrationTest(type: Test) {
+    group = 'verification'
+    description = 'Run integration tests with test database'
+    
+    dependsOn startTestDB
+    finalizedBy stopTestDB
+    
+    // 統合テストのみ実行
+    include '**/*IntegrationTest*'
+    
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+// テスト環境セットアップタスク
+task setupTestEnv {
+    group = 'verification'
+    description = 'Setup complete test environment'
+    dependsOn startTestDB
+    
+    doLast {
+        println 'Test environment is ready!'
+        println 'Database: localhost:3307/otsukailist_test'
+        println 'Run tests with: ./gradlew test'
+        println 'Stop test environment with: ./gradlew stopTestDB'
+    }
+}
+
+// テスト環境クリーンアップタスク
+task cleanTestEnv {
+    group = 'verification'
+    description = 'Clean up test environment'
+    dependsOn stopTestDB
+    
+    doLast {
+        println 'Test environment cleaned up!'
+    }
+}
