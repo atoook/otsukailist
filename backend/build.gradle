@@ -2,7 +2,13 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.7'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'checkstyle'
+	id 'pmd'
+	id 'com.github.spotbugs' version '6.0.26'
 }
+
+// テスト環境管理タスクをインポート
+apply from: 'gradle/test-db.gradle'
 
 group = 'com.atoook'
 version = '0.0.1-SNAPSHOT'
@@ -39,4 +45,93 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// ===== 静的解析設定 =====
+
+// Checkstyle設定
+checkstyle {
+	toolVersion = '10.12.5'
+	configFile = file('config/checkstyle/checkstyle.xml')
+	ignoreFailures = true  // 警告レベルなので開発を停止しない
+	maxWarnings = 50       // 段階的に改善していく
+}
+
+// PMD設定
+pmd {
+	toolVersion = '7.0.0'
+	ruleSetFiles = files('config/pmd/pmd-ruleset.xml')
+	ignoreFailures = true  // 警告レベルなので開発を停止しない
+	consoleOutput = true
+}
+
+// SpotBugs設定
+spotbugs {
+	toolVersion = '4.8.3'
+	effort = 'default'     // max から default に変更（軽量化）
+	reportLevel = 'high'   // medium から high に変更（重要な問題のみ）
+	ignoreFailures = true  // 警告レベルなので開発を停止しない
+}
+
+// SpotBugs HTMLレポート生成
+spotbugsMain {
+	reports {
+		html {
+			required = true
+			outputLocation = file("$buildDir/reports/spotbugs/main.html")
+		}
+		xml.required = false
+	}
+}
+
+spotbugsTest {
+	reports {
+		html {
+			required = true
+			outputLocation = file("$buildDir/reports/spotbugs/test.html")
+		}
+		xml.required = false
+	}
+}
+
+// 静的解析を一括実行するタスク
+task staticAnalysis {
+	dependsOn 'checkstyleMain', 'checkstyleTest', 'pmdMain', 'pmdTest', 'spotbugsMain', 'spotbugsTest'
+	description = '静的解析を一括実行します'
+	group = 'verification'
+}
+
+// 軽微なコード品質問題を自動修正するタスク
+task fixCodeStyle {
+	description = '軽微なコード品質問題を自動修正します（改行、タブなど）'
+	group = 'formatting'
+	doLast {
+		// 末尾改行の修正
+		fileTree('src/main/java').visit { details ->
+			if (details.file.isFile() && details.name.endsWith('.java')) {
+				def content = details.file.text
+				if (!content.endsWith('\n')) {
+					details.file.text = content + '\n'
+					println "Fixed newline in: ${details.relativePath}"
+				}
+			}
+		}
+		
+		// タブをスペースに変換（インデント4スペース）
+		fileTree('src/main/java').visit { details ->
+			if (details.file.isFile() && details.name.endsWith('.java')) {
+				def content = details.file.text
+				def newContent = content.replaceAll('\t', '    ')
+				if (content != newContent) {
+					details.file.text = newContent
+					println "Fixed tabs in: ${details.relativePath}"
+				}
+			}
+		}
+	}
+}
+
+// テスト前に軽い静的解析を実行
+check {
+	dependsOn 'checkstyleMain', 'pmdMain'
 }
