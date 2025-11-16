@@ -1,6 +1,6 @@
--- otsukailistデータベースの初期化スクリプト
+-- otsukailist_testデータベースの初期化スクリプト（テスト環境専用）
 
-USE otsukailist;
+USE otsukailist_test;
 
 -- お使いリストテーブル（ログイン不要、UUID使用）
 CREATE TABLE IF NOT EXISTS shopping_list (

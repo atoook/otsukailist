@@ -1,0 +1,22 @@
+# CI/CD環境用 - 最小構成
+version: "3.8"
+
+services:
+  mysql-ci:
+    image: mysql:8.0
+    container_name: otsukailist_mysql_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: testpassword
+      MYSQL_DATABASE: otsukailist_test
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: testpassword
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 3
+    tmpfs:
+      - /var/lib/mysql:rw,noexec,nosuid,size=256m
