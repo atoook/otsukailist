@@ -10,3 +10,6 @@ Thumbs.db
 
 # Database
 db/.env
+
+# Backend
+backend/.env
