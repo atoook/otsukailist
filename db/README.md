@@ -80,16 +80,27 @@ spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 
 ### shopping_list
 
-- **id**: VARCHAR(36) PRIMARY KEY (UUID)
-- **created_at**: TIMESTAMP (作成日時)
+| カラム名   | データ型  | 制約                                                  | 説明     |
+| ---------- | --------- | ----------------------------------------------------- | -------- |
+| id         | CHAR(36)  | PRIMARY KEY                                           | UUID     |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP                             | 作成日時 |
+| updated_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新日時 |
 
 ### item
 
-- **id**: VARCHAR(36) PRIMARY KEY (UUID)
-- **list_id**: VARCHAR(36) (shopping_list への外部キー)
-- **name**: VARCHAR(255) (アイテム名)
-- **is_checked**: BOOLEAN (購入済みフラグ)
-- **created_at**: TIMESTAMP (作成日時)
+| カラム名   | データ型     | 制約                                                  | 説明                       |
+| ---------- | ------------ | ----------------------------------------------------- | -------------------------- |
+| id         | CHAR(36)     | PRIMARY KEY                                           | UUID                       |
+| name       | VARCHAR(255) | NOT NULL                                              | アイテム名                 |
+| is_checked | BOOLEAN      | DEFAULT FALSE                                         | 購入済みフラグ             |
+| created_at | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP                             | 作成日時                   |
+| updated_at | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新日時                   |
+| list_id    | CHAR(36)     | NOT NULL, FOREIGN KEY                                 | shopping_list への外部キー |
+
+**インデックス:**
+
+- `idx_list_id` on `item(list_id)`
+- `idx_created_at` on `item(created_at)`
 
 ## 注意事項
 
