@@ -39,7 +39,7 @@ cd $DB_DIR
 case $ACTION in
     up)
         echo "Starting $ENV environment..."
-        docker-compose -f $COMPOSE_FILE up -d
+        docker compose -f "$COMPOSE_FILE" up -d
         echo "Database is starting on port $PORT"
         
         if [ "$ENV" = "test" ]; then
@@ -51,16 +51,16 @@ case $ACTION in
         ;;
     down)
         echo "Stopping $ENV environment..."
-        docker-compose -f $COMPOSE_FILE down
+        docker compose -f "$COMPOSE_FILE" down
         echo "$ENV environment stopped."
         ;;
     logs)
         echo "Showing $ENV environment logs..."
-        docker-compose -f $COMPOSE_FILE logs -f
+        docker compose -f "$COMPOSE_FILE" logs -f
         ;;
     status)
         echo "Status of $ENV environment:"
-        docker-compose -f $COMPOSE_FILE ps
+        docker compose -f "$COMPOSE_FILE" ps
         ;;
     *)
         echo "Error: Unknown action '$ACTION'. Use: up, down, logs, or status"
