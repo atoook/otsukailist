@@ -87,8 +87,8 @@ public class Item {
 
 **詳細**: `db/init/01_create_tables.sql`
 
-- **shopping_list**: id(UUID), created_at
-- **item**: id(UUID), name, is_checked, created_at, list_id(FK)
+- **shopping_list**: id(UUID), created_at, updated_at
+- **item**: id(UUID), name, is_checked, created_at, updated_at, list_id(FK)
 
 ---
 
@@ -105,10 +105,16 @@ public class Item {
 
 ## セキュリティ方針
 
-- UUID ベース URL → 推測困難
-- URL 保有者＝編集権限
-- 入力サニタイズ（XSS 対策）
-- レート制限（簡易 DoS 対策）
+**基本思想**: 機密情報を扱わない前提のシンプル設計
+
+- **UUID ベース URL**: 推測困難なリンクによる一時的なアクセス制御
+- **URL 保有者＝編集権限**: ログイン不要での簡単共有を実現
+- **機密情報非対応**: 個人情報や重要データの保存は想定外
+- **一時利用想定**: BBQ・旅行等の短期間イベント向け
+- **入力サニタイズ**: XSS 対策（基本的な Web セキュリティ）
+- **レート制限**: 簡易 DoS 対策（サービス安定性向上）
+
+**⚠️ 注意**: 機密情報や個人情報の記載は避けてください
 
 ---
 
