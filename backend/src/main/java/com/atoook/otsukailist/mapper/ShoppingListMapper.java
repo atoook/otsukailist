@@ -1,6 +1,5 @@
 package com.atoook.otsukailist.mapper;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,11 +59,6 @@ public class ShoppingListMapper {
         ShoppingList entity = new ShoppingList();
         entity.setName(request.getName());
 
-        // 作成時刻・更新時刻を設定
-        LocalDateTime now = LocalDateTime.now();
-        entity.setCreatedAt(now);
-        entity.setUpdatedAt(now);
-
         return entity;
     }
 
@@ -79,6 +73,5 @@ public class ShoppingListMapper {
         if (request.getName() != null) {
             entity.setName(request.getName());
         }
-        entity.setUpdatedAt(LocalDateTime.now());
     }
 }

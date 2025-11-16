@@ -150,8 +150,8 @@ class ItemServiceTest {
             // Given
             UUID listId = UUID.randomUUID();
             CreateItemRequest request = CreateItemRequest.builder()
-                    .name("新しいアイテム")
-                    .isChecked(false)
+                    .name("牛乳")
+                    .checked(false)
                     .build();
 
             ShoppingList mockShoppingList = createMockShoppingList(listId, "テストリスト");
@@ -211,7 +211,7 @@ class ItemServiceTest {
             UUID itemId = UUID.randomUUID();
             UpdateItemRequest request = UpdateItemRequest.builder()
                     .name("更新されたアイテム")
-                    .isChecked(true)
+                    .checked(true)
                     .build();
 
             Item existingItem = createMockItem(itemId, "元のアイテム", false, listId);
@@ -386,11 +386,11 @@ class ItemServiceTest {
     /**
      * テスト用のモックItemエンティティ作成
      */
-    private Item createMockItem(UUID id, String name, boolean isChecked, UUID listId) {
+    private Item createMockItem(UUID id, String name, boolean checked, UUID listId) {
         Item item = new Item();
         item.setId(id);
         item.setName(name);
-        item.setChecked(isChecked);
+        item.setChecked(checked);
         item.setCreatedAt(LocalDateTime.now());
         item.setUpdatedAt(LocalDateTime.now());
 

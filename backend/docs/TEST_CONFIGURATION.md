@@ -6,11 +6,11 @@
 
 ```bash
 # 開発DB起動 & アプリ実行
-../env.sh dev start
+../env.sh dev up
 ./gradlew bootRun
 
 # 停止
-../env.sh dev stop
+../env.sh dev down
 ```
 
 ### テスト環境
@@ -20,17 +20,17 @@
 ./gradlew test              # DB自動起動・停止
 
 # 手動管理
-../env.sh test start        # DB起動
+../env.sh test up        # DB起動
 ./gradlew test --offline    # テスト実行
-../env.sh test stop         # DB停止
+../env.sh test down         # DB停止
 ```
 
 ### CI 環境（将来用）
 
 ```bash
-../env.sh ci start
+../env.sh ci up
 ./gradlew check
-../env.sh ci stop
+../env.sh ci down
 ```
 
 ---
@@ -58,8 +58,8 @@ gradle/test-db.gradle         # テスト自動化
 ../env.sh [dev|test] status
 
 # 環境リセット
-../env.sh [dev|test] stop
-../env.sh [dev|test] start
+../env.sh [dev|test] down
+../env.sh [dev|test] up
 
 # ポート確認
 lsof -i :3306  # 開発
@@ -70,7 +70,7 @@ lsof -i :3307  # テスト
 
 ```bash
 # 開発中のワークフロー
-../env.sh dev start && ./gradlew bootRun
+../env.sh dev up && ./gradlew bootRun
 
 # テスト + 静的解析
 ./gradlew check

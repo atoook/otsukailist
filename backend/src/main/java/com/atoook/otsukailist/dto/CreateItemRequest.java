@@ -24,5 +24,5 @@ public class CreateItemRequest {
 
     // 作成時にチェック状態を指定可能（デフォルト: false）
     @Builder.Default
-    private boolean isChecked = false;
+    private boolean checked = false;
 }

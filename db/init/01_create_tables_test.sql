@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS item (
     list_id BINARY(16) NOT NULL, -- shopping_listへの外部キー
     FOREIGN KEY (list_id) REFERENCES shopping_list(id) ON DELETE CASCADE,
     INDEX idx_list_id (list_id),
+    INDEX idx_list_checked (list_id, is_checked),
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -133,6 +133,7 @@ class ShoppingListServiceTest {
         @DisplayName("正常系：名前なしでリスト作成")
         void createShoppingList_WithoutRequest_Success() {
             // Given
+            // サービスはリクエストがない場合、デフォルト名「新しいリスト」を使用する
             ShoppingList savedEntity = createMockShoppingList(UUID.randomUUID(), "新しいリスト");
 
             when(shoppingListRepository.save(any(ShoppingList.class)))

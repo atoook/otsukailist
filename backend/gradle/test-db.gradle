@@ -6,13 +6,12 @@
 // テスト用DBコンテナ起動タスク
 task startTestDB(type: Exec) {
     group = 'verification'
-    description = 'Start test database container'
+    description = 'Start test database container and wait for readiness'
     workingDir = '../db'
-    commandLine 'docker-compose', '-f', 'docker-compose.test.yml', 'up', '-d'
+    commandLine 'docker', 'compose', '-f', 'docker-compose.test.yml', 'up', '-d', '--wait'
     
     doLast {
-        println 'Waiting for test database to be ready...'
-        sleep(10000)  // 10秒待機
+        println 'Test database is ready!'
     }
 }
 
@@ -21,7 +20,7 @@ task stopTestDB(type: Exec) {
     group = 'verification'
     description = 'Stop test database container'
     workingDir = '../db'
-    commandLine 'docker-compose', '-f', 'docker-compose.test.yml', 'down'
+    commandLine 'docker', 'compose', '-f', 'docker-compose.test.yml', 'down'
 }
 
 // テスト用DB状態確認タスク
@@ -29,11 +28,8 @@ task checkTestDB(type: Exec) {
     group = 'verification'
     description = 'Check test database status'
     workingDir = '../db'
-    commandLine 'docker-compose', '-f', 'docker-compose.test.yml', 'ps'
+    commandLine 'docker', 'compose', '-f', 'docker-compose.test.yml', 'ps'
 }
-
-// テスト実行前にテスト用DBを起動
-test.dependsOn startTestDB
 
 // テスト実行後にテスト用DBを停止（オプション）
 // 連続してテストを実行する場合はコメントアウト

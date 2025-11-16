@@ -166,13 +166,13 @@ int deleteAllByListId(@Param("listId") UUID listId);
 **理由：**
 
 - **型安全性**: Entity によるコンパイル時チェック
-- **保守性**: スキーマ変更時の自動対応  
+- **保守性**: スキーマ変更時の自動対応
 - **可読性**: ビジネスロジックと SQL の分離
 - **移植性**: データベース非依存
-- **`@Modifying`の問題**: 
-  - **1次キャッシュ不整合**: DB更新後もEntityManagerの1次キャッシュが古いまま残り、同一トランザクション内で不整合が発生
+- **`@Modifying`の問題**:
+  - **1 次キャッシュ不整合**: DB 更新後も EntityManager の 1 次キャッシュが古いまま残り、同一トランザクション内で不整合が発生
   - **関連エンティティの整合性問題**: オブジェクトグラフの依存関係が更新されない
-  - **Hibernateの自動機能無効化**: Dirty Checking、Cascade、楽観的ロック等が効かない
+  - **Hibernate の自動機能無効化**: Dirty Checking、Cascade、楽観的ロック等が効かない
 
 **⚠️ 例外：`@Modifying` が適切な場面**
 
@@ -189,21 +189,21 @@ int uncheckAllItemsInList(@Param("listId") UUID listId);
 // 4. テストで整合性を確認
 ```
 
-**✅ 推奨：Entityを使用した標準的な更新・削除**
+**✅ 推奨：Entity を使用した標準的な更新・削除**
 
 ```java
 // ✅ 推奨パターン - Entityベースの操作
 @Transactional
 public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
     Optional<Item> existingOpt = this.itemRepository.findByIdAndShoppingListId(itemId, listId);
-    
+
     if (existingOpt.isEmpty()) {
         return Optional.empty();
     }
-    
+
     Item existing = existingOpt.get();
     existing.setName(request.getName());  // Entityの変更
-    
+
     Item saved = this.itemRepository.save(existing);  // Hibernateが自動でUPDATE
     return Optional.of(ItemMapper.toResponse(saved));
 }
@@ -236,16 +236,16 @@ public class ItemService {
 ```java
 // 全体検索は禁止（設計思想に反する）
 List<Item> findAll();
-Item findById(String itemId);
+Item findById(UUID itemId);
 ```
 
 **✅ 推奨パターン**
 
 ```java
 // 必ずリスト ID でスコープを限定
-List<Item> findByShoppingListId(String listId);
-Optional<Item> findByIdAndShoppingListId(String itemId, String listId);
-boolean existsByIdAndShoppingListId(String itemId, String listId);
+List<Item> findByShoppingListId(UUID listId);
+Optional<Item> findByIdAndShoppingListId(UUID itemId, UUID listId);
+boolean existsByIdAndShoppingListId(UUID itemId, UUID listId);
 ```
 
 ### セキュリティ認証の実装パターン
@@ -343,19 +343,19 @@ public class ItemResponse {
 
 ```java
 @Repository
-public interface ItemRepository extends JpaRepository<Item, String> {
+public interface ItemRepository extends JpaRepository<Item, UUID> {
 
     // ✅ 正しい：リストは空でも正常
-    List<Item> findByShoppingListId(String shoppingListId);
+    List<Item> findByShoppingListId(UUID shoppingListId);
 
     // ✅ 正しい：単一アイテムは見つからない可能性
-    Optional<Item> findByIdAndShoppingListId(String itemId, String shoppingListId);
+    Optional<Item> findByIdAndShoppingListId(UUID itemId, UUID shoppingListId);
 
     // ✅ 正しい：存在確認は boolean
-    boolean existsByIdAndShoppingListId(String itemId, String shoppingListId);
+    boolean existsByIdAndShoppingListId(UUID itemId, UUID shoppingListId);
 
     // ❌ 間違い：リストにOptionalは不要
-    // Optional<List<Item>> findByShoppingListId(String shoppingListId);
+    // Optional<List<Item>> findByShoppingListId(UUID shoppingListId);
 }
 ```
 
@@ -364,6 +364,19 @@ public interface ItemRepository extends JpaRepository<Item, String> {
 - `List<T>`: コレクション（空でも正常な状態）
 - `Optional<T>`: 単一オブジェクト（未発見は異常状態）
 - `boolean`: 存在確認（性能優位性）
+
+### 正統的 ID タイプ：UUID
+
+**設計方針**: 本プロジェクトでは、エンティティの ID タイプとして`UUID`を採用しています。
+
+**採用理由**:
+
+- **グローバル一意性**: 複数のサーバーやデータベース間での重複を避けられる
+- **セキュリティ**: 連番による推測攻撃を防止
+- **分散システム対応**: 将来的なスケーラビリティを考慮
+- **Hibernate 統合**: `@UuidGenerator`による自動生成に最適化
+
+**実装例**: 全てのリポジトリインターフェースとメソッドシグニチャで`UUID`を使用
 
 ## トランザクション管理パターン
 
@@ -480,6 +493,104 @@ CreateItemRequest request = CreateItemRequest.builder()
 @Builder.Default
 ```
 
+### ⚠️ boolean 型フィールドの命名規則（重要）
+
+**問題の背景**: Lombok と Jackson の命名規則の不整合により、JSON シリアライゼーションエラーが発生
+
+#### ❌ 問題のあるパターン
+
+```java
+public class ItemResponse {
+    private boolean isChecked;  // "is" で始まるフィールド名
+}
+
+// Lombokが生成するメソッド：
+// - public boolean isChecked() { ... }
+// - public void setChecked(boolean checked) { ... }
+
+// Jacksonが期待するメソッド：
+// - public boolean getIsChecked() { ... }  ← 存在しない！
+
+// 結果：JSON シリアライゼーション時にエラー
+```
+
+#### ✅ 推奨パターン
+
+```java
+public class ItemResponse {
+    private boolean checked;    // "is" なしの述語的な名前
+}
+
+// Lombokが生成するメソッド：
+// - public boolean isChecked() { ... }    ← Jackson期待通り！
+// - public void setChecked(boolean checked) { ... }
+
+// JSON出力例：
+// { "checked": true }
+```
+
+#### 命名ルールとベストプラクティス
+
+```java
+// ✅ 推奨：述語的な形容詞（"is" なし）
+private boolean checked;
+private boolean active;
+private boolean enabled;
+private boolean visible;
+private boolean completed;
+
+// ❌ 避ける："is" で始まる名前
+private boolean isChecked;
+private boolean isActive;
+private boolean isEnabled;
+```
+
+#### プリミティブ vs ラッパー型の使い分け
+
+```java
+// DTOでの使い分け例
+public class CreateItemRequest {
+    @Builder.Default
+    private boolean checked = false;    // 必須、デフォルト値あり
+}
+
+public class UpdateItemRequest {
+    private Boolean checked;            // 任意更新（null = 更新しない）
+
+    // Lombokが生成：getChecked() / setChecked()
+    // 使用例：if (request.getChecked() != null) { ... }
+}
+```
+
+#### 実装時の統一性確保
+
+```java
+// Entity（データベース層）
+@Entity
+public class Item {
+    @Column(name = "is_checked")  // DB物理名
+    private boolean checked;      // Java論理名
+}
+
+// DTO（API層）
+public class ItemResponse {
+    private boolean checked;      // 同じ論理名で統一
+}
+
+// Mapper（変換層）
+public static ItemResponse toResponse(Item entity) {
+    return ItemResponse.builder()
+            .checked(entity.isChecked())  // isChecked()メソッド使用
+            .build();
+}
+```
+
+#### トラブルシューティング
+
+**症状**: JSON に boolean フィールドが含まれない、または null になる  
+**原因**: Lombok と Jackson の命名規則不整合  
+**解決**: フィールド名から "is" プレフィックスを除去
+
 ---
 
 # 🧪 テスト・品質管理
@@ -562,6 +673,8 @@ class ItemServiceTest {
 - [ ] **Entity + Hibernate でのデータアクセスを使用している**
 - [ ] **生 DML や nativeQuery を不必要に使用していない**
 - [ ] **@Modifying + @Query が必要最小限の使用に留まっている（大量データ処理など）**
+- [ ] **boolean フィールドが "is" プレフィックスなしで命名されている**
+- [ ] **Lombok と Jackson の統合で JSON シリアライゼーションが正常動作する**
 
 ---
 

@@ -22,5 +22,5 @@ public class UpdateItemRequest {
     private String name;
 
     // チェック状態（nullの場合は更新しない）
-    private Boolean isChecked;
+    private Boolean checked;
 }

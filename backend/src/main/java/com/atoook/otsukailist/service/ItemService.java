@@ -61,7 +61,6 @@ public class ItemService {
 
         ShoppingList shoppingList = shoppingListOpt.get();
         Item entity = ItemMapper.toEntity(request, shoppingList);
-        entity.setId(UUID.randomUUID());
 
         Item saved = this.itemRepository.save(entity);
         return Optional.of(ItemMapper.toResponse(saved));
@@ -73,8 +72,8 @@ public class ItemService {
     @Transactional
     public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
         // Shopping List の存在確認
+        // Item の存在確認（listId によるスコープ制限）
         Optional<Item> existingOpt = this.itemRepository.findByIdAndShoppingListId(itemId, listId);
-
         if (existingOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -113,7 +112,6 @@ public class ItemService {
 
         Item existing = existingOpt.get();
         existing.setChecked(!existing.isChecked());
-        existing.setUpdatedAt(java.time.LocalDateTime.now());
 
         Item saved = this.itemRepository.save(existing);
         return Optional.of(ItemMapper.toResponse(saved));

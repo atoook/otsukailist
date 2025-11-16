@@ -30,8 +30,10 @@ services:
           "root",
           "-p${MYSQL_ROOT_PASSWORD}",
         ]
+      interval: 5s
       timeout: 10s
-      retries: 5
+      retries: 6
+      start_period: 30s
     tmpfs:
       - /var/lib/mysql:rw,noexec,nosuid,size=2g # MySQL 8.0の初期化に必要な容量を確保
 

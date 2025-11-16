@@ -23,7 +23,7 @@ public class ItemResponse {
 
     private String name;
 
-    private boolean isChecked;
+    private boolean checked;
 
     private LocalDateTime createdAt;
 

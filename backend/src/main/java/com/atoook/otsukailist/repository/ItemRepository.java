@@ -5,8 +5,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.atoook.otsukailist.model.Item;
@@ -29,8 +27,7 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
     long countByShoppingListIdAndIsChecked(UUID shoppingListId, boolean isChecked);
 
     // アイテム名で部分検索（必須：リストIDでスコープ）
-    @Query("SELECT i FROM Item i WHERE i.shoppingList.id = :listId AND i.name LIKE %:name%")
-    List<Item> findByListIdAndNameContaining(@Param("listId") UUID listId, @Param("name") String name);
+    List<Item> findByShoppingListIdAndNameContaining(UUID shoppingListId, String name);
 
     // リスト内のアイテム存在チェック
     boolean existsByIdAndShoppingListId(UUID itemId, UUID shoppingListId);

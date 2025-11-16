@@ -129,7 +129,7 @@ spring.websocket.allowed-origins=http://localhost:3000
 
 ### 新機能開発
 
-1. [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) を確認
+1. [CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md) を確認
 2. DTO → Service → Repository → Controller の順で実装
 3. セキュリティチェック（リスト ID スコープ）を必ず実装
 4. 単体テストを作成

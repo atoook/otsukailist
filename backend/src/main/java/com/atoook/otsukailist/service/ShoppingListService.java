@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.atoook.otsukailist.dto.CreateShoppingListRequest;
 import com.atoook.otsukailist.dto.ShoppingListResponse;
@@ -41,7 +42,6 @@ public class ShoppingListService {
      */
     public ShoppingListResponse createShoppingList(CreateShoppingListRequest request) {
         ShoppingList entity = ShoppingListMapper.toEntity(request);
-        entity.setId(UUID.randomUUID());
 
         ShoppingList saved = this.shoppingListRepository.save(entity);
         return ShoppingListMapper.toResponse(saved);
@@ -60,6 +60,7 @@ public class ShoppingListService {
     /**
      * Shopping List 更新
      */
+    @Transactional
     public Optional<ShoppingListResponse> updateShoppingList(UUID id, CreateShoppingListRequest request) {
         Optional<ShoppingList> existingOpt = this.shoppingListRepository.findById(id);
 
@@ -74,11 +75,15 @@ public class ShoppingListService {
         return Optional.of(ShoppingListMapper.toResponse(saved));
     }
 
+    /**
+     * Shopping List を削除
+     */
+    @Transactional
     public boolean deleteShoppingList(UUID id) {
-        if (this.shoppingListRepository.existsById(id)) {
+        boolean exists = this.shoppingListRepository.existsById(id);
+        if (exists) {
             this.shoppingListRepository.deleteById(id);
-            return true;
         }
-        return false;
+        return exists;
     }
 }

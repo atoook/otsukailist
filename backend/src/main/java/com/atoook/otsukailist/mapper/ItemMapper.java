@@ -1,7 +1,5 @@
 package com.atoook.otsukailist.mapper;
 
-import java.time.LocalDateTime;
-
 import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
@@ -24,7 +22,7 @@ public class ItemMapper {
         return ItemResponse.builder()
                 .id(entity.getId())
                 .name(entity.getName())
-                .isChecked(entity.isChecked())
+                .checked(entity.isChecked())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .listId(entity.getShoppingList() != null ? entity.getShoppingList().getId() : null)
@@ -44,11 +42,6 @@ public class ItemMapper {
         entity.setChecked(request.isChecked());
         entity.setShoppingList(shoppingList);
 
-        // 作成時刻・更新時刻を設定
-        LocalDateTime now = LocalDateTime.now();
-        entity.setCreatedAt(now);
-        entity.setUpdatedAt(now);
-
         return entity;
     }
 
@@ -66,10 +59,8 @@ public class ItemMapper {
         }
 
         // チェック状態の更新（nullでない場合のみ）
-        if (request.getIsChecked() != null) {
-            entity.setChecked(request.getIsChecked());
+        if (request.getChecked() != null) {
+            entity.setChecked(request.getChecked());
         }
-
-        entity.setUpdatedAt(LocalDateTime.now());
     }
 }
