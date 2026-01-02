@@ -1,24 +1,25 @@
 <script>
-import CardContent from '../components/CardContent.vue';
+import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 
 export default {
   name: 'Welcome',
   components: {
-    CardContent,
+    ContentArea,
     MainButton
   }
 };
 </script>
 
 <template>
-  <CardContent layout="center">
-    <div class="w-full max-w-sm text-center">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">ようこそ！</h2>
-      <p class="text-gray-600 mb-6">おつかいリストを作成・管理できます</p>
+  <ContentArea>
+    <div class="text-center">
+      <div class="text-6xl mb-4">🔥</div>
+      <h2 class="text-3xl font-bold font-serif text-charcoal-800 mb-4">ようこそ！</h2>
+      <p class="text-charcoal-600 mb-8 leading-relaxed">あなたの買い物を<br />🍖 スマートに管理しましょう</p>
       <router-link to="/create-list">
         <MainButton>はじめる</MainButton>
       </router-link>
     </div>
-  </CardContent>
+  </ContentArea>
 </template>
