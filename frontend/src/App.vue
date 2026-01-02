@@ -1,21 +1,21 @@
 <script>
-import Layout from './components/Layout.vue';
-import Header from './components/Header.vue';
-import Footer from './components/Footer.vue';
+import AppLayout from './components/AppLayout.vue';
+import AppHeader from './components/AppHeader.vue';
+import AppFooter from './components/AppFooter.vue';
 
 export default {
   components: {
-    Layout,
-    Header,
-    Footer
+    AppLayout,
+    AppHeader,
+    AppFooter
   }
 };
 </script>
 
 <template>
-  <Layout>
-    <Header />
+  <AppLayout>
+    <AppHeader />
     <router-view />
-    <Footer />
-  </Layout>
+    <AppFooter />
+  </AppLayout>
 </template>

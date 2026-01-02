@@ -1,25 +1,25 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 
 // Lazy loading for better performance
-const Welcome = () => import('../pages/Welcome.vue');
-const CreateList = () => import('../pages/CreateList.vue');
-const ItemList = () => import('../pages/ItemList.vue');
+const WelcomePage = () => import('../pages/WelcomePage.vue');
+const CreateListPage = () => import('../pages/CreateListPage.vue');
+const ItemListPage = () => import('../pages/ItemListPage.vue');
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Welcome',
-    component: Welcome
+    component: WelcomePage
   },
   {
     path: '/create-list',
     name: 'CreateList',
-    component: CreateList
+    component: CreateListPage
   },
   {
     path: '/list/:id',
     name: 'ItemList',
-    component: ItemList
+    component: ItemListPage
   }
 ];
 

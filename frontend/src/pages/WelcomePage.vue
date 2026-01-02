@@ -3,7 +3,7 @@ import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 
 export default {
-  name: 'Welcome',
+  name: 'WelcomePage',
   components: {
     ContentArea,
     MainButton
