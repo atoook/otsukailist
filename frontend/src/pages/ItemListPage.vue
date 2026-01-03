@@ -81,7 +81,11 @@ export default {
           class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm"
         >
           <!-- カスタムチェックボックス -->
-          <CheckBox :checked="item.completed" @toggle="toggleItem(item)" />
+          <CheckBox
+            :checked="item.completed"
+            :aria-label="`${item.name}を完了としてマーク`"
+            @toggle="toggleItem(item)"
+          />
 
           <!-- アイテム名 -->
           <span

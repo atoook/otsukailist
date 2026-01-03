@@ -1,8 +1,8 @@
 <template>
-  <div @click="$emit('toggle')" class="relative w-6 h-6 cursor-pointer">
-    <!-- 隠れたチェックボックス -->
-    <input type="checkbox" :checked="checked" class="sr-only" />
-    <!-- カスタムチェックボックス本体 -->
+  <label class="relative w-6 h-6 cursor-pointer">
+    <!-- 実際のチェックボックス（操作主体） -->
+    <input type="checkbox" :checked="checked" :aria-label="ariaLabel" @change="$emit('toggle')" class="sr-only" />
+    <!-- 見た目のオーバーレイ（装飾のみ） -->
     <div
       :class="{
         'bg-wood-100 border-wood-300': !checked,
@@ -13,7 +13,7 @@
       <!-- チェックマーク -->
       <span v-if="checked" class="text-white text-sm font-bold align-top"> ✓ </span>
     </div>
-  </div>
+  </label>
 </template>
 <script>
 export default {
@@ -22,6 +22,10 @@ export default {
     checked: {
       type: Boolean,
       default: false
+    },
+    ariaLabel: {
+      type: String,
+      required: true
     }
   },
   emits: ['toggle']
