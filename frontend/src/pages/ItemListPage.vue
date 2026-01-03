@@ -2,13 +2,15 @@
 import ContentArea from '../components/ContentArea.vue';
 import CheckBox from '../components/CheckBox.vue';
 import MainButton from '../components/MainButton.vue';
+import TextInput from '../components/TextInput.vue';
 
 export default {
   name: 'ItemListPage',
   components: {
     ContentArea,
     CheckBox,
-    MainButton
+    MainButton,
+    TextInput
   },
   data() {
     return {
@@ -62,13 +64,7 @@ export default {
       <!-- 新しいアイテム追加 -->
       <div class="mb-6">
         <div class="flex gap-2 px-3 py-3 border border-wood-300 bg-wood-100 rounded-lg shadow-sm">
-          <input
-            v-model="newItemName"
-            @keyup.enter="addItem"
-            type="text"
-            placeholder="アイテムを追加..."
-            class="flex-1 focus:outline-none"
-          />
+          <TextInput v-model="newItemName" @enter="addItem" placeholder="アイテムを追加..." variant="inline" />
           <MainButton @click="addItem" :disabled="!newItemName.trim()"> 追加 </MainButton>
         </div>
       </div>
