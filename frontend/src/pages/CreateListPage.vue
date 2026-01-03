@@ -1,12 +1,14 @@
 <script>
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
+import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 
 export default {
   name: 'CreateListPage',
   components: {
     ContentArea,
-    MainButton
+    MainButton,
+    TextInputWithLabel
   },
   data() {
     return {
@@ -44,14 +46,7 @@ export default {
     </div>
 
     <div class="mb-6">
-      <label for="listName" class="block text-sm font-medium text-charcoal-700 mb-2"> 🍖 リスト名 </label>
-      <input
-        id="listName"
-        v-model="listName"
-        type="text"
-        placeholder="例：今日のBBQ材料"
-        class="w-full px-4 py-3 border border-wood-300 bg-wood-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-wood-500 focus:border-wood-500 text-charcoal-800 placeholder-charcoal-500"
-      />
+      <TextInputWithLabel input-id="listName" label="🍖 リスト名" placeholder="例：今日のBBQ材料" v-model="listName" />
     </div>
 
     <div class="flex flex-col gap-3">
