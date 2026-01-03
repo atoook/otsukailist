@@ -64,7 +64,13 @@ export default {
       <!-- 新しいアイテム追加 -->
       <div class="mb-6">
         <div class="flex gap-2 px-3 py-3 border border-wood-300 bg-wood-100 rounded-lg shadow-sm">
-          <TextInput v-model="newItemName" @enter="addItem" placeholder="アイテムを追加..." variant="inline" />
+          <TextInput
+            v-model="newItemName"
+            @enter="addItem"
+            input-name="newItem"
+            placeholder="アイテムを追加..."
+            variant="inline"
+          />
           <MainButton @click="addItem" :disabled="!newItemName.trim()"> 追加 </MainButton>
         </div>
       </div>
