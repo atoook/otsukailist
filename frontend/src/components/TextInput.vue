@@ -1,13 +1,13 @@
 <template>
   <input
-    v-bind="inputId ? { id: inputId } : {}"
+    :id="inputId || undefined"
     :name="inputName || inputId"
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
     @keyup.enter="$emit('enter')"
     type="text"
     :placeholder="placeholder"
-    :aria-label="ariaLabel"
+    :aria-label="ariaLabel || undefined"
     :disabled="disabled"
     :readonly="readonly"
     :maxlength="maxlength"
