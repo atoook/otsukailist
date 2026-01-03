@@ -2,17 +2,23 @@
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
+import TextInput from '../components/TextInput.vue';
+import Badge from '../components/Badge.vue';
 
 export default {
   name: 'CreateListPage',
   components: {
     ContentArea,
     MainButton,
-    TextInputWithLabel
+    TextInputWithLabel,
+    TextInput,
+    Badge
   },
   data() {
     return {
-      listName: ''
+      listName: '',
+      members: [],
+      newMemberName: ''
     };
   },
   methods: {
@@ -32,6 +38,23 @@ export default {
           query: { name: this.listName }
         });
       }
+    },
+    addMember() {
+      if (this.newMemberName.trim()) {
+        this.members.push({
+          id: Date.now(),
+          name: this.newMemberName
+        });
+        this.newMemberName = '';
+      }
+    },
+    removeMember(memberId) {
+      this.members = this.members.filter((member) => member.id !== memberId);
+    }
+  },
+  computed: {
+    hasRequiredInput() {
+      return this.listName.trim() && this.members.length > 0;
     }
   }
 };
@@ -49,8 +72,37 @@ export default {
       <TextInputWithLabel input-id="listName" label="🍖 リスト名" placeholder="例：今日のBBQ材料" v-model="listName" />
     </div>
 
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-charcoal-700 mb-2">👥 メンバー</label>
+      <div class="flex gap-2 px-2 py-1 border border-wood-200 bg-wood-50 rounded-md">
+        <TextInput
+          v-model="newMemberName"
+          @enter="addMember"
+          input-name="newMember"
+          placeholder="メンバーを追加..."
+          variant="inline"
+        />
+
+        <MainButton @click="addMember" :disabled="!newMemberName.trim()" size="small"> 追加 </MainButton>
+      </div>
+
+      <!-- メンバーバッジ表示 -->
+      <div v-if="members.length > 0" class="mt-3">
+        <div class="flex flex-wrap gap-2">
+          <Badge
+            v-for="member in members"
+            :key="member.id"
+            :text="member.name"
+            icon="👤"
+            :removable="true"
+            @remove="removeMember(member.id)"
+          />
+        </div>
+      </div>
+    </div>
+
     <div class="flex flex-col gap-3">
-      <MainButton @click="createList" :disabled="!listName.trim()"> リストを作成 </MainButton>
+      <MainButton @click="createList" :disabled="!hasRequiredInput"> リストを作成 </MainButton>
     </div>
   </ContentArea>
 </template>
