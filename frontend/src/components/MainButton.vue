@@ -28,7 +28,7 @@ export default {
   computed: {
     buttonClass() {
       const baseClass = [
-        // Layout & spacing base
+        // Base shape (rounded corners)
         'rounded-lg',
         // Typography
         'font-medium',

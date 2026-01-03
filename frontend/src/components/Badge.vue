@@ -4,6 +4,7 @@
     <span class="overflow-hidden whitespace-nowrap text-ellipsis">{{ text }}</span>
     <button
       v-if="removable"
+      type="button"
       @click="$emit('remove')"
       class="text-ember-400 hover:text-ember-600 transition-colors flex-shrink-0"
       :aria-label="`${text}を削除`"
