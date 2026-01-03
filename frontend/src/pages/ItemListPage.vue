@@ -1,11 +1,13 @@
 <script>
-import CardContent from '../components/CardContent.vue';
+import ContentArea from '../components/ContentArea.vue';
+import CheckBox from '../components/CheckBox.vue';
 import MainButton from '../components/MainButton.vue';
 
 export default {
-  name: 'ItemList',
+  name: 'ItemListPage',
   components: {
-    CardContent,
+    ContentArea,
+    CheckBox,
     MainButton
   },
   data() {
@@ -49,17 +51,17 @@ export default {
 </script>
 
 <template>
-  <CardContent>
+  <ContentArea>
     <div class="w-full">
       <!-- リストタイトル -->
       <div class="mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 text-center mb-2">{{ listName }}</h2>
-        <p class="text-sm text-gray-500 text-center">買い物リスト</p>
+        <h2 class="text-2xl font-bold text-charcoal-800 text-center mb-2">{{ listName }}</h2>
+        <p class="text-sm text-charcoal-600 text-center">🍖 買い物リスト</p>
       </div>
 
       <!-- 新しいアイテム追加 -->
       <div class="mb-6">
-        <div class="flex gap-2 px-1.5 py-1.5 border border-gray-300 rounded-lg">
+        <div class="flex gap-2 px-3 py-3 border border-wood-300 bg-wood-100 rounded-lg shadow-sm">
           <input
             v-model="newItemName"
             @keyup.enter="addItem"
@@ -73,15 +75,23 @@ export default {
 
       <!-- アイテムリスト -->
       <div class="space-y-3">
-        <div v-for="item in items" :key="item.id" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-          <!-- チェックボックス -->
-          <input type="checkbox" :checked="item.completed" @change="toggleItem(item)" class="w-5 h-5 text-blue-600" />
+        <div
+          v-for="item in items"
+          :key="item.id"
+          class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm"
+        >
+          <!-- カスタムチェックボックス -->
+          <CheckBox
+            :checked="item.completed"
+            :aria-label="`${item.name}を完了としてマーク`"
+            @toggle="toggleItem(item)"
+          />
 
           <!-- アイテム名 -->
           <span
             :class="{
-              'line-through text-gray-500': item.completed,
-              'text-gray-900': !item.completed
+              'line-through text-charcoal-500': item.completed,
+              'text-charcoal-800': !item.completed
             }"
             class="flex-1"
           >
@@ -89,15 +99,21 @@ export default {
           </span>
 
           <!-- 削除ボタン -->
-          <button @click="deleteItem(item.id)" class="text-red-500 hover:text-red-700 text-sm">削除</button>
+          <button
+            @click="deleteItem(item.id)"
+            class="text-ember-500 hover:text-ember-600 text-sm font-medium transition-colors"
+          >
+            🗑️
+          </button>
         </div>
 
         <!-- アイテムがない場合 -->
-        <div v-if="items.length === 0" class="text-center text-gray-500 py-8">
+        <div v-if="items.length === 0" class="text-center text-charcoal-600 py-8">
+          <div class="text-4xl mb-3">🍖</div>
           まだアイテムがありません。<br />
           上のフォームからアイテムを追加してください。
         </div>
       </div>
     </div>
-  </CardContent>
+  </ContentArea>
 </template>
