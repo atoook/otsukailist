@@ -16,7 +16,8 @@ export default {
     return {
       listName: '',
       items: [],
-      newItemName: ''
+      newItemName: '',
+      searchQuery: ''
     };
   },
   created() {
@@ -30,6 +31,15 @@ export default {
     // TODO: APIからリストデータを取得
     console.log('リストID:', listId);
     console.log('リスト名:', this.listName);
+  },
+  computed: {
+    filteredItems() {
+      if (!this.searchQuery.trim()) {
+        return this.items;
+      }
+      const query = this.searchQuery.toLowerCase();
+      return this.items.filter((item) => item.name.toLowerCase().includes(query));
+    }
   },
   methods: {
     addItem() {
@@ -75,10 +85,17 @@ export default {
         </div>
       </div>
 
+      <!-- 検索ボックス -->
+      <div v-if="items.length > 0" class="mb-4">
+        <div class="px-2 py-2 border border-charcoal-200 bg-charcoal-100 rounded-md">
+          <TextInput v-model="searchQuery" input-name="search" placeholder="検索..." variant="inline" class="text-sm" />
+        </div>
+      </div>
+
       <!-- アイテムリスト -->
       <div class="space-y-3">
         <div
-          v-for="item in items"
+          v-for="item in filteredItems"
           :key="item.id"
           class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm"
         >
@@ -114,6 +131,12 @@ export default {
           <div class="text-4xl mb-3">🍖</div>
           まだアイテムがありません。<br />
           上のフォームからアイテムを追加してください。
+        </div>
+
+        <!-- 検索結果がない場合 -->
+        <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
+          <div class="text-4xl mb-3">🔍</div>
+          「{{ searchQuery }}」に一致するアイテムが見つかりませんでした。
         </div>
       </div>
     </div>
