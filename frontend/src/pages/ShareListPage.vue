@@ -85,7 +85,7 @@ export default {
       <span class="flex-1 min-w-0 text-charcoal-800 whitespace-nowrap overflow-hidden overflow-x-auto scrollbar-hidden">
         {{ listURL }}
       </span>
-      <MainButton @click="copyUrl" :disabled="!listURL" size="small"> コピー </MainButton>
+      <MainButton @click="copyUrl" size="small"> コピー </MainButton>
     </div>
     <div class="mt-6">
       <MainButton variant="secondary" @click="navigateToItemList"> アイテムリストへ移動 </MainButton>
