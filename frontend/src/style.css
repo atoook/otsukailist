@@ -37,3 +37,12 @@
   --color-error-500: #ef4444;
   --color-error-600: #dc2626;
 }
+
+@utility scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+
+  &::-webkit-scrollbar {
+    display: none; /* WebKit browsers */
+  }
+}

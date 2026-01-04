@@ -3,7 +3,7 @@ import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
-import Badge from '../components/Badge.vue';
+import BadgeTag from '../components/BadgeTag.vue';
 
 export default {
   name: 'CreateListPage',
@@ -12,7 +12,7 @@ export default {
     MainButton,
     TextInputWithLabel,
     TextInput,
-    Badge
+    BadgeTag
   },
   data() {
     return {
@@ -31,9 +31,9 @@ export default {
         console.log('リスト名:', this.listName);
         console.log('リストID:', listId);
 
-        // アイテムリスト画面に遷移
+        // リスト共有画面に遷移
         this.$router.push({
-          name: 'ItemList',
+          name: 'ShareList',
           params: { id: listId },
           query: { name: this.listName }
         });
@@ -89,7 +89,7 @@ export default {
       <!-- メンバーバッジ表示 -->
       <div v-if="members.length > 0" class="mt-3">
         <div class="flex flex-wrap gap-2">
-          <Badge
+          <BadgeTag
             v-for="member in members"
             :key="member.id"
             :text="member.name"

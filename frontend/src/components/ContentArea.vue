@@ -25,9 +25,9 @@ export default {
 
       switch (this.layout) {
         case 'center':
-          return `${baseClass} flex items-center justify-center`;
+          return `${baseClass} flex flex-col items-center justify-center`;
         case 'center-vertical':
-          return `${baseClass} flex items-center`;
+          return `${baseClass} flex flex-col items-center`;
         default:
           return baseClass;
       }

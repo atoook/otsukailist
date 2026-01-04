@@ -3,6 +3,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 // Lazy loading for better performance
 const WelcomePage = () => import('../pages/WelcomePage.vue');
 const CreateListPage = () => import('../pages/CreateListPage.vue');
+const ShareListPage = () => import('../pages/ShareListPage.vue');
 const ItemListPage = () => import('../pages/ItemListPage.vue');
 
 const routes: RouteRecordRaw[] = [
@@ -17,7 +18,12 @@ const routes: RouteRecordRaw[] = [
     component: CreateListPage
   },
   {
-    path: '/list/:id',
+    path: '/share-list/:id',
+    name: 'ShareList',
+    component: ShareListPage
+  },
+  {
+    path: '/lists/:id',
     name: 'ItemList',
     component: ItemListPage
   }
