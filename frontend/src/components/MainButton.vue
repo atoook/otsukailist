@@ -13,7 +13,7 @@ export default {
     variant: {
       type: String,
       default: 'primary',
-      validator: (value) => ['primary', 'secondary', 'cancel'].includes(value)
+      validator: (value) => ['primary', 'secondary', 'cancel', 'success'].includes(value)
     },
     size: {
       type: String,
@@ -53,7 +53,8 @@ export default {
       const variantClasses = {
         primary: 'bg-wood-500 text-wood-50 border-wood-600 hover:bg-wood-600 active:bg-wood-700',
         secondary: 'bg-transparent text-wood-700 border-wood-300 hover:bg-wood-50 active:bg-wood-100',
-        cancel: 'bg-transparent text-charcoal-500 border-charcoal-300 hover:bg-charcoal-50 active:bg-charcoal-100'
+        cancel: 'bg-transparent text-charcoal-500 border-charcoal-300 hover:bg-charcoal-50 active:bg-charcoal-100',
+        success: 'bg-wood-50 text-wood-700 border-wood-500 shadow-lg ring-2 ring-wood-300 font-semibold'
       };
 
       return twMerge(baseClass, sizeClasses[this.size], variantClasses[this.variant]);

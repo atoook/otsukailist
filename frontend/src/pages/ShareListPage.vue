@@ -95,12 +95,9 @@ export default {
       <MainButton
         @click="copyUrl"
         :disabled="copySuccess"
-        :variant="copySuccess ? 'secondary' : 'primary'"
+        :variant="copySuccess ? 'success' : 'primary'"
         size="small"
-        :class="[
-          'transition-[background-color,color,border-color,box-shadow,font-weight] duration-300 ease-out',
-          copySuccess && 'bg-wood-50 text-wood-700 border-wood-500 shadow-lg ring-2 ring-wood-300 font-semibold'
-        ]"
+        class="transition-[background-color,color,border-color,box-shadow,font-weight] duration-300 ease-out"
       >
         {{ copySuccess ? '✓ コピー済み' : 'コピー' }}
       </MainButton>
