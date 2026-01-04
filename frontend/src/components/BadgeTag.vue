@@ -18,7 +18,7 @@
 import { twMerge } from 'tailwind-merge';
 
 export default {
-  name: 'Badge',
+  name: 'BadgeTag',
   emits: ['remove'],
   props: {
     text: {
