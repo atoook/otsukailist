@@ -34,11 +34,18 @@ export default {
   },
   computed: {
     filteredItems() {
+      // Ensure items is an array
+      const items = Array.isArray(this.items) ? this.items : [];
+
       if (!this.searchQuery.trim()) {
-        return this.items;
+        return items;
       }
       const query = this.searchQuery.toLowerCase();
-      return this.items.filter((item) => item.name.toLowerCase().includes(query));
+      return items.filter((item) => {
+        // Guard against null/undefined item.name
+        const itemName = item?.name || '';
+        return itemName.toLowerCase().includes(query);
+      });
     }
   },
   methods: {
@@ -88,7 +95,14 @@ export default {
       <!-- 検索ボックス -->
       <div v-if="items.length > 0" class="mb-4">
         <div class="px-2 py-2 border border-charcoal-200 bg-charcoal-100 rounded-md">
-          <TextInput v-model="searchQuery" input-name="search" placeholder="検索..." variant="inline" class="text-sm" />
+          <TextInput
+            v-model="searchQuery"
+            input-name="search"
+            placeholder="検索..."
+            aria-label="アイテムを検索"
+            variant="inline"
+            class="text-sm"
+          />
         </div>
       </div>
 
