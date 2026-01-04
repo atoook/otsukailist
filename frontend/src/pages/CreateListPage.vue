@@ -31,13 +31,6 @@ export default {
         console.log('リスト名:', this.listName);
         console.log('リストID:', listId);
 
-        // アイテムリスト画面に遷移
-        // this.$router.push({
-        //   name: 'ItemList',
-        //   params: { id: listId },
-        //   query: { name: this.listName }
-        // });
-
         // リスト共有画面に遷移
         this.$router.push({
           name: 'ShareList',
