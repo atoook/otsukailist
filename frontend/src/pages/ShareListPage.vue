@@ -13,11 +13,18 @@ export default {
       listName: '',
       listId: '',
       listURL: '',
-      copySuccess: false
+      copySuccess: false,
+      copyTimeoutId: null
     };
   },
   created() {
     this.initializeFromRoute();
+  },
+  beforeUnmount() {
+    // Clean up timeout to prevent memory leaks
+    if (this.copyTimeoutId) {
+      clearTimeout(this.copyTimeoutId);
+    }
   },
   methods: {
     initializeFromRoute() {
@@ -63,8 +70,12 @@ export default {
         .writeText(this.listURL)
         .then(() => {
           this.copySuccess = true;
+          // Clear any existing timeout
+          if (this.copyTimeoutId) {
+            clearTimeout(this.copyTimeoutId);
+          }
           // 2秒後に元の状態に戻す
-          setTimeout(() => {
+          this.copyTimeoutId = setTimeout(() => {
             this.copySuccess = false;
           }, 2000);
         })
