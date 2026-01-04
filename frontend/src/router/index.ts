@@ -23,7 +23,7 @@ const routes: RouteRecordRaw[] = [
     component: ShareListPage
   },
   {
-    path: '/list/:id',
+    path: '/lists/:id',
     name: 'ItemList',
     component: ItemListPage
   }
