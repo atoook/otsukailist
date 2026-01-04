@@ -12,7 +12,8 @@ export default {
     return {
       listName: '',
       listId: '',
-      listURL: ''
+      listURL: '',
+      copySuccess: false
     };
   },
   created() {
@@ -61,10 +62,16 @@ export default {
       navigator.clipboard
         .writeText(this.listURL)
         .then(() => {
-          alert('リンクがコピーされました！');
+          this.copySuccess = true;
+          // 2秒後に元の状態に戻す
+          setTimeout(() => {
+            this.copySuccess = false;
+          }, 2000);
         })
         .catch(() => {
-          alert('コピーに失敗しました。手動でコピーしてください。');
+          // より良いエラーUI（今回は単純なコンソールエラーのみ）
+          console.error('コピーに失敗しました');
+          // 将来的にはトーストnotificationなどを実装
         });
     },
     navigateToItemList() {
@@ -85,7 +92,18 @@ export default {
       <span class="flex-1 min-w-0 text-charcoal-800 whitespace-nowrap overflow-hidden overflow-x-auto scrollbar-hidden">
         {{ listURL }}
       </span>
-      <MainButton @click="copyUrl" size="small"> コピー </MainButton>
+      <MainButton
+        @click="copyUrl"
+        :disabled="copySuccess"
+        :variant="copySuccess ? 'secondary' : 'primary'"
+        size="small"
+        :class="[
+          'transition-[background-color,color,border-color,box-shadow,font-weight] duration-300 ease-out',
+          copySuccess && 'bg-wood-50 text-wood-700 border-wood-500 shadow-lg ring-2 ring-wood-300 font-semibold'
+        ]"
+      >
+        {{ copySuccess ? '✓ コピー済み' : 'コピー' }}
+      </MainButton>
     </div>
     <div class="mt-6">
       <MainButton variant="secondary" @click="navigateToItemList"> アイテムリストへ移動 </MainButton>
