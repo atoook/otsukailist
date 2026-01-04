@@ -16,12 +16,47 @@ export default {
     };
   },
   created() {
-    this.listName = this.$route.query.name;
-    this.listId = this.$route.params.id;
-    // ルートパラメータからリストIDを取得
-    this.listURL = `http://example.com/lists/${this.listId}?name=${encodeURIComponent(this.listName)}`;
+    this.initializeFromRoute();
   },
   methods: {
+    initializeFromRoute() {
+      const { isValid, listId, listName } = this.validateRouteParams();
+
+      if (!isValid) {
+        console.error('Invalid route parameters');
+        this.$router.push({ name: 'Welcome' });
+        return;
+      }
+
+      this.listId = listId;
+      this.listName = listName;
+      this.generateShareUrl();
+    },
+
+    validateRouteParams() {
+      const routeId = this.$route.params.id;
+      const routeName = this.$route.query.name;
+
+      // IDの検証
+      if (!routeId || typeof routeId !== 'string' || !routeId.trim()) {
+        return { isValid: false };
+      }
+
+      // 名前の検証とデフォルト値設定
+      const validatedName =
+        routeName && typeof routeName === 'string' && routeName.trim() ? routeName.trim() : 'リスト';
+
+      return {
+        isValid: true,
+        listId: routeId.trim(),
+        listName: validatedName
+      };
+    },
+
+    generateShareUrl() {
+      const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
+      this.listURL = `${baseUrl}/lists/${this.listId}?name=${encodeURIComponent(this.listName)}`;
+    },
     copyUrl() {
       navigator.clipboard
         .writeText(this.listURL)
