@@ -42,9 +42,7 @@ export default {
       }
       const query = this.searchQuery.toLowerCase();
       return items.filter((item) => {
-        // Guard against null/undefined item.name
-        const itemName = item?.name || '';
-        return itemName.toLowerCase().includes(query);
+        return item.name.toLowerCase().includes(query);
       });
     }
   },
