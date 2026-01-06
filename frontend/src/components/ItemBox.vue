@@ -20,6 +20,7 @@
     <!-- 削除ボタン -->
     <button
       @click="handleDelete(item.id)"
+      :aria-label="`${item.name}を削除`"
       class="text-ember-500 hover:text-ember-600 text-sm font-medium transition-colors"
     >
       🗑️
