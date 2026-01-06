@@ -1,8 +1,11 @@
-<script>
+<script lang="ts">
 import ContentArea from '../components/ContentArea.vue';
 import CheckBox from '../components/CheckBox.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInput from '../components/TextInput.vue';
+import ItemBox from '../components/ItemBox.vue';
+import type { Item, ItemId } from '../types/item';
+import { ItemStatus } from '../types/item';
 
 export default {
   name: 'ItemListPage',
@@ -10,9 +13,15 @@ export default {
     ContentArea,
     CheckBox,
     MainButton,
-    TextInput
+    TextInput,
+    ItemBox
   },
-  data() {
+  data(): {
+    listName: string;
+    items: Item[];
+    newItemName: string;
+    searchQuery: string;
+  } {
     return {
       listName: '',
       items: [],
@@ -24,7 +33,7 @@ export default {
     // ルートパラメータからリストIDを取得
     const listId = this.$route.params.id;
     // クエリパラメータからリスト名を取得
-    const listName = this.$route.query.name;
+    const listName = this.$route.query.name as string | undefined;
 
     this.listName = listName || `リスト${listId}`;
 
@@ -33,7 +42,7 @@ export default {
     console.log('リスト名:', this.listName);
   },
   computed: {
-    filteredItems() {
+    filteredItems(): Item[] {
       // Ensure items is an array
       const items = Array.isArray(this.items) ? this.items : [];
 
@@ -42,7 +51,9 @@ export default {
       }
       const query = this.searchQuery.toLowerCase();
       return items.filter((item) => {
-        return item.name.toLowerCase().includes(query);
+        // Defensive programming: ensure item.name exists
+        const itemName = item?.name ?? '';
+        return itemName.toLowerCase().includes(query);
       });
     }
   },
@@ -50,17 +61,17 @@ export default {
     addItem() {
       if (this.newItemName.trim()) {
         this.items.push({
-          id: Date.now(),
+          id: Date.now(), //this to be replaced with unique ID from backend
           name: this.newItemName,
-          completed: false
+          status: ItemStatus.PENDING
         });
         this.newItemName = '';
       }
     },
-    toggleItem(item) {
-      item.completed = !item.completed;
+    toggleItem(item: Item) {
+      item.status = item.status === ItemStatus.COMPLETED ? ItemStatus.PENDING : ItemStatus.COMPLETED;
     },
-    deleteItem(itemId) {
+    deleteItem(itemId: ItemId) {
       this.items = this.items.filter((item) => item.id !== itemId);
     }
   }
@@ -106,37 +117,7 @@ export default {
 
       <!-- アイテムリスト -->
       <div class="space-y-3">
-        <div
-          v-for="item in filteredItems"
-          :key="item.id"
-          class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm"
-        >
-          <!-- カスタムチェックボックス -->
-          <CheckBox
-            :checked="item.completed"
-            :aria-label="`${item.name}を完了としてマーク`"
-            @toggle="toggleItem(item)"
-          />
-
-          <!-- アイテム名 -->
-          <span
-            :class="{
-              'line-through text-charcoal-500': item.completed,
-              'text-charcoal-800': !item.completed
-            }"
-            class="flex-1"
-          >
-            {{ item.name }}
-          </span>
-
-          <!-- 削除ボタン -->
-          <button
-            @click="deleteItem(item.id)"
-            class="text-ember-500 hover:text-ember-600 text-sm font-medium transition-colors"
-          >
-            🗑️
-          </button>
-        </div>
+        <ItemBox v-for="item in filteredItems" :key="item.id" :item="item" @toggle="toggleItem" @delete="deleteItem" />
 
         <!-- アイテムがない場合 -->
         <div v-if="items.length === 0" class="text-center text-charcoal-600 py-8">
