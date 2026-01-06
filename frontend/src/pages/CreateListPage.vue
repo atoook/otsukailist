@@ -1,9 +1,11 @@
-<script>
+<script lang="ts">
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import type { Member, MemberId } from '../types/member';
+import type { ItemListId } from '../types/item-list';
 
 export default {
   name: 'CreateListPage',
@@ -14,7 +16,11 @@ export default {
     TextInput,
     BadgeTag
   },
-  data() {
+  data(): {
+    listName: string;
+    members: Member[];
+    newMemberName: string;
+  } {
     return {
       listName: '',
       members: [],
@@ -22,10 +28,10 @@ export default {
     };
   },
   methods: {
-    createList() {
+    createList(): void {
       if (this.listName.trim()) {
         // リストIDを生成（実際のプロジェクトではAPIから取得）
-        const listId = Date.now().toString();
+        const listId: ItemListId = Date.now().toString();
 
         // TODO: APIでリストを作成
         console.log('リスト名:', this.listName);
@@ -39,22 +45,22 @@ export default {
         });
       }
     },
-    addMember() {
+    addMember(): void {
       if (this.newMemberName.trim()) {
         this.members.push({
-          id: Date.now(),
+          id: Date.now(), // this to be replaced with proper unique ID generation from backend
           name: this.newMemberName
         });
         this.newMemberName = '';
       }
     },
-    removeMember(memberId) {
+    removeMember(memberId: MemberId): void {
       this.members = this.members.filter((member) => member.id !== memberId);
     }
   },
   computed: {
-    hasRequiredInput() {
-      return this.listName.trim() && this.members.length > 0;
+    hasRequiredInput(): boolean {
+      return this.listName.trim() !== '' && this.members.length > 0;
     }
   }
 };
