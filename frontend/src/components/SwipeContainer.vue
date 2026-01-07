@@ -81,7 +81,13 @@ export default {
     // 統一されたポインターイベント（マウス・タッチ・ペン全対応）
     handlePointerStart(e) {
       // ポインターをキャプチャ（追跡を継続）
-      e.target.setPointerCapture(e.pointerId);
+      try {
+        e.target.setPointerCapture(e.pointerId);
+      } catch (error) {
+        // ポインターキャプチャに失敗（無効なpointerIdや切断された要素など）
+        // ドラッグフローは継続
+        console.warn('Failed to capture pointer:', error);
+      }
       this.startDrag(e.clientX);
     },
     handlePointerMove(e) {
@@ -92,7 +98,13 @@ export default {
     },
     handlePointerEnd(e) {
       // ポインターキャプチャを解放
-      e.target.releasePointerCapture(e.pointerId);
+      try {
+        e.target.releasePointerCapture(e.pointerId);
+      } catch (error) {
+        // ポインターキャプチャの解放に失敗（無効なpointerIdや切断された要素など）
+        // ドラッグフローは継続
+        console.warn('Failed to release pointer capture:', error);
+      }
       this.endDrag();
     },
 

@@ -1,8 +1,12 @@
 <template>
-  <SwipeContainer :hiddenBgColor="'#fef7f0'">
+  <SwipeContainer :hiddenBgColor="'#fef7f0'" role="listitem">
     <div
       :id="`item-${item.id}`"
-      class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm"
+      class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-wood-300 focus:ring-opacity-60"
+      tabindex="0"
+      role="group"
+      :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}. スペースキーで完了状態を切り替え、Deleteキーで削除`"
+      @keydown="handleKeyDown"
     >
       <!-- カスタムチェックボックス -->
       <CheckBox :checked="isCompleted" :aria-label="`${item.name}を完了としてマーク`" @toggle="handleToggle(item)" />
@@ -20,7 +24,7 @@
     </div>
 
     <template #hiddenActions>
-      <button @click="handleDelete(item.id)" :aria-label="`${item.name}を削除`">
+      <button @click="handleDelete(item.id)" :aria-label="`${item.name}を削除`" tabindex="-1" role="button">
         <BadgeTag text="削除" icon="🗑️" size="small" class="bg-ember-400 border-ember-600 text-white" />
       </button>
     </template>
@@ -63,6 +67,18 @@ export default {
     },
     handleDelete(itemId: ItemId) {
       this.$emit('delete', itemId);
+    },
+    handleKeyDown(event: KeyboardEvent) {
+      // スペースキーまたはEnterキーでチェックボックストグル
+      if (event.code === 'Space' || event.code === 'Enter') {
+        event.preventDefault();
+        this.handleToggle(this.item);
+      }
+      // DeleteキーまたはBackspaceキーで削除
+      else if (event.code === 'Delete' || event.code === 'Backspace') {
+        event.preventDefault();
+        this.handleDelete(this.item.id);
+      }
     }
   }
 };
