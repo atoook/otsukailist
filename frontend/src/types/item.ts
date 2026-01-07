@@ -15,7 +15,6 @@ export enum ItemStatus {
 // 型ガード関数（ランタイムでの型チェック）
 export function isItem(obj: any): obj is Item {
   return (
-    obj &&
     obj !== null &&
     typeof obj === 'object' &&
     'id' in obj &&
