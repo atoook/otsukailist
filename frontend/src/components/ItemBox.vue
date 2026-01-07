@@ -20,17 +20,8 @@
     </div>
 
     <template #hiddenActions>
-      <button
-        @click="handleDelete(item.id)"
-        :aria-label="`${item.name}を削除`"
-        class="text-white hover:text-ember-100 text-sm font-medium transition-colors px-2"
-      >
-        <BadgeTag
-          text="削除"
-          icon="🗑️"
-          size="small"
-          class="bg-ember-500 border-ember-600 text-white hover:bg-ember-600"
-        />
+      <button @click="handleDelete(item.id)" :aria-label="`${item.name}を削除`">
+        <BadgeTag text="削除" icon="🗑️" size="small" class="bg-ember-400 border-ember-600 text-white" />
       </button>
     </template>
   </SwipeContainer>
