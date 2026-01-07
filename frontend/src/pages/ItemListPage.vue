@@ -55,8 +55,6 @@ export default {
       });
     }
   },
-    }
-  },
   methods: {
     addItem() {
       if (this.newItemName.trim()) {
