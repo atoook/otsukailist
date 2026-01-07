@@ -60,7 +60,7 @@ export default {
   },
   computed: {
     hasRequiredInput(): boolean {
-      return this.listName.trim() !== '' && this.members.length > 0;
+      return !!this.listName.trim() && this.members.length > 0;
     }
   }
 };
