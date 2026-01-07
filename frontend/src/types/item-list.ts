@@ -19,7 +19,6 @@ export function isItemListId(value: any): value is ItemListId {
 
 export function isList(obj: any): obj is ItemList {
   return (
-    obj &&
     obj !== null &&
     typeof obj === 'object' &&
     'id' in obj &&
