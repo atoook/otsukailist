@@ -4,7 +4,9 @@
     :name="inputName || inputId"
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
-    @keyup.enter="$emit('enter')"
+    @keydown="handleKeyDown"
+    @compositionstart="handleCompositionStart"
+    @compositionend="handleCompositionEnd"
     type="text"
     :placeholder="placeholder"
     :aria-label="ariaLabel || undefined"
@@ -21,6 +23,11 @@ import { twMerge } from 'tailwind-merge';
 export default {
   name: 'TextInput',
   emits: ['update:modelValue', 'enter'],
+  data() {
+    return {
+      isComposing: false
+    };
+  },
   props: {
     inputId: {
       type: String,
@@ -58,6 +65,22 @@ export default {
     maxlength: {
       type: Number,
       default: 255
+    }
+  },
+  methods: {
+    // IME制御
+    handleCompositionStart() {
+      this.isComposing = true;
+    },
+    handleCompositionEnd() {
+      this.isComposing = false;
+    },
+    // エンター処理（IME確定時は無視）
+    handleKeyDown(event) {
+      if (event.key === 'Enter' && !this.isComposing) {
+        event.preventDefault();
+        this.$emit('enter');
+      }
     }
   },
   computed: {
