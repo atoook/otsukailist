@@ -6,6 +6,7 @@ import TextInput from '../components/TextInput.vue';
 import ItemBox from '../components/ItemBox.vue';
 import type { Item, ItemId } from '../types/item';
 import { ItemStatus } from '../types/item';
+import { normalizeText, normalizeInput, normalizeForSearch } from '../utils/text-normalization';
 
 export default {
   name: 'ItemListPage',
@@ -46,25 +47,34 @@ export default {
       // Ensure items is an array
       const items = Array.isArray(this.items) ? this.items : [];
 
-      if (!this.searchQuery.trim()) {
+      const normalizedQuery = normalizeForSearch(this.searchQuery);
+      if (!normalizedQuery) {
         return items;
       }
-      const query = this.searchQuery.toLowerCase();
       return items.filter((item) => {
-        return item.name.toLowerCase().includes(query);
+        const normalizedItemName = normalizeForSearch(item.name);
+        return normalizedItemName.includes(normalizedQuery);
       });
     }
   },
   methods: {
     addItem() {
-      if (this.newItemName.trim()) {
+      const normalizedName = normalizeText(this.newItemName);
+      if (normalizedName) {
         this.items.push({
           id: Date.now(), //this to be replaced with unique ID from backend
-          name: this.newItemName,
+          name: normalizedName,
           status: ItemStatus.PENDING
         });
         this.newItemName = '';
       }
+    },
+    // 入力時のリアルタイム正規化
+    onItemNameInput(value: string): void {
+      this.newItemName = normalizeInput(value);
+    },
+    onSearchInput(value: string): void {
+      this.searchQuery = normalizeInput(value);
     },
     toggleItem(item: Item) {
       item.status = item.status === ItemStatus.COMPLETED ? ItemStatus.PENDING : ItemStatus.COMPLETED;
@@ -89,7 +99,8 @@ export default {
       <div class="mb-6">
         <div class="flex gap-2 px-3 py-3 border border-wood-300 bg-wood-100 rounded-lg shadow-sm">
           <TextInput
-            v-model="newItemName"
+            :model-value="newItemName"
+            @update:model-value="onItemNameInput"
             @enter="addItem"
             input-name="newItem"
             placeholder="アイテムを追加..."
@@ -103,7 +114,8 @@ export default {
       <div v-if="items.length > 0" class="mb-4">
         <div class="px-2 py-2 border border-charcoal-200 bg-charcoal-100 rounded-md">
           <TextInput
-            v-model="searchQuery"
+            :model-value="searchQuery"
+            @update:model-value="onSearchInput"
             input-name="search"
             placeholder="検索..."
             aria-label="アイテムを検索"
