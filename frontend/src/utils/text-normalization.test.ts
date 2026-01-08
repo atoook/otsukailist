@@ -22,9 +22,16 @@ describe('text-normalization', () => {
   });
 
   describe('normalizeForSearch', () => {
-    it('検索用に正規化（小文字変換含む）', () => {
-      expect(normalizeForSearch('  BBQ　ソース  ')).toBe('bbq ソース');
-      expect(normalizeForSearch('バーベキュー　肉')).toBe('バーベキュー 肉');
+    it('検索用に正規化（小文字変換・スペース除去）', () => {
+      expect(normalizeForSearch('  BBQ　ソース  ')).toBe('bbqソース');
+      expect(normalizeForSearch('バーベキュー　肉')).toBe('バーベキュー肉');
+    });
+
+    it('様々なスペースパターンを除去', () => {
+      expect(normalizeForSearch('BBQ ソース')).toBe('bbqソース');
+      expect(normalizeForSearch('BBQ　ソース')).toBe('bbqソース');
+      expect(normalizeForSearch('BBQ   ソース')).toBe('bbqソース');
+      expect(normalizeForSearch('BBQソース')).toBe('bbqソース');
     });
   });
 
@@ -46,25 +53,25 @@ describe('text-normalization', () => {
         input: 'バーベキュー　肉',
         normalizeInput: 'バーベキュー 肉',
         normalizeText: 'バーベキュー 肉',
-        normalizeForSearch: 'バーベキュー 肉'
+        normalizeForSearch: 'バーベキュー肉'
       },
       {
         input: 'BBQ   材料',
         normalizeInput: 'BBQ   材料',
         normalizeText: 'BBQ 材料',
-        normalizeForSearch: 'bbq 材料'
+        normalizeForSearch: 'bbq材料'
       },
       {
         input: '  肉　魚  ',
         normalizeInput: '  肉 魚  ',
         normalizeText: '肉 魚',
-        normalizeForSearch: '肉 魚'
+        normalizeForSearch: '肉魚'
       },
       {
         input: 'ソース　　セット   ',
         normalizeInput: 'ソース  セット   ',
         normalizeText: 'ソース セット',
-        normalizeForSearch: 'ソース セット'
+        normalizeForSearch: 'ソースセット'
       }
     ];
 

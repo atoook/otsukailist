@@ -34,12 +34,12 @@ export function normalizeText(text: string): string {
 }
 
 /**
- * 検索用にテキストを正規化（小文字変換も含む）
+ * 検索用にテキストを正規化（小文字変換・スペース除去）
  * @param text 正規化するテキスト
  * @returns 検索用に正規化されたテキスト
  */
 export function normalizeForSearch(text: string): string {
-  return normalizeText(text).toLowerCase();
+  return normalizeText(text).toLowerCase().replace(/\s/g, '');
 }
 
 /**
