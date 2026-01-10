@@ -2,14 +2,17 @@
   <SwipeContainer :hiddenBgColor="'#fef7f0'" role="listitem">
     <div
       :id="`item-${item.id}`"
-      class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-wood-300 focus:ring-opacity-60"
-      tabindex="0"
+      class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60"
       role="group"
-      :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}. スペースキーで完了状態を切り替え、Deleteキーで削除`"
-      @keydown="handleKeyDown"
+      :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}`"
     >
       <!-- カスタムチェックボックス -->
-      <CheckBox :checked="isCompleted" :aria-label="`${item.name}を完了としてマーク`" @toggle="handleToggle(item)" />
+      <CheckBox
+        :checked="isCompleted"
+        :aria-label="`${item.name}を完了としてマーク`"
+        @toggle="handleToggle(item)"
+        @keydown="handleKeyDown"
+      />
 
       <!-- アイテム名 -->
       <span

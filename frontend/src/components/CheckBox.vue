@@ -1,7 +1,14 @@
 <template>
   <label class="relative w-6 h-6 cursor-pointer">
     <!-- 実際のチェックボックス（操作主体） -->
-    <input type="checkbox" :checked="checked" :aria-label="ariaLabel" @change="$emit('toggle')" class="sr-only" />
+    <input
+      type="checkbox"
+      :checked="checked"
+      :aria-label="ariaLabel"
+      @change="$emit('toggle')"
+      @keydown="$emit('keydown', $event)"
+      class="sr-only"
+    />
     <!-- 見た目のオーバーレイ（装飾のみ） -->
     <div
       :class="{
@@ -28,6 +35,6 @@ export default {
       required: true
     }
   },
-  emits: ['toggle']
+  emits: ['toggle', 'keydown']
 };
 </script>
