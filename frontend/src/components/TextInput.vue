@@ -77,7 +77,7 @@ export default {
         // Focus base
         'focus:outline-none',
         // Typography
-        'text-charcoal-800 placeholder-charcoal-500'
+        'text-base text-charcoal-800 placeholder-charcoal-500'
       ].join(' ');
 
       const variantClasses = {
