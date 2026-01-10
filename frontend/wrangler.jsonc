@@ -1,0 +1,10 @@
+{
+  "name": "otsukailist-frontend",
+  "compatibility_date": "2026-01-10",
+  "assets": {
+    "directory": "./dist"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
