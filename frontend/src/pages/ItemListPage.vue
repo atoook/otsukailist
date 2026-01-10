@@ -120,7 +120,6 @@ export default {
             placeholder="検索..."
             aria-label="アイテムを検索"
             variant="inline"
-            class="text-sm"
           />
         </div>
       </div>
