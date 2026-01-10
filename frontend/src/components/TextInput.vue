@@ -4,7 +4,7 @@
     :name="inputName || inputId"
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
-    @keyup.enter="$emit('enter')"
+    @keydown="handleKeyDown"
     type="text"
     :placeholder="placeholder"
     :aria-label="ariaLabel || undefined"
@@ -58,6 +58,15 @@ export default {
     maxlength: {
       type: Number,
       default: 255
+    }
+  },
+  methods: {
+    // エンター処理（event.isComposingで確実にIME制御）
+    handleKeyDown(event) {
+      if (event.key === 'Enter' && !event.isComposing) {
+        event.preventDefault();
+        this.$emit('enter');
+      }
     }
   },
   computed: {

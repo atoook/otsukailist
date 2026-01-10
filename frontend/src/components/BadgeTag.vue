@@ -19,6 +19,7 @@ import { twMerge } from 'tailwind-merge';
 
 export default {
   name: 'BadgeTag',
+  inheritAttrs: false, // 自動的なattribute継承を無効化
   emits: ['remove'],
   props: {
     text: {
@@ -52,7 +53,8 @@ export default {
         large: 'px-4 py-2 text-base max-w-64'
       };
 
-      return twMerge(baseClass, sizeClasses[this.size]);
+      // 外部から渡されたクラスも含めてマージ
+      return twMerge(baseClass, sizeClasses[this.size], this.$attrs.class);
     }
   }
 };

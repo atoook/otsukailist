@@ -1,9 +1,12 @@
-<script>
+<script lang="ts">
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import type { Member, MemberId } from '../types/member';
+import type { ItemListId } from '../types/item-list';
+import { normalizeText, normalizeInput } from '../utils/text-normalization';
 
 export default {
   name: 'CreateListPage',
@@ -14,7 +17,11 @@ export default {
     TextInput,
     BadgeTag
   },
-  data() {
+  data(): {
+    listName: string;
+    members: Member[];
+    newMemberName: string;
+  } {
     return {
       listName: '',
       members: [],
@@ -22,10 +29,14 @@ export default {
     };
   },
   methods: {
-    createList() {
-      if (this.listName.trim()) {
+    createList(): void {
+      const normalizedListName = normalizeText(this.listName);
+      if (normalizedListName) {
         // リストIDを生成（実際のプロジェクトではAPIから取得）
-        const listId = Date.now().toString();
+        const listId: ItemListId = Date.now().toString();
+
+        // 正規化されたリスト名で保存
+        this.listName = normalizedListName;
 
         // TODO: APIでリストを作成
         console.log('リスト名:', this.listName);
@@ -39,22 +50,33 @@ export default {
         });
       }
     },
-    addMember() {
-      if (this.newMemberName.trim()) {
+    addMember(): void {
+      const normalizedName = normalizeText(this.newMemberName);
+      if (normalizedName) {
         this.members.push({
-          id: Date.now(),
-          name: this.newMemberName
+          id: Date.now(), // this to be replaced with proper unique ID generation from backend
+          name: normalizedName
         });
         this.newMemberName = '';
       }
     },
-    removeMember(memberId) {
+    // 入力時のリアルタイム正規化
+    onListNameInput(value: string): void {
+      this.listName = normalizeInput(value);
+    },
+    onMemberNameInput(value: string): void {
+      this.newMemberName = normalizeInput(value);
+    },
+    removeMember(memberId: MemberId): void {
       this.members = this.members.filter((member) => member.id !== memberId);
     }
   },
   computed: {
-    hasRequiredInput() {
-      return this.listName.trim() && this.members.length > 0;
+    hasRequiredInput(): boolean {
+      return !!normalizeText(this.listName) && this.members.length > 0;
+    },
+    hasValidMemberName(): boolean {
+      return !!normalizeText(this.newMemberName);
     }
   }
 };
@@ -69,21 +91,28 @@ export default {
     </div>
 
     <div class="mb-6">
-      <TextInputWithLabel input-id="listName" label="🍖 リスト名" placeholder="例：今日のBBQ材料" v-model="listName" />
+      <TextInputWithLabel
+        input-id="listName"
+        label="🍖 リスト名"
+        placeholder="例：今日のBBQ材料"
+        :model-value="listName"
+        @update:model-value="onListNameInput"
+      />
     </div>
 
     <div class="mb-6">
       <label class="block text-sm font-medium text-charcoal-700 mb-2">👥 メンバー</label>
       <div class="flex gap-2 px-2 py-1 border border-wood-200 bg-wood-50 rounded-md">
         <TextInput
-          v-model="newMemberName"
+          :model-value="newMemberName"
+          @update:model-value="onMemberNameInput"
           @enter="addMember"
           input-name="newMember"
           placeholder="メンバーを追加..."
           variant="inline"
         />
 
-        <MainButton @click="addMember" :disabled="!newMemberName.trim()" size="small"> 追加 </MainButton>
+        <MainButton @click="addMember" :disabled="!hasValidMemberName" size="small"> 追加 </MainButton>
       </div>
 
       <!-- メンバーバッジ表示 -->
