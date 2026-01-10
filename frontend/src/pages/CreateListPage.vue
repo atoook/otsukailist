@@ -74,6 +74,9 @@ export default {
   computed: {
     hasRequiredInput(): boolean {
       return !!normalizeText(this.listName) && this.members.length > 0;
+    },
+    hasValidMemberName(): boolean {
+      return !!normalizeText(this.newMemberName);
     }
   }
 };
@@ -109,7 +112,7 @@ export default {
           variant="inline"
         />
 
-        <MainButton @click="addMember" :disabled="!newMemberName.trim()" size="small"> 追加 </MainButton>
+        <MainButton @click="addMember" :disabled="!hasValidMemberName" size="small"> 追加 </MainButton>
       </div>
 
       <!-- メンバーバッジ表示 -->

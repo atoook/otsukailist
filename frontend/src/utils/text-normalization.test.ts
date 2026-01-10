@@ -19,6 +19,11 @@ describe('text-normalization', () => {
       expect(normalizeText('')).toBe('');
       expect(normalizeText('   ')).toBe('');
     });
+
+    it('null/undefinedを安全に処理', () => {
+      expect(normalizeText(null)).toBe('');
+      expect(normalizeText(undefined)).toBe('');
+    });
   });
 
   describe('normalizeForSearch', () => {

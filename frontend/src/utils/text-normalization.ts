@@ -29,7 +29,8 @@ export function collapseSpaces(text: string): string {
  * @param text 正規化するテキスト
  * @returns 正規化されたテキスト
  */
-export function normalizeText(text: string): string {
+export function normalizeText(text: string | null | undefined): string {
+  if (text == null) return '';
   return collapseSpaces(normalizeSpaces(text)).trim();
 }
 
