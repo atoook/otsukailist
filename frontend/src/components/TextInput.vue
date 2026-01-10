@@ -5,8 +5,6 @@
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
     @keydown="handleKeyDown"
-    @compositionstart="handleCompositionStart"
-    @compositionend="handleCompositionEnd"
     type="text"
     :placeholder="placeholder"
     :aria-label="ariaLabel || undefined"
@@ -23,11 +21,6 @@ import { twMerge } from 'tailwind-merge';
 export default {
   name: 'TextInput',
   emits: ['update:modelValue', 'enter'],
-  data() {
-    return {
-      isComposing: false
-    };
-  },
   props: {
     inputId: {
       type: String,
@@ -68,16 +61,9 @@ export default {
     }
   },
   methods: {
-    // IME制御
-    handleCompositionStart() {
-      this.isComposing = true;
-    },
-    handleCompositionEnd() {
-      this.isComposing = false;
-    },
-    // エンター処理（IME確定時は無視）
+    // エンター処理（event.isComposingで確実にIME制御）
     handleKeyDown(event) {
-      if (event.key === 'Enter' && !this.isComposing) {
+      if (event.key === 'Enter' && !event.isComposing) {
         event.preventDefault();
         this.$emit('enter');
       }
