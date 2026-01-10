@@ -14,12 +14,12 @@ function normalizeSpaces(text: string): string {
 }
 
 /**
- * 連続するスペースを単一のスペースに置換
+ * 連続する空白文字（スペース、タブ、改行など）を単一のスペースに置換
  * @param text 正規化するテキスト
  * @returns 正規化されたテキスト
  */
 export function collapseSpaces(text: string): string {
-  // 連続する半角スペースを1つにまとめる
+  // 連続する空白文字を1つにまとめる
   return text.replace(/\s+/g, ' ');
 }
 
