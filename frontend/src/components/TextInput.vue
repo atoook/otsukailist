@@ -1,11 +1,11 @@
 <template>
   <input
+    :type="type"
     :id="inputId || undefined"
     :name="inputName || inputId"
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
     @keydown="handleKeyDown"
-    type="text"
     :placeholder="placeholder"
     :aria-label="ariaLabel || undefined"
     :disabled="disabled"
@@ -22,6 +22,11 @@ export default {
   name: 'TextInput',
   emits: ['update:modelValue', 'enter'],
   props: {
+    type: {
+      type: String,
+      default: 'text',
+      validator: (value) => ['text', 'search'].includes(value)
+    },
     inputId: {
       type: String,
       default: ''
@@ -42,6 +47,8 @@ export default {
       type: String,
       default: 'default',
       validator: (value) => ['default', 'inline'].includes(value)
+      // 'default': Standalone input with full styling
+      // 'inline': Lightweight input for use inside flex containers (requires parent to have 'flex' class)
     },
     ariaLabel: {
       type: String,
