@@ -97,8 +97,6 @@ export default {
           'focus:ring-2 focus:ring-wood-500 focus:border-wood-500'
         ].join(' '),
         inline: [
-          // Full inline-width input
-          'w-full',
           // Flexible inline input (no padding - container provides it)
           'flex-1',
           // Minimal styling for inline use
