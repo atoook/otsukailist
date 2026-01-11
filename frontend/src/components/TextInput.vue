@@ -47,6 +47,8 @@ export default {
       type: String,
       default: 'default',
       validator: (value) => ['default', 'inline'].includes(value)
+      // 'default': Standalone input with full styling
+      // 'inline': Lightweight input for use inside flex containers (requires parent to have 'flex' class)
     },
     ariaLabel: {
       type: String,
