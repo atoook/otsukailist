@@ -114,6 +114,7 @@ export default {
       <div v-if="items.length > 0" class="mb-4">
         <div class="px-2 py-2 border border-charcoal-200 bg-charcoal-100 rounded-md">
           <TextInput
+            :type="'search'"
             :model-value="searchQuery"
             @update:model-value="onSearchInput"
             input-name="search"
