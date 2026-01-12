@@ -32,17 +32,27 @@ export default {
     showArrow: {
       type: Boolean,
       default: true
+    },
+    width: {
+      type: String,
+      default: 'full',
+      validator: (value) => ['full', 'fixed'].includes(value)
     }
   },
   emits: ['update:modelValue'],
   computed: {
     selectClasses() {
-      // アローあり＝フォーム用途（w-full）、アローなし＝設定用途（w-auto）
       const baseClasses =
         'border rounded-lg bg-wood-500 text-wood-50 pl-3 py-2 appearance-none focus:outline-none overflow-hidden whitespace-nowrap text-ellipsis';
-      const widthClass = this.showArrow ? 'w-full' : 'w-32';
+
+      // 幅をwidthプロパティで制御
+      const widthClasses = {
+        full: 'flex-1',
+        fixed: 'w-32'
+      };
+
       const rightPadding = this.showArrow ? 'pr-8' : 'pr-3';
-      return twMerge(baseClasses, widthClass, rightPadding);
+      return twMerge(baseClasses, widthClasses[this.width], rightPadding);
     }
   },
   methods: {

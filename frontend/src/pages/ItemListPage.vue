@@ -154,20 +154,6 @@ export default {
     <div class="w-full">
       <!-- リストタイトル -->
       <div class="mb-6">
-        <!-- 担当者選択 -->
-        <div class="flex justify-end items-center mb-2">
-          <div class="flex items-center gap-2 text-sm">
-            <span class="text-charcoal-600 font-medium">担当者</span>
-            <DropDown
-              selectName="member"
-              :showArrow="false"
-              :optionItems="members"
-              v-model="selectedMemberId"
-              @update:modelValue="handleMemberSelect"
-            />
-          </div>
-        </div>
-
         <h2 class="text-2xl font-bold text-charcoal-800 text-center mb-2">{{ listName }}</h2>
         <p class="text-sm text-charcoal-600 text-center">🍖 買い物リスト</p>
       </div>
@@ -201,7 +187,20 @@ export default {
           />
         </div>
       </div>
-
+      <!-- チェック時に記録する購入者選択 -->
+      <div v-if="filteredItems.length > 0" class="flex justify-end items-center mb-2">
+        <div class="flex items-center gap-2 text-sm">
+          <span class="text-charcoal-600 font-medium">購入完了者</span>
+          <DropDown
+            selectName="member"
+            :showArrow="true"
+            :optionItems="members"
+            width="fixed"
+            v-model="selectedMemberId"
+            @update:modelValue="handleMemberSelect"
+          />
+        </div>
+      </div>
       <!-- アイテムリスト -->
       <div class="space-y-3">
         <ItemBox
