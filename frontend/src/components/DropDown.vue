@@ -33,13 +33,6 @@ export default {
     showArrow: {
       type: Boolean,
       default: true
-    },
-    valiantClass: {
-      type: String,
-      default: 'default',
-      validator: (value) => ['default', 'inline'].includes(value)
-      // 'default': Standalone dropdown with full styling
-      // 'inline': Lightweight dropdown for use inside flex containers (requires parent to have 'flex' class)
     }
   },
   emits: ['select'],

@@ -52,11 +52,6 @@ export default {
     BadgeTag
   },
   props: {
-    member: {
-      type: Object as () => Member | null,
-      default: null,
-      validator: isMember
-    },
     item: {
       type: Object as () => Item,
       required: true,
