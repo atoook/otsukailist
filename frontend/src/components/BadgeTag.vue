@@ -38,14 +38,22 @@ export default {
       type: String,
       default: 'default',
       validator: (value) => ['small', 'default', 'large'].includes(value)
+    },
+    variant: {
+      type: String,
+      default: 'default',
+      validator: (value) => ['default', 'primary', 'secondary'].includes(value)
     }
   },
   computed: {
     badgeClass() {
-      const baseClass = [
-        'inline-flex items-center gap-2 rounded-full font-medium border transition-colors',
-        'bg-ember-100 border-ember-200 text-ember-700'
-      ].join(' ');
+      const baseClass = ['inline-flex items-center gap-2 rounded-full font-medium border transition-colors'].join(' ');
+
+      const variantClasses = {
+        default: 'bg-ember-100 border-ember-200 text-ember-700',
+        primary: 'bg-wood-200 border-wood-300 text-charcoal-800',
+        secondary: 'bg-wood-50 text-charcoal-800 border-wood-100'
+      };
 
       const sizeClasses = {
         small: 'px-2 py-1 text-xs max-w-32',
@@ -54,7 +62,7 @@ export default {
       };
 
       // 外部から渡されたクラスも含めてマージ
-      return twMerge(baseClass, sizeClasses[this.size], this.$attrs.class);
+      return twMerge(baseClass, variantClasses[this.variant], sizeClasses[this.size], this.$attrs.class);
     }
   }
 };
