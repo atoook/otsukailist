@@ -108,7 +108,7 @@ export default {
     handleMemberSelect(selectedId: string) {
       this.members = this.members.map((member) => ({
         ...member,
-        selected: member.id.toString() === selectedId
+        selected: member.id === selectedId
       }));
     },
     addItem() {

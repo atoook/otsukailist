@@ -18,5 +18,5 @@ export function isMember(obj: any): obj is Member {
 
 // MemberIdの型ガード関数
 export function isMemberId(value: any): value is MemberId {
-  return typeof value === 'string' || typeof value === 'number';
+  return typeof value === 'string';
 }
