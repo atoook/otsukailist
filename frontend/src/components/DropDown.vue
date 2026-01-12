@@ -1,12 +1,7 @@
 <template>
   <div class="relative">
-    <select :name="selectName" :class="selectClasses" @change="handleChange">
-      <option
-        v-for="optionItem in optionItems"
-        :key="optionItem.id"
-        :value="optionItem.id"
-        :selected="optionItem.selected"
-      >
+    <select :name="selectName" :class="selectClasses" :value="modelValue" @change="handleChange">
+      <option v-for="optionItem in optionItems" :key="optionItem.id" :value="optionItem.id">
         {{ optionItem.name }}
       </option>
     </select>
@@ -26,6 +21,10 @@ export default {
       type: String,
       required: true
     },
+    modelValue: {
+      type: [String, Number],
+      default: null
+    },
     optionItems: {
       type: Array,
       required: true
@@ -35,7 +34,7 @@ export default {
       default: true
     }
   },
-  emits: ['select'],
+  emits: ['update:modelValue'],
   computed: {
     selectClasses() {
       // アローあり＝フォーム用途（w-full）、アローなし＝設定用途（w-auto）
@@ -49,7 +48,7 @@ export default {
   methods: {
     handleChange(event) {
       const selectedValue = event.target.value;
-      this.$emit('select', selectedValue);
+      this.$emit('update:modelValue', selectedValue);
     }
   }
 };

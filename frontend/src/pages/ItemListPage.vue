@@ -8,18 +8,7 @@ import DropDown from '../components/DropDown.vue';
 import type { Item, ItemId } from '../types/item';
 import { ItemStatus } from '../types/item';
 import { normalizeText, normalizeInput, normalizeForSearch } from '../utils/text-normalization';
-import type { Member } from '@/types/member';
-
-type SelectableMember = Member & { selected: boolean };
-function toMember(member: SelectableMember | undefined): Member | null {
-  if (!member) {
-    return null;
-  }
-  return {
-    id: member.id,
-    name: member.name
-  };
-}
+import type { Member, MemberId } from '@/types/member';
 
 export default {
   name: 'ItemListPage',
@@ -32,18 +21,20 @@ export default {
     DropDown
   },
   data(): {
-    members: SelectableMember[];
+    members: Member[];
     listName: string;
     items: Item[];
     newItemName: string;
     searchQuery: string;
+    selectedMemberId: MemberId | null;
   } {
     return {
       members: [],
       listName: '',
       items: [],
       newItemName: '',
-      searchQuery: ''
+      searchQuery: '',
+      selectedMemberId: null
     };
   },
   created() {
@@ -61,8 +52,8 @@ export default {
     console.log('リスト名:', this.listName);
   },
   computed: {
-    selectedMember(): Member | null {
-      return toMember(this.members.find((member) => member.selected));
+    selectedMember(): Member | undefined {
+      return this.members.find((member) => member.id === this.selectedMemberId);
     },
     filteredItems(): Item[] {
       // Ensure items is an array
@@ -81,16 +72,21 @@ export default {
   methods: {
     initializeMembers() {
       this.members = [
-        { id: '1', name: 'しんじ', selected: false },
-        { id: '2', name: 'Jerry', selected: false },
-        { id: '3', name: 'けんたろう', selected: false },
-        { id: '4', name: 'Mike', selected: false },
-        { id: '5', name: 'トミージャッカーソン', selected: false },
-        { id: '6', name: 'SomeoneWhoHasLoooooongName', selected: true }, // default selected to be acquired from LocalStorage
-        { id: '7', name: 'Ellen', selected: false },
-        { id: '8', name: 'Daisy', selected: false },
-        { id: '9', name: 'Lily', selected: false }
+        { id: '1', name: 'しんじ' },
+        { id: '2', name: 'Jerry' },
+        { id: '3', name: 'けんたろう' },
+        { id: '4', name: 'Mike' },
+        { id: '5', name: 'トミージャッカーソン' },
+        { id: '6', name: 'SomeoneWhoHasLoooooongName' },
+        { id: '7', name: 'Ellen' },
+        { id: '8', name: 'Daisy' },
+        { id: '9', name: 'Lily' },
+        { id: '10', name: '太郎' }
       ];
+
+      // Set the default selected member ID
+      // default selected to be acquired from LocalStorage
+      this.selectedMemberId = '6';
     },
     getMemberBadgeVariant(item: Item): string {
       // 完了済みアイテムで現在選択中のメンバーが割り当てメンバーと同じ場合はprimary（強調）
@@ -106,10 +102,7 @@ export default {
       return 'secondary';
     },
     handleMemberSelect(selectedId: string) {
-      this.members = this.members.map((member) => ({
-        ...member,
-        selected: member.id === selectedId
-      }));
+      this.selectedMemberId = selectedId;
     },
     addItem() {
       const normalizedName = normalizeText(this.newItemName);
@@ -165,7 +158,13 @@ export default {
         <div class="flex justify-end items-center mb-2">
           <div class="flex items-center gap-2 text-sm">
             <span class="text-charcoal-600 font-medium">担当者</span>
-            <DropDown selectName="member" :showArrow="false" :optionItems="members" @select="handleMemberSelect" />
+            <DropDown
+              selectName="member"
+              :showArrow="false"
+              :optionItems="members"
+              v-model="selectedMemberId"
+              @update:modelValue="handleMemberSelect"
+            />
           </div>
         </div>
 
