@@ -47,7 +47,7 @@ export default {
   },
   computed: {
     badgeClass() {
-      const baseClass = ['inline-flex items-center gap-2 rounded-full font-medium border transition-colors'].join(' ');
+      const baseClass = 'inline-flex items-center gap-2 rounded-full font-medium border transition-colors';
 
       const variantClasses = {
         default: 'bg-ember-100 border-ember-200 text-ember-700',
