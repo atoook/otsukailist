@@ -81,15 +81,15 @@ export default {
   methods: {
     initializeMembers() {
       this.members = [
-        { id: 1, name: 'しんじ', selected: false },
-        { id: 2, name: 'Jerry', selected: false },
-        { id: 3, name: 'けんたろう', selected: false },
-        { id: 4, name: 'Mike', selected: false },
-        { id: 5, name: 'トミージャッカーソン', selected: false },
-        { id: 6, name: 'SomeoneWhoHasLoooooongName', selected: true }, // default selected to be acquired from LocalStorage
-        { id: 7, name: 'Ellen', selected: false },
-        { id: 8, name: 'Daisy', selected: false },
-        { id: 9, name: 'Lily', selected: false }
+        { id: '1', name: 'しんじ', selected: false },
+        { id: '2', name: 'Jerry', selected: false },
+        { id: '3', name: 'けんたろう', selected: false },
+        { id: '4', name: 'Mike', selected: false },
+        { id: '5', name: 'トミージャッカーソン', selected: false },
+        { id: '6', name: 'SomeoneWhoHasLoooooongName', selected: true }, // default selected to be acquired from LocalStorage
+        { id: '7', name: 'Ellen', selected: false },
+        { id: '8', name: 'Daisy', selected: false },
+        { id: '9', name: 'Lily', selected: false }
       ];
     },
     getMemberBadgeVariant(item: Item): string {
@@ -115,7 +115,7 @@ export default {
       const normalizedName = normalizeText(this.newItemName);
       if (normalizedName) {
         this.items.push({
-          id: Date.now(), //this to be replaced with unique ID from backend
+          id: Date.now().toString(), //this to be replaced with unique ID from backend
           name: normalizedName,
           status: ItemStatus.PENDING,
           assignedMember: undefined // 初期状態では未割り当て

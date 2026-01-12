@@ -1,4 +1,5 @@
 import type { Member } from './member';
+import { isMember } from './member';
 
 // アイテムの型定義
 export interface Item {
@@ -25,16 +26,17 @@ export function isItem(obj: any): obj is Item {
     'name' in obj &&
     typeof obj.name === 'string' &&
     'status' in obj &&
-    Object.values(ItemStatus).includes(obj.status)
+    Object.values(ItemStatus).includes(obj.status) &&
+    (obj.assignedMember === undefined || obj.assignedMember === null || isMember(obj.assignedMember))
   );
 }
 
 // その他のアイテム関連の型定義
-export type ItemId = string | number;
+export type ItemId = string;
 
 // ItemIdの型ガード関数
 export function isItemId(value: any): value is ItemId {
-  return typeof value === 'string' || typeof value === 'number';
+  return typeof value === 'string';
 }
 
 // ステータス関連のヘルパー関数

@@ -3,7 +3,7 @@ export interface Member {
   name: string;
 }
 
-export type MemberId = string | number;
+export type MemberId = string;
 
 export function isMember(obj: any): obj is Member {
   return (

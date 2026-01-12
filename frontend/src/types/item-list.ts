@@ -1,7 +1,7 @@
 import type { ItemId } from './item';
 import { isItemId } from './item';
 import type { MemberId } from './member';
-import { isMemberId } from './member';
+import { isMember } from './member';
 
 export interface ItemList {
   id: ItemListId;
@@ -14,7 +14,7 @@ export type ItemListId = string | number;
 
 // ItemListIdの型ガード関数
 export function isItemListId(value: any): value is ItemListId {
-  return typeof value === 'string' || typeof value === 'number';
+  return typeof value === 'string';
 }
 
 export function isList(obj: any): obj is ItemList {
@@ -27,7 +27,7 @@ export function isList(obj: any): obj is ItemList {
     typeof obj.name === 'string' &&
     'members' in obj &&
     Array.isArray(obj.members) &&
-    obj.members.every((member: any) => isMemberId(member)) &&
+    obj.members.every((member: any) => isMember(member)) &&
     'items' in obj &&
     Array.isArray(obj.items) &&
     obj.items.every((item: any) => isItemId(item))
