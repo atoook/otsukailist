@@ -1,8 +1,11 @@
+import type { Member } from './member';
+
 // アイテムの型定義
 export interface Item {
   id: ItemId;
   name: string;
   status: ItemStatus;
+  assignedMember?: Member; // 完了時に連携されたメンバー
 }
 
 // アイテムのステータスをenumで定義
