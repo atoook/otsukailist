@@ -24,6 +24,7 @@
       >
         {{ item.name }}
       </span>
+      <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
     </div>
 
     <template #hiddenActions>
@@ -39,7 +40,9 @@ import CheckBox from './CheckBox.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
 import type { Item, ItemId } from '../types/item';
+import type { Member } from '../types/member';
 import { isItem, isCompletedStatus } from '../types/item';
+import { isMember } from '../types/member';
 
 export default {
   name: 'ItemBox',
@@ -49,16 +52,33 @@ export default {
     BadgeTag
   },
   props: {
+    member: {
+      type: Object as () => Member | null,
+      default: null,
+      validator: isMember
+    },
     item: {
       type: Object as () => Item,
       required: true,
       validator: isItem
+    },
+    memberBadgeVariant: {
+      type: String,
+      default: 'primary',
+      validator: (value: string) => ['primary', 'secondary'].includes(value)
     }
   },
   emits: ['toggle', 'info', 'delete'],
   computed: {
     isCompleted() {
       return isCompletedStatus(this.item.status);
+    },
+    displayMember() {
+      // 完了済みアイテム: assignedMember（連携されたメンバー）を表示
+      if (this.isCompleted && this.item.assignedMember) {
+        return this.item.assignedMember;
+      }
+      return null;
     }
   },
   methods: {
