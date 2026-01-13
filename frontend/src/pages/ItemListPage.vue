@@ -77,7 +77,7 @@ export default {
         { id: '3', name: 'けんたろう' },
         { id: '4', name: 'Mike' },
         { id: '5', name: 'トミージャッカーソン' },
-        { id: '6', name: 'SomeoneWhoHasLoooooongName' },
+        { id: '6', name: 'ハリーポッターストレンジャーシングス' },
         { id: '7', name: 'Ellen' },
         { id: '8', name: 'Daisy' },
         { id: '9', name: 'Lily' },
@@ -153,9 +153,9 @@ export default {
   <ContentArea>
     <div class="w-full">
       <!-- リストタイトル -->
-      <div class="mb-6">
-        <h2 class="text-2xl font-bold text-charcoal-800 text-center mb-2">{{ listName }}</h2>
-        <p class="text-sm text-charcoal-600 text-center">🍖 買い物リスト</p>
+      <div class="mb-8">
+        <h2 class="text-2xl font-black text-charcoal-800 text-center mb-2">{{ listName }}</h2>
+        <p class="text-sm text-charcoal-600 text-center">{{ members.map((member) => member.name).join(' ・ ') }}</p>
       </div>
 
       <!-- 新しいアイテム追加 -->
