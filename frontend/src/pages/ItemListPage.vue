@@ -4,9 +4,11 @@ import CheckBox from '../components/CheckBox.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInput from '../components/TextInput.vue';
 import ItemBox from '../components/ItemBox.vue';
+import DropDown from '../components/DropDown.vue';
 import type { Item, ItemId } from '../types/item';
 import { ItemStatus } from '../types/item';
 import { normalizeText, normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import type { Member, MemberId } from '@/types/member';
 
 export default {
   name: 'ItemListPage',
@@ -15,34 +17,44 @@ export default {
     CheckBox,
     MainButton,
     TextInput,
-    ItemBox
+    ItemBox,
+    DropDown
   },
   data(): {
+    members: Member[];
     listName: string;
     items: Item[];
     newItemName: string;
     searchQuery: string;
+    selectedMemberId: MemberId | null;
   } {
     return {
+      members: [],
       listName: '',
       items: [],
       newItemName: '',
-      searchQuery: ''
+      searchQuery: '',
+      selectedMemberId: null
     };
   },
   created() {
     // ルートパラメータからリストIDを取得
     const listId = this.$route.params.id;
-    // クエリパラメータからリスト名を取得
+    // クエリパラメータからリスト名を取得(TODO: APIから取得する)
     const listName = this.$route.query.name as string | undefined;
-
     this.listName = listName || `リスト${listId}`;
+
+    // メンバーデータの初期化
+    this.initializeMembers();
 
     // TODO: APIからリストデータを取得
     console.log('リストID:', listId);
     console.log('リスト名:', this.listName);
   },
   computed: {
+    selectedMember(): Member | undefined {
+      return this.members.find((member) => member.id === this.selectedMemberId);
+    },
     filteredItems(): Item[] {
       // Ensure items is an array
       const items = Array.isArray(this.items) ? this.items : [];
@@ -58,16 +70,52 @@ export default {
     }
   },
   methods: {
+    initializeMembers() {
+      this.members = [
+        { id: '1', name: 'しんじ' },
+        { id: '2', name: 'Jerry' },
+        { id: '3', name: 'けんたろう' },
+        { id: '4', name: 'Mike' },
+        { id: '5', name: 'トミージャッカーソン' },
+        { id: '6', name: 'SomeoneWhoHasLoooooongName' },
+        { id: '7', name: 'Ellen' },
+        { id: '8', name: 'Daisy' },
+        { id: '9', name: 'Lily' },
+        { id: '10', name: '太郎' }
+      ];
+
+      // Set the default selected member ID
+      // default selected to be acquired from LocalStorage
+      this.selectedMemberId = '6';
+    },
+    getMemberBadgeVariant(item: Item): string {
+      // 完了済みアイテムで現在選択中のメンバーが割り当てメンバーと同じ場合はprimary（強調）
+      if (
+        item.status === ItemStatus.COMPLETED &&
+        item.assignedMember &&
+        this.selectedMember &&
+        item.assignedMember.id === this.selectedMember.id
+      ) {
+        return 'primary';
+      }
+      // それ以外はsecondary（通常）
+      return 'secondary';
+    },
+    handleMemberSelect(selectedId: string) {
+      this.selectedMemberId = selectedId;
+    },
     addItem() {
       const normalizedName = normalizeText(this.newItemName);
       if (normalizedName) {
         this.items.push({
-          id: Date.now(), //this to be replaced with unique ID from backend
+          id: Date.now().toString(), //this to be replaced with unique ID from backend
           name: normalizedName,
-          status: ItemStatus.PENDING
+          status: ItemStatus.PENDING,
+          assignedMember: undefined // 初期状態では未割り当て
         });
         this.newItemName = '';
       }
+      //sync with backend API here
     },
     // 入力時のリアルタイム正規化
     onItemNameInput(value: string): void {
@@ -77,7 +125,22 @@ export default {
       this.searchQuery = normalizeInput(value);
     },
     toggleItem(item: Item) {
-      item.status = item.status === ItemStatus.COMPLETED ? ItemStatus.PENDING : ItemStatus.COMPLETED;
+      const wasCompleted = item.status === ItemStatus.COMPLETED;
+
+      if (wasCompleted) {
+        // COMPLETEDからPENDINGに戻す場合：assignedMemberはクリア
+        item.status = ItemStatus.PENDING;
+        item.assignedMember = undefined;
+      } else {
+        // PENDINGからCOMPLETEDに変更する場合：現在のselectedMemberを割り当て
+        item.status = ItemStatus.COMPLETED;
+        if (this.selectedMember) {
+          item.assignedMember = {
+            id: this.selectedMember.id,
+            name: this.selectedMember.name
+          };
+        }
+      }
     },
     deleteItem(itemId: ItemId) {
       this.items = this.items.filter((item) => item.id !== itemId);
@@ -124,10 +187,33 @@ export default {
           />
         </div>
       </div>
-
+      <!-- チェック時に記録する購入者選択 -->
+      <div v-if="filteredItems.length > 0" class="flex justify-end items-center mb-2">
+        <div class="flex items-center gap-2 text-sm">
+          <label for="memberSelect">
+            <span class="text-charcoal-600 font-medium">買った人</span>
+          </label>
+          <DropDown
+            selectId="memberSelect"
+            selectName="member"
+            :showArrow="true"
+            :optionItems="members"
+            width="fixed"
+            v-model="selectedMemberId"
+            @update:modelValue="handleMemberSelect"
+          />
+        </div>
+      </div>
       <!-- アイテムリスト -->
       <div class="space-y-3">
-        <ItemBox v-for="item in filteredItems" :key="item.id" :item="item" @toggle="toggleItem" @delete="deleteItem" />
+        <ItemBox
+          v-for="item in filteredItems"
+          :key="item.id"
+          :item="item"
+          :memberBadgeVariant="getMemberBadgeVariant(item)"
+          @toggle="toggleItem"
+          @delete="deleteItem"
+        />
 
         <!-- アイテムがない場合 -->
         <div v-if="items.length === 0" class="text-center text-charcoal-600 py-8">

@@ -54,7 +54,7 @@ export default {
       const normalizedName = normalizeText(this.newMemberName);
       if (normalizedName) {
         this.members.push({
-          id: Date.now(), // this to be replaced with proper unique ID generation from backend
+          id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
           name: normalizedName
         });
         this.newMemberName = '';

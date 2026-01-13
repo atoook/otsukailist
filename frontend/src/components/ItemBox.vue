@@ -24,6 +24,7 @@
       >
         {{ item.name }}
       </span>
+      <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
     </div>
 
     <template #hiddenActions>
@@ -53,12 +54,24 @@ export default {
       type: Object as () => Item,
       required: true,
       validator: isItem
+    },
+    memberBadgeVariant: {
+      type: String,
+      default: 'primary',
+      validator: (value: string) => ['default', 'primary', 'secondary'].includes(value)
     }
   },
   emits: ['toggle', 'info', 'delete'],
   computed: {
     isCompleted() {
       return isCompletedStatus(this.item.status);
+    },
+    displayMember() {
+      // 完了済みアイテム: assignedMember（連携されたメンバー）を表示
+      if (this.isCompleted && this.item.assignedMember) {
+        return this.item.assignedMember;
+      }
+      return null;
     }
   },
   methods: {

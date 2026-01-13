@@ -10,11 +10,11 @@ export interface ItemList {
   items: ItemId[];
 }
 
-export type ItemListId = string | number;
+export type ItemListId = string;
 
 // ItemListIdの型ガード関数
 export function isItemListId(value: any): value is ItemListId {
-  return typeof value === 'string' || typeof value === 'number';
+  return typeof value === 'string';
 }
 
 export function isList(obj: any): obj is ItemList {
