@@ -67,6 +67,9 @@ export default {
         const normalizedItemName = normalizeForSearch(item.name);
         return normalizedItemName.includes(normalizedQuery);
       });
+    },
+    memberNames(): string {
+      return this.members.map((member) => member.name).join(' ・ ');
     }
   },
   methods: {
@@ -155,7 +158,7 @@ export default {
       <!-- リストタイトル -->
       <div class="mb-8">
         <h2 class="text-2xl font-black text-charcoal-800 text-center mb-2">{{ listName }}</h2>
-        <p class="text-sm text-charcoal-600 text-center">{{ members.map((member) => member.name).join(' ・ ') }}</p>
+        <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
       </div>
 
       <!-- 新しいアイテム追加 -->
