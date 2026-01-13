@@ -40,9 +40,7 @@ import CheckBox from './CheckBox.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
 import type { Item, ItemId } from '../types/item';
-import type { Member } from '../types/member';
 import { isItem, isCompletedStatus } from '../types/item';
-import { isMember } from '../types/member';
 
 export default {
   name: 'ItemBox',
@@ -60,7 +58,7 @@ export default {
     memberBadgeVariant: {
       type: String,
       default: 'primary',
-      validator: (value: string) => ['primary', 'secondary'].includes(value)
+      validator: (value: string) => ['default', 'primary', 'secondary'].includes(value)
     }
   },
   emits: ['toggle', 'info', 'delete'],

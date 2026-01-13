@@ -132,7 +132,7 @@ export default {
         item.status = ItemStatus.PENDING;
         item.assignedMember = undefined;
       } else {
-        // PENDINGからCOMPLETEDに変更する場合：現在のselectedMemberを連携
+        // PENDINGからCOMPLETEDに変更する場合：現在のselectedMemberを割り当て
         item.status = ItemStatus.COMPLETED;
         if (this.selectedMember) {
           item.assignedMember = {
@@ -190,8 +190,11 @@ export default {
       <!-- チェック時に記録する購入者選択 -->
       <div v-if="filteredItems.length > 0" class="flex justify-end items-center mb-2">
         <div class="flex items-center gap-2 text-sm">
-          <span class="text-charcoal-600 font-medium">購入完了者</span>
+          <label for="memberSelect">
+            <span class="text-charcoal-600 font-medium">買った人</span>
+          </label>
           <DropDown
+            selectId="memberSelect"
             selectName="member"
             :showArrow="true"
             :optionItems="members"
@@ -207,7 +210,6 @@ export default {
           v-for="item in filteredItems"
           :key="item.id"
           :item="item"
-          :member="selectedMember"
           :memberBadgeVariant="getMemberBadgeVariant(item)"
           @toggle="toggleItem"
           @delete="deleteItem"

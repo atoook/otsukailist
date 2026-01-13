@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <select :name="selectName" :class="selectClasses" :value="modelValue" @change="handleChange">
+    <select :id="selectId" :name="selectName" :class="selectClasses" :value="modelValue" @change="handleChange">
       <option v-for="optionItem in optionItems" :key="optionItem.id" :value="optionItem.id">
         {{ optionItem.name }}
       </option>
@@ -12,22 +12,34 @@
 </template>
 <script>
 import { twMerge } from 'tailwind-merge';
+
+function optionItemsValidator(value) {
+  if (!Array.isArray(value)) {
+    return false;
+  }
+  return value.every((item) => item && 'id' in item && 'name' in item);
+}
 export default {
   data() {
     return {};
   },
   props: {
+    selectId: {
+      type: String,
+      required: true
+    },
     selectName: {
       type: String,
       required: true
     },
     modelValue: {
-      type: [String, Number],
+      type: String,
       default: null
     },
     optionItems: {
       type: Array,
-      required: true
+      required: true,
+      validator: optionItemsValidator
     },
     showArrow: {
       type: Boolean,

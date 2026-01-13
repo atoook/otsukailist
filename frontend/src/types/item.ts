@@ -6,7 +6,7 @@ export interface Item {
   id: ItemId;
   name: string;
   status: ItemStatus;
-  assignedMember?: Member; // 完了時に連携されたメンバー
+  assignedMember?: Member; // 完了時に割り当てられたメンバー
 }
 
 // アイテムのステータスをenumで定義
