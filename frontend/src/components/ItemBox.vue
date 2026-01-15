@@ -44,7 +44,6 @@ import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isCompletedStatus } from '../types/item';
-import { Text } from 'vue';
 
 export default {
   name: 'ItemBox',
