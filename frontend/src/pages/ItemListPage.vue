@@ -147,6 +147,26 @@ export default {
     },
     deleteItem(itemId: ItemId) {
       this.items = this.items.filter((item) => item.id !== itemId);
+    },
+    modifyItem(updatedItem: Item) {
+      const normalizedItemName = normalizeText(updatedItem.name);
+      // 正規化後の名前が空の場合は更新しない
+      if (!normalizedItemName) {
+        return;
+      }
+      const index = this.items.findIndex((item) => item.id === updatedItem.id);
+      if (index === -1) {
+        console.error('アイテムが見つかりません:', updatedItem.id);
+        return;
+      }
+      // 新しいオブジェクトを作成（副作用を避ける）
+      const modifiedItem = {
+        ...updatedItem,
+        name: normalizedItemName
+      };
+      // 配列を更新
+      this.items.splice(index, 1, modifiedItem);
+      // TODO: APIとの同期処理
     }
   }
 };
@@ -216,6 +236,7 @@ export default {
           :memberBadgeVariant="getMemberBadgeVariant(item)"
           @toggle="toggleItem"
           @delete="deleteItem"
+          @modify="modifyItem"
         />
 
         <!-- アイテムがない場合 -->

@@ -15,13 +15,15 @@
       />
 
       <!-- アイテム名 -->
-      <span
-        :class="{
-          'line-through text-charcoal-500': isCompleted,
-          'text-charcoal-800': !isCompleted
-        }"
-        class="flex-1"
-      >
+      <TextInput
+        v-if="!isCompleted"
+        :input-id="item.id"
+        input-name="itemName"
+        :model-value="item.name"
+        @update:model-value="handleModify"
+        variant="inline"
+      />
+      <span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
       <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
@@ -37,15 +39,18 @@
 
 <script lang="ts">
 import CheckBox from './CheckBox.vue';
+import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isCompletedStatus } from '../types/item';
+import { Text } from 'vue';
 
 export default {
   name: 'ItemBox',
   components: {
     CheckBox,
+    TextInput,
     SwipeContainer,
     BadgeTag
   },
@@ -61,7 +66,7 @@ export default {
       validator: (value: string) => ['default', 'primary', 'secondary'].includes(value)
     }
   },
-  emits: ['toggle', 'info', 'delete'],
+  emits: ['toggle', 'info', 'delete', 'modify'],
   computed: {
     isCompleted() {
       return isCompletedStatus(this.item.status);
@@ -95,6 +100,11 @@ export default {
         event.preventDefault();
         this.handleDelete(this.item.id);
       }
+    },
+    handleModify(newName: string) {
+      // アイテム名の変更を親コンポーネントに通知
+      const updatedItem = { ...this.item, name: newName };
+      this.$emit('modify', updatedItem);
     }
   }
 };
