@@ -123,7 +123,7 @@ export default {
   <ContentArea>
     <div class="text-center mb-6">
       <div class="text-5xl mb-3">🛠️</div>
-      <h2 class="text-2xl font-bold font-serif text-charcoal-800 mb-2">リストを編集</h2>
+      <h2 class="text-2xl font-bold font-serif text-charcoal-800">リストを編集</h2>
     </div>
 
     <div class="mb-6">
