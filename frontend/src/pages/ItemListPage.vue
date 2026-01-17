@@ -137,6 +137,7 @@ export default {
       const normalizedName = normalizeText(item.name);
       if (!normalizedName) {
         this.errorMessage = 'アイテム名が空のため、状態を変更できません。';
+        console.error(this.errorMessage, ' : ', item.id);
         this.showErrorFeedback();
         return;
       }
@@ -145,8 +146,8 @@ export default {
       const index = this.items.findIndex((existingItem) => existingItem.id === item.id);
       if (index === -1) {
         this.errorMessage = 'アイテムが見つかりません。';
+        console.error(this.errorMessage, ' : ', item.id);
         this.showErrorFeedback();
-        console.error('アイテムが見つかりません:', item.id);
         return;
       }
 
@@ -186,11 +187,16 @@ export default {
       const normalizedItemName = normalizeText(updatedItem.name);
       // 正規化後の名前が空の場合は更新しない
       if (!normalizedItemName) {
+        this.errorMessage = 'アイテム名が空のため、更新できません。';
+        console.error(this.errorMessage, ' : ', updatedItem.id);
+        this.showErrorFeedback();
         return;
       }
       const index = this.items.findIndex((item) => item.id === updatedItem.id);
       if (index === -1) {
-        console.error('アイテムが見つかりません:', updatedItem.id);
+        this.errorMessage = 'アイテムが見つかりません。';
+        console.error(this.errorMessage, ' : ', updatedItem.id);
+        this.showErrorFeedback();
         return;
       }
       // 新しいオブジェクトを作成（副作用を避ける）

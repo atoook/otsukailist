@@ -19,13 +19,23 @@
         v-if="!isCompleted"
         :input-id="item.id"
         input-name="itemName"
-        :model-value="item.name"
+        :model-value="newName"
         @update:model-value="handleModify"
+        @enter="isModified && syncUpdate()"
+        @blur="handleBlur"
         variant="inline"
       />
       <span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
+      <button
+        v-if="!isCompleted && isModified"
+        ref="syncButton"
+        @click="syncUpdate()"
+        type="button"
+      >
+        ✔︎
+      </button>
       <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
     </div>
 
@@ -44,6 +54,7 @@ import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isCompletedStatus } from '../types/item';
+import { normalizeText } from '../utils/text-normalization';
 
 export default {
   name: 'ItemBox',
@@ -52,6 +63,12 @@ export default {
     TextInput,
     SwipeContainer,
     BadgeTag
+  },
+  data() {
+    return {
+      isModified: false,
+      newName: ''
+    };
   },
   props: {
     item: {
@@ -66,6 +83,9 @@ export default {
     }
   },
   emits: ['toggle', 'info', 'delete', 'modify'],
+  created() {
+    this.newName = this.item.name;
+  },
   computed: {
     isCompleted() {
       return isCompletedStatus(this.item.status);
@@ -76,6 +96,16 @@ export default {
         return this.item.assignedMember;
       }
       return null;
+    }
+  },
+  watch: {
+    item: {
+      handler(newItem: Item) {
+        // 親コンポーネントからitemが更新された場合、新しい名前を反映
+        this.newName = newItem.name;
+        this.isModified = false;
+      },
+      deep: true
     }
   },
   methods: {
@@ -101,9 +131,52 @@ export default {
       }
     },
     handleModify(newName: string) {
-      // アイテム名の変更を親コンポーネントに通知
-      const updatedItem = { ...this.item, name: newName };
+      if (newName === this.item.name) {
+        this.isModified = false;
+        this.newName = this.item.name;
+        return;
+      }
+      this.isModified = true;
+      this.newName = newName;
+    },
+    handleBlur(event: FocusEvent) {
+      if (!this.isModified) {
+        return;
+      }
+
+      const nextTarget = event.relatedTarget as HTMLElement | null;
+      const syncButton = this.$refs.syncButton as HTMLElement | undefined;
+
+      // ✔ボタンへフォーカスが移動する場合はリセットを保留
+      if (
+        syncButton &&
+        ((nextTarget && syncButton.contains(nextTarget)) ||
+          (document.activeElement instanceof HTMLElement && syncButton.contains(document.activeElement)))
+      ) {
+        return;
+      }
+
+      this.resetToOriginal();
+    },
+    resetToOriginal() {
+      this.newName = this.item.name;
+      this.isModified = false;
+      // TextInputの値を強制的に更新するため、nextTickを使用
+      this.$nextTick(() => {
+        this.$forceUpdate();
+      });
+    },
+    syncUpdate() {
+      const updatedItem = { ...this.item, name: this.newName };
+      const normalizedName = normalizeText(this.newName);
       this.$emit('modify', updatedItem);
+
+      if (!normalizedName) {
+        this.resetToOriginal();
+        return;
+      }
+
+      this.isModified = false;
     }
   }
 };
