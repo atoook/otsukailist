@@ -15,32 +15,22 @@
       />
 
       <!-- アイテム名 -->
-      <TextInput
-        v-if="!isCompleted"
-        :input-id="item.id"
-        input-name="itemName"
-        :model-value="newName"
-        @update:model-value="handleModify"
-        @enter="isModified && syncUpdate()"
-        @blur="handleBlur"
-        variant="inline"
-      />
+      <div v-if="!isCompleted" class="flex-1 flex flex-col" @focusin="handleInlineInputFocus">
+        <TextInput
+          :input-id="item.id"
+          input-name="itemName"
+          :model-value="newName"
+          @update:model-value="handleModify"
+          @enter="isModified && syncUpdate()"
+          @blur="handleBlur"
+          variant="inline"
+        />
+        <p v-if="shouldShowAutosaveHint" class="text-xs text-charcoal-500 mt-1">変更は自動保存されます</p>
+      </div>
       <span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
-      <button
-        v-if="!isCompleted && isModified"
-        ref="syncButton"
-        @pointerdown="handleSyncIntentStart"
-        @pointerup="handleSyncIntentEnd"
-        @pointerleave="handleSyncIntentCancel"
-        @pointercancel="handleSyncIntentCancel"
-        @blur="handleSyncIntentCancel"
-        @click="syncUpdate()"
-        type="button"
-      >
-        ✔︎
-      </button>
+      <span v-if="showSaveIndicator" class="text-success-600 text-lg">✔︎</span>
       <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
     </div>
 
@@ -73,8 +63,9 @@ export default {
     return {
       isModified: false,
       newName: '',
-      isSyncIntentActive: false,
-      syncIntentResetTimer: null as number | null
+      isInputFocused: false,
+      showSaveIndicator: false,
+      saveIndicatorTimer: null as number | null
     };
   },
   props: {
@@ -93,6 +84,9 @@ export default {
   created() {
     this.newName = this.item.name;
   },
+  beforeUnmount() {
+    this.clearSaveIndicatorTimer();
+  },
   computed: {
     isCompleted() {
       return isCompletedStatus(this.item.status);
@@ -103,6 +97,9 @@ export default {
         return this.item.assignedMember;
       }
       return null;
+    },
+    shouldShowAutosaveHint() {
+      return this.isInputFocused && this.isModified;
     }
   },
   watch: {
@@ -146,51 +143,20 @@ export default {
       this.isModified = true;
       this.newName = newName;
     },
-    handleBlur(event: FocusEvent) {
+    handleInlineInputFocus() {
+      this.isInputFocused = true;
+    },
+    handleBlur() {
+      this.isInputFocused = false;
       if (!this.isModified) {
         return;
       }
-
-      if (this.isSyncIntentActive) {
-        return;
-      }
-      const nextTarget = event.relatedTarget as HTMLElement | null;
-      const syncButton = this.$refs.syncButton as HTMLElement | undefined;
-      // ✔ボタンへフォーカスが移動する場合はリセットを保留
-      if (
-        syncButton &&
-        ((nextTarget && syncButton.contains(nextTarget)) ||
-          (document.activeElement instanceof HTMLElement && syncButton.contains(document.activeElement)))
-      ) {
-        return;
-      }
-      this.resetToOriginal();
-    },
-    handleSyncIntentStart() {
-      this.clearSyncIntentTimer();
-      this.isSyncIntentActive = true;
-    },
-    handleSyncIntentEnd() {
-      this.clearSyncIntentTimer();
-      this.syncIntentResetTimer = window.setTimeout(() => {
-        this.isSyncIntentActive = false;
-        this.syncIntentResetTimer = null;
-      }, 150);
-    },
-    handleSyncIntentCancel() {
-      this.clearSyncIntentTimer();
-      this.isSyncIntentActive = false;
-    },
-    clearSyncIntentTimer() {
-      if (this.syncIntentResetTimer !== null) {
-        clearTimeout(this.syncIntentResetTimer);
-        this.syncIntentResetTimer = null;
-      }
+      this.syncUpdate();
     },
     resetToOriginal() {
       this.newName = this.item.name;
       this.isModified = false;
-      this.handleSyncIntentCancel();
+      this.hideSaveIndicator();
     },
     syncUpdate() {
       const normalizedName = normalizeText(this.newName);
@@ -201,7 +167,24 @@ export default {
       const updatedItem = { ...this.item, name: normalizedName };
       this.$emit('modify', updatedItem);
       this.isModified = false;
-      this.handleSyncIntentCancel();
+      this.showSaveIndicatorTemporarily();
+    },
+    showSaveIndicatorTemporarily() {
+      this.showSaveIndicator = true;
+      this.clearSaveIndicatorTimer();
+      this.saveIndicatorTimer = window.setTimeout(() => {
+        this.hideSaveIndicator();
+      }, 1500);
+    },
+    hideSaveIndicator() {
+      this.showSaveIndicator = false;
+      this.clearSaveIndicatorTimer();
+    },
+    clearSaveIndicatorTimer() {
+      if (this.saveIndicatorTimer !== null) {
+        clearTimeout(this.saveIndicatorTimer);
+        this.saveIndicatorTimer = null;
+      }
     }
   }
 };
