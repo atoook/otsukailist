@@ -28,14 +28,7 @@
       <span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
-      <button
-        v-if="!isCompleted && isModified"
-        ref="syncButton"
-        @click="syncUpdate()"
-        type="button"
-      >
-        ✔︎
-      </button>
+      <button v-if="!isCompleted && isModified" ref="syncButton" @click="syncUpdate()" type="button">✔︎</button>
       <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
     </div>
 
@@ -143,10 +136,8 @@ export default {
       if (!this.isModified) {
         return;
       }
-
       const nextTarget = event.relatedTarget as HTMLElement | null;
       const syncButton = this.$refs.syncButton as HTMLElement | undefined;
-
       // ✔ボタンへフォーカスが移動する場合はリセットを保留
       if (
         syncButton &&
@@ -155,27 +146,20 @@ export default {
       ) {
         return;
       }
-
       this.resetToOriginal();
     },
     resetToOriginal() {
       this.newName = this.item.name;
       this.isModified = false;
-      // TextInputの値を強制的に更新するため、nextTickを使用
-      this.$nextTick(() => {
-        this.$forceUpdate();
-      });
     },
     syncUpdate() {
-      const updatedItem = { ...this.item, name: this.newName };
       const normalizedName = normalizeText(this.newName);
-      this.$emit('modify', updatedItem);
-
       if (!normalizedName) {
         this.resetToOriginal();
         return;
       }
-
+      const updatedItem = { ...this.item, name: normalizedName };
+      this.$emit('modify', updatedItem);
       this.isModified = false;
     }
   }
