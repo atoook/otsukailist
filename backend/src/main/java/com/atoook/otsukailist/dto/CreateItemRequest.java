@@ -22,7 +22,7 @@ public class CreateItemRequest {
     @Size(max = 200, message = "アイテム名は200文字以下にしてください")
     private String name;
 
-    // 作成時にチェック状態を指定可能（デフォルト: false）
+    // 作成時に完了状態を指定可能（デフォルト: false）
     @Builder.Default
-    private boolean checked = false;
+    private boolean completed = false;
 }

@@ -27,7 +27,7 @@ class JsonSerializationTest {
         ItemResponse response = ItemResponse.builder()
                 .id(UUID.randomUUID())
                 .name("テストアイテム")
-                .checked(true)
+                .completed(true)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .listId(UUID.randomUUID())
@@ -36,14 +36,14 @@ class JsonSerializationTest {
         // When - シリアライゼーション
         String json = objectMapper.writeValueAsString(response);
 
-        // Then - JSON に "checked" フィールドが含まれることを確認
+        // Then - JSON に "completed" フィールドが含まれることを確認
         JsonNode jsonNode = objectMapper.readTree(json);
-        assertThat(jsonNode.has("checked")).isTrue();
-        assertThat(jsonNode.get("checked").asBoolean()).isTrue();
+        assertThat(jsonNode.has("completed")).isTrue();
+        assertThat(jsonNode.get("completed").asBoolean()).isTrue();
 
         // デシリアライゼーション
         ItemResponse deserialized = objectMapper.readValue(json, ItemResponse.class);
-        assertThat(deserialized.isChecked()).isTrue();
+        assertThat(deserialized.isCompleted()).isTrue();
         assertThat(deserialized.getName()).isEqualTo("テストアイテム");
     }
 
@@ -54,7 +54,7 @@ class JsonSerializationTest {
         String json = """
                 {
                     "name": "新しいアイテム",
-                    "checked": false
+                    "completed": false
                 }
                 """;
 
@@ -63,7 +63,7 @@ class JsonSerializationTest {
 
         // Then
         assertThat(request.getName()).isEqualTo("新しいアイテム");
-        assertThat(request.isChecked()).isFalse();
+        assertThat(request.isCompleted()).isFalse();
     }
 
     @Test
@@ -73,7 +73,7 @@ class JsonSerializationTest {
         String json = """
                 {
                     "name": "更新されたアイテム",
-                    "checked": true
+                    "completed": true
                 }
                 """;
 
@@ -82,6 +82,6 @@ class JsonSerializationTest {
 
         // Then
         assertThat(request.getName()).isEqualTo("更新されたアイテム");
-        assertThat(request.getChecked()).isTrue();
+        assertThat(request.getCompleted()).isTrue();
     }
 }

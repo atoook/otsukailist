@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import com.atoook.otsukailist.dto.CreateItemListRequest;
 import com.atoook.otsukailist.dto.ItemListResponse;
+import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.model.ItemList;
 
 /**
@@ -32,7 +33,7 @@ public class ItemListMapper {
 
         // アイテムの詳細を含める場合
         if (includeItems && entity.getItems() != null) {
-            List<com.atoook.otsukailist.dto.ItemResponse> itemResponses = entity.getItems().stream()
+            List<ItemResponse> itemResponses = entity.getItems().stream()
                     .map(ItemMapper::toResponse)
                     .collect(Collectors.toList());
             builder.items(itemResponses);

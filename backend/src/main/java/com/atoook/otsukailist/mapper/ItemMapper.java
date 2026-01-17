@@ -22,7 +22,7 @@ public class ItemMapper {
         return ItemResponse.builder()
                 .id(entity.getId())
                 .name(entity.getName())
-                .checked(entity.isChecked())
+                .completed(entity.isCompleted())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .listId(entity.getItemList() != null ? entity.getItemList().getId() : null)
@@ -39,7 +39,7 @@ public class ItemMapper {
 
         Item entity = new Item();
         entity.setName(request.getName());
-        entity.setChecked(request.isChecked());
+        entity.setCompleted(request.isCompleted());
         entity.setItemList(itemList);
 
         return entity;
@@ -58,9 +58,9 @@ public class ItemMapper {
             entity.setName(request.getName());
         }
 
-        // チェック状態の更新（nullでない場合のみ）
-        if (request.getChecked() != null) {
-            entity.setChecked(request.getChecked());
+        // 完了状態の更新（nullでない場合のみ）
+        if (request.getCompleted() != null) {
+            entity.setCompleted(request.getCompleted());
         }
     }
 }

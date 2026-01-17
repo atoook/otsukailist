@@ -71,8 +71,8 @@ public class Item {
 
     private String name;
 
-    @Column(name = "is_checked")
-    private boolean isChecked = false;
+    @Column(name = "is_completed")
+    private boolean completed = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -88,7 +88,7 @@ public class Item {
 **詳細**: `db/init/01_create_tables.sql`
 
 - **item_list**: id(UUID), created_at, updated_at
-- **item**: id(UUID), name, is_checked, created_at, updated_at, list_id(FK)
+- **item**: id(UUID), name, is_completed, created_at, updated_at, list_id(FK)
 
 ---
 

@@ -179,7 +179,7 @@ int deleteAllByListId(@Param("listId") UUID listId);
 ```java
 // ✅ 例外的に許可：大量データの一括処理（パフォーマンス重視）
 @Modifying(clearAutomatically = true)
-@Query("UPDATE Item i SET i.isChecked = false WHERE i.itemList.id = :listId")
+@Query("UPDATE Item i SET i.isCompleted = false WHERE i.itemList.id = :listId")
 int uncheckAllItemsInList(@Param("listId") UUID listId);
 
 // 使用時の注意事項：
@@ -307,7 +307,7 @@ public class CreateItemRequest {
     private String name;
 
     @Builder.Default
-    private boolean isChecked = false;
+    private boolean completed = false;
 }
 
 // Response DTO - 公開情報のみ
@@ -315,7 +315,7 @@ public class CreateItemRequest {
 public class ItemResponse {
     private String id;
     private String name;
-    private boolean isChecked;
+    private boolean completed;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String listId;  // セキュリティ確認用
@@ -333,7 +333,7 @@ public class ItemResponse {
 | **複数件検索** | `List<T>`     | 空リストは正常結果     | `findByItemListId()`              |
 | **単一件検索** | `Optional<T>` | 見つからない場合がある | `findByIdAndItemListId()`         |
 | **存在確認**   | `boolean`     | Yes/No の明確な判定    | `existsByIdAndItemListId()`       |
-| **件数取得**   | `long`        | 数値として明確         | `countByItemListIdAndIsChecked()` |
+| **件数取得**   | `long`        | 数値として明確         | `countByItemListIdAndCompleted()` |
 
 ### 実装例
 
@@ -497,52 +497,28 @@ CreateItemRequest request = CreateItemRequest.builder()
 
 **問題の背景**: Lombok と Jackson の命名規則の不整合により、JSON シリアライゼーションエラーが発生
 
-#### ❌ 問題のあるパターン
+#### ✅ JSON 名称と Java 名称の同期
 
 ```java
 public class ItemResponse {
-    private boolean isChecked;  // "is" で始まるフィールド名
+    private boolean completed;  // JSONでは completed、Lombokが isCompleted() を生成
 }
 
 // Lombokが生成するメソッド：
-// - public boolean isChecked() { ... }
-// - public void setChecked(boolean checked) { ... }
-
-// Jacksonが期待するメソッド：
-// - public boolean getIsChecked() { ... }  ← 存在しない！
-
-// 結果：JSON シリアライゼーション時にエラー
-```
-
-#### ✅ 推奨パターン
-
-```java
-public class ItemResponse {
-    private boolean checked;    // "is" なしの述語的な名前
-}
-
-// Lombokが生成するメソッド：
-// - public boolean isChecked() { ... }    ← Jackson期待通り！
-// - public void setChecked(boolean checked) { ... }
+// - public boolean isCompleted() { ... }
+// - public void setCompleted(boolean completed) { ... }
 
 // JSON出力例：
-// { "checked": true }
+// { "completed": true }
 ```
 
 #### 命名ルールとベストプラクティス
 
 ```java
-// ✅ 推奨：述語的な形容詞（"is" なし）
-private boolean checked;
-private boolean active;
-private boolean enabled;
-private boolean visible;
+// ✅ フィールド名は述語的に（"is" を付けない）
 private boolean completed;
-
-// ❌ 避ける："is" で始まる名前
-private boolean isChecked;
-private boolean isActive;
-private boolean isEnabled;
+private boolean active;
+private Boolean completed; // ラッパー型は null 許容
 ```
 
 #### プリミティブ vs ラッパー型の使い分け
@@ -551,14 +527,14 @@ private boolean isEnabled;
 // DTOでの使い分け例
 public class CreateItemRequest {
     @Builder.Default
-    private boolean checked = false;    // 必須、デフォルト値あり
+    private boolean completed = false;    // 必須、デフォルト値あり
 }
 
 public class UpdateItemRequest {
-    private Boolean checked;            // 任意更新（null = 更新しない）
+    private Boolean completed;            // 任意更新（null = 更新しない）
 
-    // Lombokが生成：getChecked() / setChecked()
-    // 使用例：if (request.getChecked() != null) { ... }
+    // Lombokが生成：getCompleted() / setCompleted(...)
+    // 使用例：if (request.getCompleted() != null) { ... }
 }
 ```
 
@@ -568,19 +544,19 @@ public class UpdateItemRequest {
 // Entity（データベース層）
 @Entity
 public class Item {
-    @Column(name = "is_checked")  // DB物理名
-    private boolean checked;      // Java論理名
+    @Column(name = "is_completed")  // DB物理名
+    private boolean completed;      // Java論理名
 }
 
 // DTO（API層）
 public class ItemResponse {
-    private boolean checked;      // 同じ論理名で統一
+    private boolean completed;      // 同じ論理名で統一
 }
 
 // Mapper（変換層）
 public static ItemResponse toResponse(Item entity) {
     return ItemResponse.builder()
-            .checked(entity.isChecked())  // isChecked()メソッド使用
+            .completed(entity.isCompleted())
             .build();
 }
 ```
@@ -588,8 +564,8 @@ public static ItemResponse toResponse(Item entity) {
 #### トラブルシューティング
 
 **症状**: JSON に boolean フィールドが含まれない、または null になる  
-**原因**: Lombok と Jackson の命名規則不整合  
-**解決**: フィールド名から "is" プレフィックスを除去
+**原因**: フィールド名に `is` 接頭辞を付けてしまい、Lombok/Jackson が一致しない  
+**解決**: フィールド名から `is` を除去し、`completed` などの形容詞にする
 
 ---
 

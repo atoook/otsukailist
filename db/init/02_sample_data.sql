@@ -21,7 +21,7 @@ INSERT INTO item_list (id, name) VALUES
 (UUID_TO_BIN('550e8400-e29b-41d4-a716-446655440003'), 'パーティー用品');
 
 -- サンプルアイテム (BINARY形式のUUID使用)
-INSERT INTO item (id, list_id, name, is_checked) VALUES
+INSERT INTO item (id, list_id, name, is_completed) VALUES
 -- リスト1のアイテム
 (UUID_TO_BIN('550e8400-e29b-41d4-a716-446655440011'), UUID_TO_BIN('550e8400-e29b-41d4-a716-446655440001'), '牛乳', FALSE),
 (UUID_TO_BIN('550e8400-e29b-41d4-a716-446655440012'), UUID_TO_BIN('550e8400-e29b-41d4-a716-446655440001'), '卵', FALSE),

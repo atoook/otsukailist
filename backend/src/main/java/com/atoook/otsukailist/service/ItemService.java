@@ -99,7 +99,7 @@ public class ItemService {
     }
 
     /**
-     * アイテムのチェック状態を切り替える
+     * アイテムの完了状態を切り替える
      */
     @Transactional
     public Optional<ItemResponse> toggleItemCheck(UUID listId, UUID itemId) {
@@ -111,7 +111,7 @@ public class ItemService {
         }
 
         Item existing = existingOpt.get();
-        existing.setChecked(!existing.isChecked());
+        existing.setCompleted(!existing.isCompleted());
 
         Item saved = this.itemRepository.save(existing);
         return Optional.of(ItemMapper.toResponse(saved));

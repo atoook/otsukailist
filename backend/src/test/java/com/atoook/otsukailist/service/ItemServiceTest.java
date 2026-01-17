@@ -66,9 +66,9 @@ class ItemServiceTest {
             // Then
             assertThat(result).hasSize(2);
             assertThat(result.get(0).getName()).isEqualTo("牛乳");
-            assertThat(result.get(0).isChecked()).isFalse();
+            assertThat(result.get(0).isCompleted()).isFalse();
             assertThat(result.get(1).getName()).isEqualTo("パン");
-            assertThat(result.get(1).isChecked()).isTrue();
+            assertThat(result.get(1).isCompleted()).isTrue();
 
             verify(itemRepository).findByItemListId(listId);
         }
@@ -151,7 +151,7 @@ class ItemServiceTest {
             UUID listId = UUID.randomUUID();
             CreateItemRequest request = CreateItemRequest.builder()
                     .name("牛乳")
-                    .checked(false)
+                    .completed(false)
                     .build();
 
             ItemList mockItemList = createMockItemList(listId, "テストリスト");
@@ -169,7 +169,7 @@ class ItemServiceTest {
             assertThat(result).isPresent();
             ItemResponse response = result.get();
             assertThat(response.getName()).isEqualTo("新しいアイテム");
-            assertThat(response.isChecked()).isFalse();
+            assertThat(response.isCompleted()).isFalse();
             assertThat(response.getListId()).isEqualTo(listId);
 
             verify(itemListRepository).findById(listId);
@@ -211,7 +211,7 @@ class ItemServiceTest {
             UUID itemId = UUID.randomUUID();
             UpdateItemRequest request = UpdateItemRequest.builder()
                     .name("更新されたアイテム")
-                    .checked(true)
+                    .completed(true)
                     .build();
 
             Item existingItem = createMockItem(itemId, "元のアイテム", false, listId);
@@ -229,7 +229,7 @@ class ItemServiceTest {
             assertThat(result).isPresent();
             ItemResponse response = result.get();
             assertThat(response.getName()).isEqualTo("更新されたアイテム");
-            assertThat(response.isChecked()).isTrue();
+            assertThat(response.isCompleted()).isTrue();
 
             verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository).save(existingItem);
@@ -329,7 +329,7 @@ class ItemServiceTest {
             // Then
             assertThat(result).isPresent();
             ItemResponse response = result.get();
-            assertThat(response.isChecked()).isTrue();
+            assertThat(response.isCompleted()).isTrue();
 
             verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository).save(existingItem);
@@ -356,7 +356,7 @@ class ItemServiceTest {
             // Then
             assertThat(result).isPresent();
             ItemResponse response = result.get();
-            assertThat(response.isChecked()).isFalse();
+            assertThat(response.isCompleted()).isFalse();
 
             verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository).save(existingItem);
@@ -386,11 +386,11 @@ class ItemServiceTest {
     /**
      * テスト用のモックItemエンティティ作成
      */
-    private Item createMockItem(UUID id, String name, boolean checked, UUID listId) {
+    private Item createMockItem(UUID id, String name, boolean completed, UUID listId) {
         Item item = new Item();
         item.setId(id);
         item.setName(name);
-        item.setChecked(checked);
+        item.setCompleted(completed);
         item.setCreatedAt(LocalDateTime.now());
         item.setUpdatedAt(LocalDateTime.now());
 
