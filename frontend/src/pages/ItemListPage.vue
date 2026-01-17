@@ -207,6 +207,13 @@ export default {
       // 配列を更新
       this.items.splice(index, 1, modifiedItem);
       // TODO: APIとの同期処理
+    },
+    navigateToListEdit() {
+      this.$router.push({
+        name: 'ListEdit',
+        params: { id: this.$route.params.id },
+        query: { name: this.listName }
+      });
     }
   }
 };
@@ -217,7 +224,14 @@ export default {
     <div class="w-full">
       <!-- リストタイトル -->
       <div class="mb-8">
-        <h2 class="text-2xl font-black text-charcoal-800 text-center mb-2">{{ listName }}</h2>
+        <div class="flex flex-row justify-center space-x-2 items-center mb-1">
+          <h2 class="text-2xl font-black text-charcoal-800 text-center mb-2">
+            {{ listName }}
+          </h2>
+          <button type="button" @click="navigateToListEdit">
+            <span class="text-charcoal-800">✏️</span>
+          </button>
+        </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
       </div>
 

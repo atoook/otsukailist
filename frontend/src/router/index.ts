@@ -5,6 +5,7 @@ const WelcomePage = () => import('../pages/WelcomePage.vue');
 const CreateListPage = () => import('../pages/CreateListPage.vue');
 const ShareListPage = () => import('../pages/ShareListPage.vue');
 const ItemListPage = () => import('../pages/ItemListPage.vue');
+const ListEditPage = () => import('../pages/ListEditPage.vue');
 
 const routes: RouteRecordRaw[] = [
   {
@@ -26,6 +27,11 @@ const routes: RouteRecordRaw[] = [
     path: '/lists/:id',
     name: 'ItemList',
     component: ItemListPage
+  },
+  {
+    path: '/lists/:id/edit',
+    name: 'ListEdit',
+    component: ListEditPage
   }
 ];
 
