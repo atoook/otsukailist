@@ -28,7 +28,18 @@
       <span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
-      <button v-if="!isCompleted && isModified" ref="syncButton" @click="syncUpdate()" type="button">✔︎</button>
+      <button
+        v-if="!isCompleted && isModified"
+        ref="syncButton"
+        @pointerdown="handleSyncIntentStart"
+        @pointerup="handleSyncIntentEnd"
+        @pointercancel="handleSyncIntentEnd"
+        @blur="handleSyncIntentEnd"
+        @click="syncUpdate()"
+        type="button"
+      >
+        ✔︎
+      </button>
       <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
     </div>
 
@@ -60,7 +71,8 @@ export default {
   data() {
     return {
       isModified: false,
-      newName: ''
+      newName: '',
+      isSyncIntentActive: false
     };
   },
   props: {
@@ -136,6 +148,10 @@ export default {
       if (!this.isModified) {
         return;
       }
+
+      if (this.isSyncIntentActive) {
+        return;
+      }
       const nextTarget = event.relatedTarget as HTMLElement | null;
       const syncButton = this.$refs.syncButton as HTMLElement | undefined;
       // ✔ボタンへフォーカスが移動する場合はリセットを保留
@@ -148,9 +164,16 @@ export default {
       }
       this.resetToOriginal();
     },
+    handleSyncIntentStart() {
+      this.isSyncIntentActive = true;
+    },
+    handleSyncIntentEnd() {
+      this.isSyncIntentActive = false;
+    },
     resetToOriginal() {
       this.newName = this.item.name;
       this.isModified = false;
+      this.isSyncIntentActive = false;
     },
     syncUpdate() {
       const normalizedName = normalizeText(this.newName);
@@ -161,6 +184,7 @@ export default {
       const updatedItem = { ...this.item, name: normalizedName };
       this.$emit('modify', updatedItem);
       this.isModified = false;
+      this.isSyncIntentActive = false;
     }
   }
 };
