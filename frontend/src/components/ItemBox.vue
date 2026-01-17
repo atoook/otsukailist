@@ -33,8 +33,9 @@
         ref="syncButton"
         @pointerdown="handleSyncIntentStart"
         @pointerup="handleSyncIntentEnd"
-        @pointercancel="handleSyncIntentEnd"
-        @blur="handleSyncIntentEnd"
+        @pointerleave="handleSyncIntentCancel"
+        @pointercancel="handleSyncIntentCancel"
+        @blur="handleSyncIntentCancel"
         @click="syncUpdate()"
         type="button"
       >
@@ -72,7 +73,8 @@ export default {
     return {
       isModified: false,
       newName: '',
-      isSyncIntentActive: false
+      isSyncIntentActive: false,
+      syncIntentResetTimer: null as number | null
     };
   },
   props: {
@@ -165,15 +167,30 @@ export default {
       this.resetToOriginal();
     },
     handleSyncIntentStart() {
+      this.clearSyncIntentTimer();
       this.isSyncIntentActive = true;
     },
     handleSyncIntentEnd() {
+      this.clearSyncIntentTimer();
+      this.syncIntentResetTimer = window.setTimeout(() => {
+        this.isSyncIntentActive = false;
+        this.syncIntentResetTimer = null;
+      }, 150);
+    },
+    handleSyncIntentCancel() {
+      this.clearSyncIntentTimer();
       this.isSyncIntentActive = false;
+    },
+    clearSyncIntentTimer() {
+      if (this.syncIntentResetTimer !== null) {
+        clearTimeout(this.syncIntentResetTimer);
+        this.syncIntentResetTimer = null;
+      }
     },
     resetToOriginal() {
       this.newName = this.item.name;
       this.isModified = false;
-      this.isSyncIntentActive = false;
+      this.handleSyncIntentCancel();
     },
     syncUpdate() {
       const normalizedName = normalizeText(this.newName);
@@ -184,7 +201,7 @@ export default {
       const updatedItem = { ...this.item, name: normalizedName };
       this.$emit('modify', updatedItem);
       this.isModified = false;
-      this.isSyncIntentActive = false;
+      this.handleSyncIntentCancel();
     }
   }
 };
