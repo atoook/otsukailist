@@ -27,6 +27,7 @@ export default {
     newItemName: string;
     searchQuery: string;
     selectedMemberId: MemberId | null;
+    errorMessage: string;
   } {
     return {
       members: [],
@@ -34,7 +35,8 @@ export default {
       items: [],
       newItemName: '',
       searchQuery: '',
-      selectedMemberId: null
+      selectedMemberId: null,
+      errorMessage: ''
     };
   },
   created() {
@@ -128,25 +130,83 @@ export default {
       this.searchQuery = normalizeInput(value);
     },
     toggleItem(item: Item) {
+      // Clear any previous error messages
+      this.errorMessage = '';
+
+      // Validate item name
+      const normalizedName = normalizeText(item.name);
+      if (!normalizedName) {
+        this.errorMessage = 'アイテム名が空のため、状態を変更できません。';
+        console.error(this.errorMessage, ' : ', item.id);
+        this.showErrorFeedback();
+        return;
+      }
+
+      // Find item index in the array
+      const index = this.items.findIndex((existingItem) => existingItem.id === item.id);
+      if (index === -1) {
+        this.errorMessage = 'アイテムが見つかりません。';
+        console.error(this.errorMessage, ' : ', item.id);
+        this.showErrorFeedback();
+        return;
+      }
+
       const wasCompleted = item.status === ItemStatus.COMPLETED;
 
-      if (wasCompleted) {
-        // COMPLETEDからPENDINGに戻す場合：assignedMemberはクリア
-        item.status = ItemStatus.PENDING;
-        item.assignedMember = undefined;
-      } else {
-        // PENDINGからCOMPLETEDに変更する場合：現在のselectedMemberを割り当て
-        item.status = ItemStatus.COMPLETED;
-        if (this.selectedMember) {
-          item.assignedMember = {
-            id: this.selectedMember.id,
-            name: this.selectedMember.name
-          };
-        }
+      // Create new item object with updated status (immutable update)
+      const updatedItem: Item = {
+        ...item,
+        status: wasCompleted ? ItemStatus.PENDING : ItemStatus.COMPLETED,
+        assignedMember: wasCompleted
+          ? undefined // Clear assignedMember when uncompleting
+          : this.selectedMember
+            ? {
+                id: this.selectedMember.id,
+                name: this.selectedMember.name
+              }
+            : undefined
+      };
+      // Replace item in array using splice to preserve reactivity
+      this.items.splice(index, 1, updatedItem);
+      // TODO: APIとの同期処理
+    },
+    showErrorFeedback() {
+      // Show error feedback to user (could be replaced with toast library)
+      if (this.errorMessage) {
+        alert(this.errorMessage);
+        // Clear error message after showing
+        setTimeout(() => {
+          this.errorMessage = '';
+        }, 3000);
       }
     },
     deleteItem(itemId: ItemId) {
       this.items = this.items.filter((item) => item.id !== itemId);
+    },
+    modifyItem(updatedItem: Item) {
+      const normalizedItemName = normalizeText(updatedItem.name);
+      // 正規化後の名前が空の場合は更新しない
+      if (!normalizedItemName) {
+        this.errorMessage = 'アイテム名が空のため、更新できません。';
+        console.error(this.errorMessage, ' : ', updatedItem.id);
+        this.showErrorFeedback();
+        return;
+      }
+      const index = this.items.findIndex((item) => item.id === updatedItem.id);
+      if (index === -1) {
+        this.errorMessage = 'アイテムが見つかりません。';
+        console.error(this.errorMessage, ' : ', updatedItem.id);
+        this.showErrorFeedback();
+        return;
+      }
+      // 新しいオブジェクトを作成（副作用を避ける）
+      const modifiedItem = {
+        ...updatedItem,
+        name: normalizedItemName
+      };
+      // 配列を更新
+      this.items.splice(index, 1, modifiedItem);
+      // TODO: APIとの同期処理
     }
   }
 };
@@ -159,6 +219,11 @@ export default {
       <div class="mb-8">
         <h2 class="text-2xl font-black text-charcoal-800 text-center mb-2">{{ listName }}</h2>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
+      </div>
+
+      <!-- エラーメッセージ -->
+      <div v-if="errorMessage" class="mb-4 p-3 bg-ember-100 border border-ember-300 text-ember-700 rounded-lg text-sm">
+        {{ errorMessage }}
       </div>
 
       <!-- 新しいアイテム追加 -->
@@ -216,6 +281,7 @@ export default {
           :memberBadgeVariant="getMemberBadgeVariant(item)"
           @toggle="toggleItem"
           @delete="deleteItem"
+          @modify="modifyItem"
         />
 
         <!-- アイテムがない場合 -->
