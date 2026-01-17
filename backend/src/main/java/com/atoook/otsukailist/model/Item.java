@@ -46,5 +46,5 @@ public class Item {
 
     @ManyToOne
     @JoinColumn(name = "list_id")
-    private ShoppingList shoppingList;
+    private ItemList itemList;
 }

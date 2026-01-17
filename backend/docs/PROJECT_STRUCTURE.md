@@ -11,30 +11,30 @@ backend/
 │   ├── OtsukaiListApplication.java    # Spring Boot メインクラス
 │   │
 │   ├── controller/            # REST API エンドポイント
-│   │   ├── ShoppingListController.java
+│   │   ├── ItemListController.java
 │   │   └── ItemController.java
 │   │
 │   ├── service/               # ビジネスロジック層
-│   │   ├── ShoppingListService.java
+│   │   ├── ItemListService.java
 │   │   └── ItemService.java
 │   │
 │   ├── repository/            # データアクセス層
-│   │   ├── ShoppingListRepository.java
+│   │   ├── ItemListRepository.java
 │   │   └── ItemRepository.java
 │   │
 │   ├── model/                 # JPA エンティティ
-│   │   ├── ShoppingList.java
+│   │   ├── ItemList.java
 │   │   └── Item.java
 │   │
 │   ├── dto/                   # データ転送オブジェクト
-│   │   ├── ShoppingListResponse.java
-│   │   ├── CreateShoppingListRequest.java
+│   │   ├── ItemListResponse.java
+│   │   ├── CreateItemListRequest.java
 │   │   ├── ItemResponse.java
 │   │   ├── CreateItemRequest.java
 │   │   └── UpdateItemRequest.java
 │   │
 │   ├── mapper/                # Entity ↔ DTO 変換
-│   │   ├── ShoppingListMapper.java
+│   │   ├── ItemListMapper.java
 │   │   └── ItemMapper.java
 │   │
 │   ├── config/                # Spring 設定

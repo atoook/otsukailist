@@ -86,7 +86,7 @@ open build/reports/tests/test/index.html
 
 ## 🚦 API エンドポイント
 
-### Shopping List
+### Item List
 
 ```
 GET    /api/lists/{id}           # リスト取得

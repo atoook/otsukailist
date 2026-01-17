@@ -4,7 +4,7 @@ import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.model.Item;
-import com.atoook.otsukailist.model.ShoppingList;
+import com.atoook.otsukailist.model.ItemList;
 
 /**
  * Item Entity ↔ DTO 変換用マッパー
@@ -25,14 +25,14 @@ public class ItemMapper {
                 .checked(entity.isChecked())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .listId(entity.getShoppingList() != null ? entity.getShoppingList().getId() : null)
+                .listId(entity.getItemList() != null ? entity.getItemList().getId() : null)
                 .build();
     }
 
     /**
      * Request DTO → Entity 変換（新規作成時）
      */
-    public static Item toEntity(CreateItemRequest request, ShoppingList shoppingList) {
+    public static Item toEntity(CreateItemRequest request, ItemList itemList) {
         if (request == null) {
             return null;
         }
@@ -40,7 +40,7 @@ public class ItemMapper {
         Item entity = new Item();
         entity.setName(request.getName());
         entity.setChecked(request.isChecked());
-        entity.setShoppingList(shoppingList);
+        entity.setItemList(itemList);
 
         return entity;
     }

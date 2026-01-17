@@ -42,7 +42,7 @@ db/
 
 ## データベーススキーマ
 
-### shopping_list
+### item_list
 
 | カラム名   | データ型     | 制約                                                  | 説明     |
 | ---------- | ------------ | ----------------------------------------------------- | -------- |
@@ -60,7 +60,7 @@ db/
 | is_checked | BOOLEAN      | DEFAULT FALSE                                         | 購入済みフラグ             |
 | created_at | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP                             | 作成日時                   |
 | updated_at | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP | 更新日時                   |
-| list_id    | BINARY(16)   | NOT NULL, FOREIGN KEY                                 | shopping_list への外部キー |
+| list_id    | BINARY(16)   | NOT NULL, FOREIGN KEY                                 | item_list への外部キー |
 
 **インデックス:**
 

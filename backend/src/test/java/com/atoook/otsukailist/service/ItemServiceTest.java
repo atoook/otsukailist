@@ -24,9 +24,9 @@ import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.model.Item;
-import com.atoook.otsukailist.model.ShoppingList;
+import com.atoook.otsukailist.model.ItemList;
 import com.atoook.otsukailist.repository.ItemRepository;
-import com.atoook.otsukailist.repository.ShoppingListRepository;
+import com.atoook.otsukailist.repository.ItemListRepository;
 
 /**
  * ItemService のユニットテスト
@@ -39,7 +39,7 @@ class ItemServiceTest {
     private ItemRepository itemRepository;
 
     @Mock
-    private ShoppingListRepository shoppingListRepository;
+    private ItemListRepository itemListRepository;
 
     @InjectMocks
     private ItemService itemService;
@@ -57,7 +57,7 @@ class ItemServiceTest {
                     createMockItem(UUID.randomUUID(), "牛乳", false, listId),
                     createMockItem(UUID.randomUUID(), "パン", true, listId));
 
-            when(itemRepository.findByShoppingListId(listId))
+            when(itemRepository.findByItemListId(listId))
                     .thenReturn(mockItems);
 
             // When
@@ -70,7 +70,7 @@ class ItemServiceTest {
             assertThat(result.get(1).getName()).isEqualTo("パン");
             assertThat(result.get(1).isChecked()).isTrue();
 
-            verify(itemRepository).findByShoppingListId(listId);
+            verify(itemRepository).findByItemListId(listId);
         }
 
         @Test
@@ -79,7 +79,7 @@ class ItemServiceTest {
             // Given
             UUID listId = UUID.randomUUID();
 
-            when(itemRepository.findByShoppingListId(listId))
+            when(itemRepository.findByItemListId(listId))
                     .thenReturn(Arrays.asList());
 
             // When
@@ -87,7 +87,7 @@ class ItemServiceTest {
 
             // Then
             assertThat(result).isEmpty();
-            verify(itemRepository).findByShoppingListId(listId);
+            verify(itemRepository).findByItemListId(listId);
         }
     }
 
@@ -103,7 +103,7 @@ class ItemServiceTest {
             UUID itemId = UUID.randomUUID();
             Item mockItem = createMockItem(itemId, "テストアイテム", false, listId);
 
-            when(itemRepository.findByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.findByIdAndItemListId(itemId, listId))
                     .thenReturn(Optional.of(mockItem));
 
             // When
@@ -116,7 +116,7 @@ class ItemServiceTest {
             assertThat(response.getName()).isEqualTo("テストアイテム");
             assertThat(response.getListId()).isEqualTo(listId);
 
-            verify(itemRepository).findByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).findByIdAndItemListId(itemId, listId);
         }
 
         @Test
@@ -128,7 +128,7 @@ class ItemServiceTest {
             UUID wrongListId = UUID.randomUUID();
             UUID itemId = UUID.randomUUID();
 
-            when(itemRepository.findByIdAndShoppingListId(itemId, wrongListId))
+            when(itemRepository.findByIdAndItemListId(itemId, wrongListId))
                     .thenReturn(Optional.empty());
 
             // When
@@ -136,7 +136,7 @@ class ItemServiceTest {
 
             // Then
             assertThat(result).isEmpty();
-            verify(itemRepository).findByIdAndShoppingListId(itemId, wrongListId);
+            verify(itemRepository).findByIdAndItemListId(itemId, wrongListId);
         }
     }
 
@@ -154,11 +154,11 @@ class ItemServiceTest {
                     .checked(false)
                     .build();
 
-            ShoppingList mockShoppingList = createMockShoppingList(listId, "テストリスト");
+            ItemList mockItemList = createMockItemList(listId, "テストリスト");
             Item savedItem = createMockItem(UUID.randomUUID(), "新しいアイテム", false, listId);
 
-            when(shoppingListRepository.findById(listId))
-                    .thenReturn(Optional.of(mockShoppingList));
+            when(itemListRepository.findById(listId))
+                    .thenReturn(Optional.of(mockItemList));
             when(itemRepository.save(any(Item.class)))
                     .thenReturn(savedItem);
 
@@ -172,7 +172,7 @@ class ItemServiceTest {
             assertThat(response.isChecked()).isFalse();
             assertThat(response.getListId()).isEqualTo(listId);
 
-            verify(shoppingListRepository).findById(listId);
+            verify(itemListRepository).findById(listId);
             verify(itemRepository).save(any(Item.class));
         }
 
@@ -185,7 +185,7 @@ class ItemServiceTest {
                     .name("新しいアイテム")
                     .build();
 
-            when(shoppingListRepository.findById(invalidListId))
+            when(itemListRepository.findById(invalidListId))
                     .thenReturn(Optional.empty());
 
             // When
@@ -194,7 +194,7 @@ class ItemServiceTest {
             // Then
             assertThat(result).isEmpty();
 
-            verify(shoppingListRepository).findById(invalidListId);
+            verify(itemListRepository).findById(invalidListId);
             verify(itemRepository, never()).save(any(Item.class));
         }
     }
@@ -217,7 +217,7 @@ class ItemServiceTest {
             Item existingItem = createMockItem(itemId, "元のアイテム", false, listId);
             Item updatedItem = createMockItem(itemId, "更新されたアイテム", true, listId);
 
-            when(itemRepository.findByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.findByIdAndItemListId(itemId, listId))
                     .thenReturn(Optional.of(existingItem));
             when(itemRepository.save(existingItem))
                     .thenReturn(updatedItem);
@@ -231,7 +231,7 @@ class ItemServiceTest {
             assertThat(response.getName()).isEqualTo("更新されたアイテム");
             assertThat(response.isChecked()).isTrue();
 
-            verify(itemRepository).findByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository).save(existingItem);
         }
 
@@ -245,7 +245,7 @@ class ItemServiceTest {
                     .name("更新されたアイテム")
                     .build();
 
-            when(itemRepository.findByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.findByIdAndItemListId(itemId, listId))
                     .thenReturn(Optional.empty());
 
             // When
@@ -254,7 +254,7 @@ class ItemServiceTest {
             // Then
             assertThat(result).isEmpty();
 
-            verify(itemRepository).findByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository, never()).save(any(Item.class));
         }
     }
@@ -270,7 +270,7 @@ class ItemServiceTest {
             UUID listId = UUID.randomUUID();
             UUID itemId = UUID.randomUUID();
 
-            when(itemRepository.existsByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.existsByIdAndItemListId(itemId, listId))
                     .thenReturn(true);
 
             // When
@@ -279,7 +279,7 @@ class ItemServiceTest {
             // Then
             assertThat(result).isTrue();
 
-            verify(itemRepository).existsByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).existsByIdAndItemListId(itemId, listId);
             verify(itemRepository).deleteById(itemId);
         }
 
@@ -290,7 +290,7 @@ class ItemServiceTest {
             UUID listId = UUID.randomUUID();
             UUID itemId = UUID.randomUUID();
 
-            when(itemRepository.existsByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.existsByIdAndItemListId(itemId, listId))
                     .thenReturn(false);
 
             // When
@@ -299,7 +299,7 @@ class ItemServiceTest {
             // Then
             assertThat(result).isFalse();
 
-            verify(itemRepository).existsByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).existsByIdAndItemListId(itemId, listId);
             verify(itemRepository, never()).deleteById(any(UUID.class));
         }
     }
@@ -318,7 +318,7 @@ class ItemServiceTest {
             Item existingItem = createMockItem(itemId, "テストアイテム", false, listId);
             Item toggledItem = createMockItem(itemId, "テストアイテム", true, listId);
 
-            when(itemRepository.findByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.findByIdAndItemListId(itemId, listId))
                     .thenReturn(Optional.of(existingItem));
             when(itemRepository.save(existingItem))
                     .thenReturn(toggledItem);
@@ -331,7 +331,7 @@ class ItemServiceTest {
             ItemResponse response = result.get();
             assertThat(response.isChecked()).isTrue();
 
-            verify(itemRepository).findByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository).save(existingItem);
         }
 
@@ -345,7 +345,7 @@ class ItemServiceTest {
             Item existingItem = createMockItem(itemId, "テストアイテム", true, listId);
             Item toggledItem = createMockItem(itemId, "テストアイテム", false, listId);
 
-            when(itemRepository.findByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.findByIdAndItemListId(itemId, listId))
                     .thenReturn(Optional.of(existingItem));
             when(itemRepository.save(existingItem))
                     .thenReturn(toggledItem);
@@ -358,7 +358,7 @@ class ItemServiceTest {
             ItemResponse response = result.get();
             assertThat(response.isChecked()).isFalse();
 
-            verify(itemRepository).findByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository).save(existingItem);
         }
 
@@ -369,7 +369,7 @@ class ItemServiceTest {
             UUID listId = UUID.randomUUID();
             UUID itemId = UUID.randomUUID();
 
-            when(itemRepository.findByIdAndShoppingListId(itemId, listId))
+            when(itemRepository.findByIdAndItemListId(itemId, listId))
                     .thenReturn(Optional.empty());
 
             // When
@@ -378,7 +378,7 @@ class ItemServiceTest {
             // Then
             assertThat(result).isEmpty();
 
-            verify(itemRepository).findByIdAndShoppingListId(itemId, listId);
+            verify(itemRepository).findByIdAndItemListId(itemId, listId);
             verify(itemRepository, never()).save(any(Item.class));
         }
     }
@@ -394,23 +394,23 @@ class ItemServiceTest {
         item.setCreatedAt(LocalDateTime.now());
         item.setUpdatedAt(LocalDateTime.now());
 
-        // ShoppingList の設定
-        ShoppingList shoppingList = new ShoppingList();
-        shoppingList.setId(listId);
-        item.setShoppingList(shoppingList);
+        // ItemList の設定
+        ItemList itemList = new ItemList();
+        itemList.setId(listId);
+        item.setItemList(itemList);
 
         return item;
     }
 
     /**
-     * テスト用のモックShoppingListエンティティ作成
+     * テスト用のモックItemListエンティティ作成
      */
-    private ShoppingList createMockShoppingList(UUID id, String name) {
-        ShoppingList shoppingList = new ShoppingList();
-        shoppingList.setId(id);
-        shoppingList.setName(name);
-        shoppingList.setCreatedAt(LocalDateTime.now());
-        shoppingList.setUpdatedAt(LocalDateTime.now());
-        return shoppingList;
+    private ItemList createMockItemList(UUID id, String name) {
+        ItemList itemList = new ItemList();
+        itemList.setId(id);
+        itemList.setName(name);
+        itemList.setCreatedAt(LocalDateTime.now());
+        itemList.setUpdatedAt(LocalDateTime.now());
+        return itemList;
     }
 }

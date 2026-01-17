@@ -51,8 +51,8 @@
 
 ```java
 @Entity
-@Table(name = "shopping_list")
-public class ShoppingList {
+@Table(name = "item_list")
+public class ItemList {
     @Id
     private String id;  // UUID
 
@@ -79,7 +79,7 @@ public class Item {
 
     @ManyToOne
     @JoinColumn(name = "list_id")
-    private ShoppingList list;
+    private ItemList list;
 }
 ```
 
@@ -87,7 +87,7 @@ public class Item {
 
 **詳細**: `db/init/01_create_tables.sql`
 
-- **shopping_list**: id(UUID), created_at, updated_at
+- **item_list**: id(UUID), created_at, updated_at
 - **item**: id(UUID), name, is_checked, created_at, updated_at, list_id(FK)
 
 ---

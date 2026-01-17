@@ -29,6 +29,6 @@ public class ItemResponse {
 
     private LocalDateTime updatedAt;
 
-    // Shopping List の ID も含める（必要に応じて）
+    // Item List の ID も含める（必要に応じて）
     private UUID listId;
 }

@@ -3,27 +3,27 @@ package com.atoook.otsukailist.mapper;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.atoook.otsukailist.dto.CreateShoppingListRequest;
-import com.atoook.otsukailist.dto.ShoppingListResponse;
-import com.atoook.otsukailist.model.ShoppingList;
+import com.atoook.otsukailist.dto.CreateItemListRequest;
+import com.atoook.otsukailist.dto.ItemListResponse;
+import com.atoook.otsukailist.model.ItemList;
 
 /**
- * ShoppingList Entity ↔ DTO 変換用マッパー
+ * ItemList Entity ↔ DTO 変換用マッパー
  */
-public class ShoppingListMapper {
+public class ItemListMapper {
 
     /**
      * Entity → Response DTO 変換
      * 
-     * @param entity       ShoppingList Entity
+     * @param entity       ItemList Entity
      * @param includeItems アイテム詳細を含めるかどうか
      */
-    public static ShoppingListResponse toResponse(ShoppingList entity, boolean includeItems) {
+    public static ItemListResponse toResponse(ItemList entity, boolean includeItems) {
         if (entity == null) {
             return null;
         }
 
-        ShoppingListResponse.ShoppingListResponseBuilder builder = ShoppingListResponse.builder()
+        ItemListResponse.ItemListResponseBuilder builder = ItemListResponse.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .createdAt(entity.getCreatedAt())
@@ -44,19 +44,19 @@ public class ShoppingListMapper {
     /**
      * Entity → Response DTO 変換（アイテム詳細なし）
      */
-    public static ShoppingListResponse toResponse(ShoppingList entity) {
+    public static ItemListResponse toResponse(ItemList entity) {
         return toResponse(entity, false);
     }
 
     /**
      * Request DTO → Entity 変換（新規作成時）
      */
-    public static ShoppingList toEntity(CreateShoppingListRequest request) {
+    public static ItemList toEntity(CreateItemListRequest request) {
         if (request == null) {
             return null;
         }
 
-        ShoppingList entity = new ShoppingList();
+        ItemList entity = new ItemList();
         entity.setName(request.getName());
 
         return entity;
@@ -65,7 +65,7 @@ public class ShoppingListMapper {
     /**
      * Request DTO で既存 Entity を更新
      */
-    public static void updateEntity(ShoppingList entity, CreateShoppingListRequest request) {
+    public static void updateEntity(ItemList entity, CreateItemListRequest request) {
         if (entity == null || request == null) {
             return;
         }

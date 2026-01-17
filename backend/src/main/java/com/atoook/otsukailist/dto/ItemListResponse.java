@@ -11,14 +11,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Shopping List のレスポンス用DTO
+ * Item List のレスポンス用DTO
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ShoppingListResponse {
+public class ItemListResponse {
 
     private UUID id;
 
