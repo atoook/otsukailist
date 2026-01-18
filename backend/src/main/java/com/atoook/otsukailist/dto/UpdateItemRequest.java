@@ -1,5 +1,7 @@
 package com.atoook.otsukailist.dto;
 
+import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,4 +25,7 @@ public class UpdateItemRequest {
 
     // 完了状態（nullの場合は更新しない）
     private Boolean completed;
+
+    // completed=true のとき必須（未完了に戻すときは不要）
+    private UUID completedByMemberId;
 }

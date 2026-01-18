@@ -1,6 +1,6 @@
 package com.atoook.otsukailist.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,13 +24,9 @@ public class ItemListResponse {
 
     private String name;
 
-    private LocalDateTime createdAt;
+    private long revision;
 
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
 
-    // アイテム数
-    private int itemCount;
-
-    // アイテムの詳細（必要に応じて含める）
-    private List<ItemResponse> items;
+    private Instant updatedAt;
 }

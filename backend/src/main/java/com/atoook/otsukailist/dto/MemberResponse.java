@@ -9,25 +9,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Item のレスポンス用DTO
- */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ItemResponse {
+public class MemberResponse {
 
     private UUID id;
 
-    private String name;
-
-    private boolean completed;
-
-    private UUID completedByMemberId;
-
-    private Instant completedAt;
+    private String displayName;
 
     private Instant createdAt;
 

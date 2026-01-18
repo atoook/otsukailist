@@ -7,10 +7,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Id;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -25,8 +27,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "item")
-public class Item {
+@Table(name = "member", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_member_list_name", columnNames = { "list_id", "display_name" })
+}, indexes = {
+        @Index(name = "idx_member_list_id", columnList = "list_id")
+})
+public class Member {
+
     @Id
     @GeneratedValue
     @UuidGenerator
@@ -34,21 +41,8 @@ public class Item {
     @Column(name = "id", columnDefinition = "BINARY(16)", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "name", nullable = false, length = 255)
-    private String name;
-
-    // DB物理名: is_completed（TINYINT(1)）
-    @Column(name = "is_completed", nullable = false)
-    private boolean completed;
-
-    // 誰が完了させたか（member.id）。未完了のときはNULL。
-    @JdbcTypeCode(SqlTypes.BINARY)
-    @Column(name = "completed_by_member_id", columnDefinition = "BINARY(16)")
-    private UUID completedByMemberId;
-
-    // いつ完了させたか。未完了のときはNULL。
-    @Column(name = "completed_at")
-    private Instant completedAt;
+    @Column(name = "display_name", nullable = false, length = 80)
+    private String displayName;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
