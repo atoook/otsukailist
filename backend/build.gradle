@@ -82,7 +82,7 @@ spotbugsMain {
 	reports {
 		html {
 			required = true
-			outputLocation = file("$buildDir/reports/spotbugs/main.html")
+			outputLocation = layout.buildDirectory.file("reports/spotbugs/main.html").get().asFile
 		}
 		xml.required = false
 	}
@@ -92,7 +92,7 @@ spotbugsTest {
 	reports {
 		html {
 			required = true
-			outputLocation = file("$buildDir/reports/spotbugs/test.html")
+			outputLocation = layout.buildDirectory.file("reports/spotbugs/test.html").get().asFile
 		}
 		xml.required = false
 	}
