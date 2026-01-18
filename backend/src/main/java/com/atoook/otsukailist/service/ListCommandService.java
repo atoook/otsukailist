@@ -31,6 +31,8 @@ public class ListCommandService {
     private final ItemListRepository itemListRepo;
     private final MemberRepository memberRepo;
 
+    private final ListRevisionService listRevisionService;
+
     private final static String MSG_NOT_FOUND = "%s が見つかりません";
     private final static String MSG_MEMBER_DUPLICATED = "メンバー名が重複しています: %s";
 
@@ -81,7 +83,7 @@ public class ListCommandService {
         // list保存（updated_at更新）
         ItemList saved = itemListRepo.save(list);
 
-        long revision = incrementAndGetRevision(listId);
+        long revision = listRevisionService.incrementAndGet(listId);
 
         return MutationResponse.<ItemListResponse>builder()
                 .revision(revision)
@@ -89,10 +91,4 @@ public class ListCommandService {
                 .build();
     }
 
-    private long incrementAndGetRevision(UUID listId) {
-        int updated = itemListRepo.incrementRevision(listId);
-        if (updated != 1)
-            throw new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト"));
-        return itemListRepo.findRevision(listId).orElseThrow();
-    }
 }

@@ -29,6 +29,8 @@ public class ItemCommandService {
     private final ItemListRepository itemListRepo;
     private final MemberRepository memberRepo;
 
+    private final ListRevisionService listRevisionService;
+
     private final static String MSG_NOT_FOUND = "%s が見つかりません";
     private final static String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
     private final static String MSG_COMPLETED_BY_NOT_SPECIFIED = "完了者が未指定です";
@@ -54,7 +56,7 @@ public class ItemCommandService {
 
         Item saved = itemRepo.save(item);
 
-        long revision = incrementAndGetRevision(listId);
+        long revision = listRevisionService.incrementAndGet(listId);
 
         return MutationResponse.<ItemResponse>builder()
                 .revision(revision)
@@ -95,7 +97,7 @@ public class ItemCommandService {
 
         Item saved = itemRepo.save(item);
 
-        long revision = incrementAndGetRevision(listId);
+        long revision = listRevisionService.incrementAndGet(listId);
 
         return MutationResponse.<ItemResponse>builder()
                 .revision(revision)
@@ -114,7 +116,7 @@ public class ItemCommandService {
 
         itemRepo.delete(item);
 
-        long revision = incrementAndGetRevision(listId);
+        long revision = listRevisionService.incrementAndGet(listId);
 
         return MutationResponse.<DeleteItemResponse>builder()
                 .revision(revision)
@@ -122,10 +124,4 @@ public class ItemCommandService {
                 .build();
     }
 
-    private long incrementAndGetRevision(UUID listId) {
-        int updated = itemListRepo.incrementRevision(listId);
-        if (updated != 1)
-            throw new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト"));
-        return itemListRepo.findRevision(listId).orElseThrow();
-    }
 }
