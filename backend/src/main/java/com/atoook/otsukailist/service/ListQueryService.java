@@ -14,6 +14,7 @@ import com.atoook.otsukailist.model.ItemList;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.ItemRepository;
 import com.atoook.otsukailist.repository.MemberRepository;
+import com.atoook.otsukailist.service.message.ErrorMessages;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,12 +26,10 @@ public class ListQueryService {
     private final MemberRepository memberRepo;
     private final ItemRepository itemRepo;
 
-    private final static String MSG_NOT_FOUND = "%s が見つかりません";
-
     @Transactional(readOnly = true)
     public ItemListSnapshotResponse snapshot(UUID listId) {
         ItemList list = itemListRepo.findById(listId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト")));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
 
         var members = memberRepo.findByItemListId(listId).stream()
                 .map(MemberMapper::toResponse)

@@ -18,6 +18,7 @@ import com.atoook.otsukailist.dto.DeleteItemResponse;
 import com.atoook.otsukailist.model.ItemList;
 import com.atoook.otsukailist.mapper.ItemMapper;
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
+import com.atoook.otsukailist.service.message.ErrorMessages;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +32,6 @@ public class ItemCommandService {
 
     private final ListRevisionService listRevisionService;
 
-    private final static String MSG_NOT_FOUND = "%s が見つかりません";
     private final static String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
     private final static String MSG_COMPLETED_BY_NOT_SPECIFIED = "完了者が未指定です";
 
@@ -44,7 +44,7 @@ public class ItemCommandService {
     public MutationResponse<ItemResponse> createItem(UUID listId, CreateItemRequest req) {
         // list存在確認
         ItemList list = itemListRepo.findById(listId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト")));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
 
         // Entity作成（ミニマム：作成時は未完了固定）
         Item item = new Item();
@@ -70,7 +70,7 @@ public class ItemCommandService {
     @Transactional
     public MutationResponse<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest req) {
         Item item = itemRepo.findByIdAndItemListId(itemId, listId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "アイテム")));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "アイテム")));
 
         // rename（Mapperは name のみ更新）
         ItemMapper.updateEntity(item, req);
@@ -112,7 +112,7 @@ public class ItemCommandService {
     public MutationResponse<DeleteItemResponse> deleteItem(UUID listId, UUID itemId) {
         // listIdスコープで存在確認
         Item item = itemRepo.findByIdAndItemListId(itemId, listId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "アイテム")));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "アイテム")));
 
         itemRepo.delete(item);
 

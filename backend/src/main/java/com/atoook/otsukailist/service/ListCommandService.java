@@ -21,6 +21,7 @@ import com.atoook.otsukailist.dto.CreateItemListWithMembersRequest;
 import com.atoook.otsukailist.dto.CreateItemListWithMembersResponse;
 import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.dto.UpdateItemListRequest;
+import com.atoook.otsukailist.service.message.ErrorMessages;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,9 +33,6 @@ public class ListCommandService {
     private final MemberRepository memberRepo;
 
     private final ListRevisionService listRevisionService;
-
-    private final static String MSG_NOT_FOUND = "%s が見つかりません";
-    private final static String MSG_MEMBER_DUPLICATED = "メンバー名が重複しています: %s";
 
     @Transactional
     public CreateItemListWithMembersResponse createListWithMembers(CreateItemListWithMembersRequest req) {
@@ -53,7 +51,7 @@ public class ListCommandService {
         Set<String> seen = new HashSet<>();
         for (String n : names) {
             if (!seen.add(n))
-                throw new IllegalArgumentException(String.format(MSG_MEMBER_DUPLICATED, n));
+                throw new IllegalArgumentException(String.format(ErrorMessages.MEMBER_DUPLICATED, n));
         }
 
         List<Member> members = new ArrayList<>();
@@ -76,7 +74,7 @@ public class ListCommandService {
     @Transactional
     public MutationResponse<ItemListResponse> renameList(UUID listId, UpdateItemListRequest req) {
         ItemList list = itemListRepo.findById(listId)
-                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト")));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
 
         list.setName(req.getName().trim());
 

@@ -9,13 +9,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
 import com.atoook.otsukailist.repository.ItemListRepository;
+import com.atoook.otsukailist.service.message.ErrorMessages;
 
 @Service
 @RequiredArgsConstructor
 public class ListRevisionService {
 
     private final ItemListRepository itemListRepo;
-    private final static String MSG_NOT_FOUND = "%s が見つかりません";
 
     /**
      * listId の revision を原子的に +1 し、更新後revisionを返す。
@@ -25,7 +25,7 @@ public class ListRevisionService {
     public long incrementAndGet(UUID listId) {
         int updated = itemListRepo.incrementRevision(listId);
         if (updated != 1) {
-            throw new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト"));
+            throw new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト"));
         }
         return itemListRepo.findRevision(listId).orElseThrow();
     }
