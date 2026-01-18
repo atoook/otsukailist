@@ -14,11 +14,8 @@ public class ItemListMapper {
 
     /**
      * Entity → Response DTO 変換
-     * 
-     * @param entity       ItemList Entity
-     * @param includeItems アイテム詳細を含めるかどうか
      */
-    public static ItemListResponse toResponse(ItemList entity, boolean includeItems) {
+    public static ItemListResponse toResponse(ItemList entity) {
         if (entity == null) {
             return null;
         }

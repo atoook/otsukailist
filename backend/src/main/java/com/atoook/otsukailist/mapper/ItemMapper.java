@@ -24,7 +24,7 @@ public class ItemMapper {
 
         return ItemResponse.builder()
                 .id(entity.getId())
-                .name(entity.getName())
+                .name(entity.getName().trim())
                 .completed(entity.isCompleted())
                 .completedByMemberId(entity.getCompletedByMemberId())
                 .completedAt(entity.getCompletedAt())
@@ -42,7 +42,7 @@ public class ItemMapper {
         }
 
         Item entity = new Item();
-        entity.setName(request.getName());
+        entity.setName(request.getName().trim());
         entity.setCompleted(request.isCompleted());
         entity.setItemList(itemList);
 
