@@ -42,38 +42,3 @@ public class ItemListSnapshotResponse {
     private List<MemberResponse> members;
     private List<ItemResponse> items;
 }
-
-/**
- * snapshot組立イメージ
- * 
- * @Transactional(readOnly = true)
- *                         public ItemListSnapshotResponse snapshot(UUID listId)
- *                         {
- * 
- *                         ItemList list = itemListRepo.findById(listId)
- *                         .orElseThrow(() -> new NotFoundException("list not
- *                         found"));
- * 
- *                         List<MemberResponse> members =
- *                         memberRepo.findByItemListId(listId).stream()
- *                         .map(MemberMapper::toResponse)
- *                         .toList();
- * 
- *                         List<Item> itemEntities =
- *                         itemRepo.findByItemListId(listId);
- *                         List<ItemResponse> items = itemEntities.stream()
- *                         .map(ItemMapper::toResponse)
- *                         .toList();
- * 
- *                         return ItemListSnapshotResponse.builder()
- *                         .listId(list.getId())
- *                         .name(list.getName())
- *                         .revision(list.getRevision())
- *                         .itemCount(itemEntities.size()) // ← ここ
- *                         .serverTime(Instant.now())
- *                         .members(members)
- *                         .items(items)
- *                         .build();
- *                         }
- * 
- */
