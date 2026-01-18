@@ -70,32 +70,4 @@ public class ItemMapper {
             entity.setName(request.getName().trim());
         }
     }
-    /**
-     * 利用イメージ
-     * public void updateItem(UUID itemId, UpdateItemRequest req) {
-     * Item item = itemRepo.findById(itemId).orElseThrow();
-     * 
-     * // 名前変更
-     * ItemMapper.updateEntity(item, req);
-     * 
-     * // 完了状態変更（業務ロジック）
-     * if (req.getCompleted() != null) {
-     * if (req.getCompleted()) {
-     * if (req.getCompletedByMemberId() == null) {
-     * throw new IllegalArgumentException("完了者が指定されていません");
-     * }
-     * item.setCompleted(true);
-     * item.setCompletedByMemberId(req.getCompletedByMemberId());
-     * item.setCompletedAt(Instant.now());
-     * } else {
-     * item.setCompleted(false);
-     * item.setCompletedByMemberId(null);
-     * item.setCompletedAt(null);
-     * }
-     * }
-     * 
-     * itemRepo.save(item);
-     * itemListRepo.incrementRevision(item.getItemList().getId());
-     * }
-     */
 }
