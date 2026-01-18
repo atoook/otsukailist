@@ -20,15 +20,6 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
     // 特定のアイテムを取得
     Optional<Item> findByIdAndItemListId(UUID itemId, UUID itemListId);
 
-    // 特定のアイテムリストで完了済みのアイテムを取得
-    List<Item> findByItemListIdAndIsCompleted(UUID itemListId, boolean isCompleted);
-
-    // 特定のアイテムリストで完了済みアイテムの数を取得
-    long countByItemListIdAndIsCompleted(UUID itemListId, boolean isCompleted);
-
-    // アイテム名で部分検索（必須：リストIDでスコープ）
-    List<Item> findByItemListIdAndNameContaining(UUID itemListId, String name);
-
     // リスト内のアイテム存在チェック
     boolean existsByIdAndItemListId(UUID itemId, UUID itemListId);
 }
