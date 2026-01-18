@@ -12,7 +12,6 @@ import lombok.Setter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -29,7 +28,6 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "item_list")
 public class ItemList {
     @Id
-    @GeneratedValue
     @UuidGenerator
     @JdbcTypeCode(SqlTypes.BINARY) // UUIDをBINARY(16)として扱う
     @Column(name = "id", columnDefinition = "BINARY(16)", nullable = false, updatable = false)
