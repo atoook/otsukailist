@@ -31,10 +31,10 @@ public class Item {
     @Column(name = "name")
     private String name;
 
-    // DB物理名: is_checked
-    // DTO層では "checked" フィールドとして公開（Jackson シリアライゼーション対応）
-    @Column(name = "is_checked")
-    private boolean isChecked;
+    // DB物理名: is_completed
+    // DTO層では completed フィールドとして公開
+    @Column(name = "is_completed")
+    private boolean completed;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -46,5 +46,5 @@ public class Item {
 
     @ManyToOne
     @JoinColumn(name = "list_id")
-    private ShoppingList shoppingList;
+    private ItemList itemList;
 }

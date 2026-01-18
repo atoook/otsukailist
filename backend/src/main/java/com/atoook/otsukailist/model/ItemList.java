@@ -24,8 +24,8 @@ import org.hibernate.annotations.UuidGenerator;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "shopping_list")
-public class ShoppingList {
+@Table(name = "item_list")
+public class ItemList {
     @Id
     @GeneratedValue
     @UuidGenerator
@@ -42,7 +42,7 @@ public class ShoppingList {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "shoppingList", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "itemList", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Item> items = new ArrayList<>();
 
 }

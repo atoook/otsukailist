@@ -1,7 +1,7 @@
 spring:
   # データベース設定
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:otsukailist}?useSSL=false&serverTimezone=Asia/Tokyo&characterEncoding=utf8mb4
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:otsukailist}?useSSL=false&serverTimezone=Asia/Tokyo&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: ${MYSQL_USER:otsukailist_user}
     password: ${MYSQL_PASSWORD:otsukailist_password}
     driver-class-name: com.mysql.cj.jdbc.Driver

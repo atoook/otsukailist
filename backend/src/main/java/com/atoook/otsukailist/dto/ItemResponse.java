@@ -23,12 +23,12 @@ public class ItemResponse {
 
     private String name;
 
-    private boolean checked;
+    private boolean completed;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    // Shopping List の ID も含める（必要に応じて）
+    // Item List の ID も含める（必要に応じて）
     private UUID listId;
 }

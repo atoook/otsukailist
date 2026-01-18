@@ -13,9 +13,9 @@ import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.mapper.ItemMapper;
 import com.atoook.otsukailist.model.Item;
-import com.atoook.otsukailist.model.ShoppingList;
+import com.atoook.otsukailist.model.ItemList;
 import com.atoook.otsukailist.repository.ItemRepository;
-import com.atoook.otsukailist.repository.ShoppingListRepository;
+import com.atoook.otsukailist.repository.ItemListRepository;
 
 /**
  * Item のビジネスロジック
@@ -25,18 +25,18 @@ import com.atoook.otsukailist.repository.ShoppingListRepository;
 public class ItemService {
 
     private final ItemRepository itemRepository;
-    private final ShoppingListRepository shoppingListRepository;
+    private final ItemListRepository itemListRepository;
 
-    public ItemService(ItemRepository itemRepository, ShoppingListRepository shoppingListRepository) {
+    public ItemService(ItemRepository itemRepository, ItemListRepository itemListRepository) {
         this.itemRepository = itemRepository;
-        this.shoppingListRepository = shoppingListRepository;
+        this.itemListRepository = itemListRepository;
     }
 
     /**
      * 指定されたリストのアイテム一覧を取得
      */
     public List<ItemResponse> getItemsByListId(UUID listId) {
-        return this.itemRepository.findByShoppingListId(listId).stream()
+        return this.itemRepository.findByItemListId(listId).stream()
                 .map(ItemMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -45,7 +45,7 @@ public class ItemService {
      * アイテムを取得
      */
     public Optional<ItemResponse> getItemById(UUID listId, UUID itemId) {
-        return this.itemRepository.findByIdAndShoppingListId(itemId, listId)
+        return this.itemRepository.findByIdAndItemListId(itemId, listId)
                 .map(ItemMapper::toResponse);
     }
 
@@ -53,14 +53,14 @@ public class ItemService {
      * 新規アイテム作成
      */
     public Optional<ItemResponse> createItem(UUID listId, CreateItemRequest request) {
-        // Shopping List の存在確認
-        Optional<ShoppingList> shoppingListOpt = this.shoppingListRepository.findById(listId);
-        if (shoppingListOpt.isEmpty()) {
+        // Item List の存在確認
+        Optional<ItemList> itemListOpt = this.itemListRepository.findById(listId);
+        if (itemListOpt.isEmpty()) {
             return Optional.empty();
         }
 
-        ShoppingList shoppingList = shoppingListOpt.get();
-        Item entity = ItemMapper.toEntity(request, shoppingList);
+        ItemList itemList = itemListOpt.get();
+        Item entity = ItemMapper.toEntity(request, itemList);
 
         Item saved = this.itemRepository.save(entity);
         return Optional.of(ItemMapper.toResponse(saved));
@@ -71,9 +71,9 @@ public class ItemService {
      */
     @Transactional
     public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
-        // Shopping List の存在確認
+        // Item List の存在確認
         // Item の存在確認（listId によるスコープ制限）
-        Optional<Item> existingOpt = this.itemRepository.findByIdAndShoppingListId(itemId, listId);
+        Optional<Item> existingOpt = this.itemRepository.findByIdAndItemListId(itemId, listId);
         if (existingOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -90,8 +90,8 @@ public class ItemService {
      */
     @Transactional
     public boolean deleteItem(UUID listId, UUID itemId) {
-        // Shopping List の存在確認
-        if (this.itemRepository.existsByIdAndShoppingListId(itemId, listId)) {
+        // Item List の存在確認
+        if (this.itemRepository.existsByIdAndItemListId(itemId, listId)) {
             this.itemRepository.deleteById(itemId);
             return true;
         }
@@ -99,19 +99,19 @@ public class ItemService {
     }
 
     /**
-     * アイテムのチェック状態を切り替える
+     * アイテムの完了状態を切り替える
      */
     @Transactional
     public Optional<ItemResponse> toggleItemCheck(UUID listId, UUID itemId) {
-        // Shopping List の存在確認
-        Optional<Item> existingOpt = this.itemRepository.findByIdAndShoppingListId(itemId, listId);
+        // Item List の存在確認
+        Optional<Item> existingOpt = this.itemRepository.findByIdAndItemListId(itemId, listId);
 
         if (existingOpt.isEmpty()) {
             return Optional.empty();
         }
 
         Item existing = existingOpt.get();
-        existing.setChecked(!existing.isChecked());
+        existing.setCompleted(!existing.isCompleted());
 
         Item saved = this.itemRepository.save(existing);
         return Optional.of(ItemMapper.toResponse(saved));
