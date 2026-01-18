@@ -3,11 +3,12 @@ package com.atoook.otsukailist.dto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,19 +19,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class JsonSerializationTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Test
     @DisplayName("ItemResponse の JSON シリアライゼーション テスト")
     void testItemResponseSerialization() throws JsonProcessingException {
         // Given
+        UUID id = UUID.randomUUID();
+        UUID completedByMemberId = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2024-01-01T00:00:00Z");
+        Instant updatedAt = Instant.parse("2024-01-01T01:00:00Z");
+        Instant completedAt = Instant.parse("2024-01-01T00:30:00Z");
+
         ItemResponse response = ItemResponse.builder()
-                .id(UUID.randomUUID())
+                .id(id)
                 .name("テストアイテム")
                 .completed(true)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .listId(UUID.randomUUID())
+                .completedByMemberId(completedByMemberId)
+                .completedAt(completedAt)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .build();
 
         // When - シリアライゼーション
@@ -38,12 +48,21 @@ class JsonSerializationTest {
 
         // Then - JSON に "completed" フィールドが含まれることを確認
         JsonNode jsonNode = objectMapper.readTree(json);
-        assertThat(jsonNode.has("completed")).isTrue();
+        assertThat(jsonNode.get("id").asText()).isEqualTo(id.toString());
         assertThat(jsonNode.get("completed").asBoolean()).isTrue();
+        assertThat(jsonNode.get("completedByMemberId").asText()).isEqualTo(completedByMemberId.toString());
+        assertThat(jsonNode.get("completedAt").asText()).isEqualTo(completedAt.toString());
+        assertThat(jsonNode.get("createdAt").asText()).isEqualTo(createdAt.toString());
+        assertThat(jsonNode.get("updatedAt").asText()).isEqualTo(updatedAt.toString());
 
         // デシリアライゼーション
         ItemResponse deserialized = objectMapper.readValue(json, ItemResponse.class);
+        assertThat(deserialized.getId()).isEqualTo(id);
         assertThat(deserialized.isCompleted()).isTrue();
+        assertThat(deserialized.getCompletedByMemberId()).isEqualTo(completedByMemberId);
+        assertThat(deserialized.getCompletedAt()).isEqualTo(completedAt);
+        assertThat(deserialized.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(deserialized.getUpdatedAt()).isEqualTo(updatedAt);
         assertThat(deserialized.getName()).isEqualTo("テストアイテム");
     }
 
@@ -73,7 +92,8 @@ class JsonSerializationTest {
         String json = """
                 {
                     "name": "更新されたアイテム",
-                    "completed": true
+                    "completed": true,
+                    "completedByMemberId": "4aa8c874-708b-4f96-8658-3f4daff9c6ee"
                 }
                 """;
 
@@ -83,5 +103,6 @@ class JsonSerializationTest {
         // Then
         assertThat(request.getName()).isEqualTo("更新されたアイテム");
         assertThat(request.getCompleted()).isTrue();
+        assertThat(request.getCompletedByMemberId()).isEqualTo(UUID.fromString("4aa8c874-708b-4f96-8658-3f4daff9c6ee"));
     }
 }
