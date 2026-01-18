@@ -25,10 +25,12 @@ public class ListQueryService {
     private final MemberRepository memberRepo;
     private final ItemRepository itemRepo;
 
+    private final static String MSG_NOT_FOUND = "%s が見つかりません";
+
     @Transactional(readOnly = true)
     public ItemListSnapshotResponse snapshot(UUID listId) {
         ItemList list = itemListRepo.findById(listId)
-                .orElseThrow(() -> new ResourceNotFoundException("ItemList not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト")));
 
         var members = memberRepo.findByItemListId(listId).stream()
                 .map(MemberMapper::toResponse)

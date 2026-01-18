@@ -29,6 +29,10 @@ public class ItemCommandService {
     private final ItemListRepository itemListRepo;
     private final MemberRepository memberRepo;
 
+    private final static String MSG_NOT_FOUND = "%s が見つかりません";
+    private final static String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
+    private final static String MSG_COMPLETED_BY_NOT_SPECIFIED = "完了者が未指定です";
+
     /**
      * Item追加（listIdスコープ）
      * - 完了状態を作成時に許可するなら completedByMemberId もDTOに追加するのが整合的
@@ -38,7 +42,7 @@ public class ItemCommandService {
     public MutationResponse<ItemResponse> createItem(UUID listId, CreateItemRequest req) {
         // list存在確認
         ItemList list = itemListRepo.findById(listId)
-                .orElseThrow(() -> new ResourceNotFoundException("list not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト")));
 
         // Entity作成（ミニマム：作成時は未完了固定）
         Item item = new Item();
@@ -64,7 +68,7 @@ public class ItemCommandService {
     @Transactional
     public MutationResponse<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest req) {
         Item item = itemRepo.findByIdAndItemListId(itemId, listId)
-                .orElseThrow(() -> new ResourceNotFoundException("item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "アイテム")));
 
         // rename（Mapperは name のみ更新）
         ItemMapper.updateEntity(item, req);
@@ -73,11 +77,11 @@ public class ItemCommandService {
         if (req.getCompleted() != null) {
             if (req.getCompleted()) {
                 if (req.getCompletedByMemberId() == null) {
-                    throw new IllegalArgumentException("完了者が未指定です");
+                    throw new IllegalArgumentException(MSG_COMPLETED_BY_NOT_SPECIFIED);
                 }
                 boolean exists = memberRepo.existsByIdAndItemListId(req.getCompletedByMemberId(), listId);
                 if (!exists) {
-                    throw new IllegalArgumentException("指定したメンバーがこのリストに存在しません");
+                    throw new IllegalArgumentException(MSG_MEMBER_NOT_IN_LIST);
                 }
                 item.setCompleted(true);
                 item.setCompletedByMemberId(req.getCompletedByMemberId());
@@ -106,7 +110,7 @@ public class ItemCommandService {
     public MutationResponse<DeleteItemResponse> deleteItem(UUID listId, UUID itemId) {
         // listIdスコープで存在確認
         Item item = itemRepo.findByIdAndItemListId(itemId, listId)
-                .orElseThrow(() -> new ResourceNotFoundException("item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "アイテム")));
 
         itemRepo.delete(item);
 
@@ -121,7 +125,7 @@ public class ItemCommandService {
     private long incrementAndGetRevision(UUID listId) {
         int updated = itemListRepo.incrementRevision(listId);
         if (updated != 1)
-            throw new ResourceNotFoundException("list not found");
+            throw new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト"));
         return itemListRepo.findRevision(listId).orElseThrow();
     }
 }

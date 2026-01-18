@@ -31,6 +31,9 @@ public class ListCommandService {
     private final ItemListRepository itemListRepo;
     private final MemberRepository memberRepo;
 
+    private final static String MSG_NOT_FOUND = "%s が見つかりません";
+    private final static String MSG_MEMBER_DUPLICATED = "メンバー名が重複しています: %s";
+
     @Transactional
     public CreateItemListWithMembersResponse createListWithMembers(CreateItemListWithMembersRequest req) {
         String listName = req.getName().trim();
@@ -48,7 +51,7 @@ public class ListCommandService {
         Set<String> seen = new HashSet<>();
         for (String n : names) {
             if (!seen.add(n))
-                throw new IllegalArgumentException("メンバー名が重複しています: " + n);
+                throw new IllegalArgumentException(String.format(MSG_MEMBER_DUPLICATED, n));
         }
 
         List<Member> members = new ArrayList<>();
@@ -71,7 +74,7 @@ public class ListCommandService {
     @Transactional
     public MutationResponse<ItemListResponse> renameList(UUID listId, UpdateItemListRequest req) {
         ItemList list = itemListRepo.findById(listId)
-                .orElseThrow(() -> new ResourceNotFoundException("list not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト")));
 
         list.setName(req.getName().trim());
 
@@ -89,7 +92,7 @@ public class ListCommandService {
     private long incrementAndGetRevision(UUID listId) {
         int updated = itemListRepo.incrementRevision(listId);
         if (updated != 1)
-            throw new ResourceNotFoundException("list not found");
+            throw new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト"));
         return itemListRepo.findRevision(listId).orElseThrow();
     }
 }

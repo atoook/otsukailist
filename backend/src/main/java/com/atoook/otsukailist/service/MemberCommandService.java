@@ -25,10 +25,12 @@ public class MemberCommandService {
     private final ItemListRepository itemListRepo;
     private final MemberRepository memberRepo;
 
+    private final static String MSG_NOT_FOUND = "%s が見つかりません";
+
     @Transactional
     public MutationResponse<MemberResponse> addMember(UUID listId, CreateMemberRequest req) {
         ItemList list = itemListRepo.findById(listId)
-                .orElseThrow(() -> new ResourceNotFoundException("list not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト")));
 
         Member member = new Member();
         member.setDisplayName(req.getDisplayName().trim());
@@ -47,7 +49,7 @@ public class MemberCommandService {
     @Transactional
     public MutationResponse<MemberResponse> renameMember(UUID listId, UUID memberId, CreateMemberRequest req) {
         Member member = memberRepo.findByIdAndItemListId(memberId, listId)
-                .orElseThrow(() -> new ResourceNotFoundException("member not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "メンバー")));
 
         // Mapperでtrim含めて更新する想定
         MemberMapper.updateEntity(member, req);
@@ -65,7 +67,7 @@ public class MemberCommandService {
     @Transactional
     public MutationResponse<DeleteMemberResponse> deleteMember(UUID listId, UUID memberId) {
         Member member = memberRepo.findByIdAndItemListId(memberId, listId)
-                .orElseThrow(() -> new ResourceNotFoundException("member not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "メンバー")));
 
         memberRepo.delete(member);
         // DB側 FK: item.completed_by_member_id ON DELETE SET NULL が効く
@@ -81,7 +83,7 @@ public class MemberCommandService {
     private long incrementAndGetRevision(UUID listId) {
         int updated = itemListRepo.incrementRevision(listId);
         if (updated != 1)
-            throw new ResourceNotFoundException("list not found");
+            throw new ResourceNotFoundException(String.format(MSG_NOT_FOUND, "リスト"));
         return itemListRepo.findRevision(listId).orElseThrow();
     }
 }
