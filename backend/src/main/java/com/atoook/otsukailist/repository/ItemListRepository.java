@@ -21,7 +21,7 @@ public interface ItemListRepository extends JpaRepository<ItemList, UUID> {
     // - count()
     // - existsById(UUID id)
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update ItemList l set l.revision = l.revision + 1 where l.id = :listId")
     int incrementRevision(@Param("listId") UUID listId);
 

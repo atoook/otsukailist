@@ -27,6 +27,7 @@ public class ListRevisionService {
         if (updated != 1) {
             throw new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト"));
         }
-        return itemListRepo.findRevision(listId).orElseThrow();
+        return itemListRepo.findRevision(listId)
+                .orElseThrow(() -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
     }
 }
