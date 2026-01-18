@@ -1,3 +1,6 @@
+import com.github.spotbugs.snom.Confidence
+import com.github.spotbugs.snom.Effort
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.7'
@@ -68,8 +71,8 @@ pmd {
 // SpotBugs設定
 spotbugs {
 	toolVersion = '4.8.3'
-	effort = 'default'     // max から default に変更（軽量化）
-	reportLevel = 'high'   // medium から high に変更（重要な問題のみ）
+	effort = Effort.valueOf('DEFAULT')     // max から default に変更（軽量化）
+	reportLevel = Confidence.valueOf('HIGH')   // medium から high に変更（重要な問題のみ）
 	ignoreFailures = true  // 警告レベルなので開発を停止しない
 }
 
