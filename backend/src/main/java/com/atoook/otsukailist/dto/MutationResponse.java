@@ -1,10 +1,10 @@
 package com.atoook.otsukailist.dto;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Getter
-@Setter
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class MutationResponse<T> {

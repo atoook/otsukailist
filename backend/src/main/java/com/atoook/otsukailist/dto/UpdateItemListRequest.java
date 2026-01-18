@@ -20,6 +20,6 @@ import lombok.Setter;
 public class UpdateItemListRequest {
 
     @NotBlank
-    @Size(max = 100)
+    @Size(max = 100, message = "リスト名は100文字以下にしてください")
     private String name;
 }

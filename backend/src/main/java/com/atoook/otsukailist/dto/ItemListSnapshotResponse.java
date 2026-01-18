@@ -7,8 +7,6 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * Item List のSnapshotレスポンス用DTO
@@ -21,8 +19,6 @@ import lombok.Setter;
  * * → N+1を踏まない。
  */
 @Getter
-@Setter
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ItemListSnapshotResponse {
@@ -39,6 +35,8 @@ public class ItemListSnapshotResponse {
     /** 任意：クライアントの基準時刻 */
     private Instant serverTime;
 
-    private List<MemberResponse> members;
-    private List<ItemResponse> items;
+    @Builder.Default
+    private List<MemberResponse> members = List.of();
+    @Builder.Default
+    private List<ItemResponse> items = List.of();
 }
