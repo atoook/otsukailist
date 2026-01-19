@@ -68,8 +68,12 @@ pmd {
 // SpotBugs設定
 spotbugs {
 	toolVersion = '4.8.3'
-	effort = 'default'     // max から default に変更（軽量化）
-	reportLevel = 'high'   // medium から high に変更（重要な問題のみ）
+
+	def effortEnum = Class.forName('com.github.spotbugs.snom.Effort')
+	def confidenceEnum = Class.forName('com.github.spotbugs.snom.Confidence')
+
+	effort = Enum.valueOf(effortEnum, 'DEFAULT')     // max から default に変更（軽量化）
+	reportLevel = Enum.valueOf(confidenceEnum, 'HIGH')   // medium から high に変更（重要な問題のみ）
 	ignoreFailures = true  // 警告レベルなので開発を停止しない
 }
 
@@ -78,7 +82,7 @@ spotbugsMain {
 	reports {
 		html {
 			required = true
-			outputLocation = file("$buildDir/reports/spotbugs/main.html")
+			outputLocation = layout.buildDirectory.file("reports/spotbugs/main.html").get().asFile
 		}
 		xml.required = false
 	}
@@ -88,7 +92,7 @@ spotbugsTest {
 	reports {
 		html {
 			required = true
-			outputLocation = file("$buildDir/reports/spotbugs/test.html")
+			outputLocation = layout.buildDirectory.file("reports/spotbugs/test.html").get().asFile
 		}
 		xml.required = false
 	}

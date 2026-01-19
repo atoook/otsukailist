@@ -1,165 +1,95 @@
 # OtsukaiList - 設計書
 
+OtsukaiList は「ログイン不要で共有できる共同おつかいリスト」を提供する OSS プロジェクト。ここでは最新の PR 方針を反映したうえで、開発チーム内で共有すべき前提を簡潔にまとめる。
+
+---
+
 ## 技術スタック
 
 - **Frontend**: Vue.js 3, Vite, Tailwind CSS
-- **Backend**: Spring Boot (Java), WebSocket (Spring Messaging)
-- **Database**: MySQL 8.x + JPA (Hibernate)
+- **Backend**: Spring Boot (Java 17), Spring Data JPA, Spring Messaging (WebSocket)
+- **Database**: MySQL 8.x
 - **Infra**: Docker / docker-compose
 
 ---
 
 ## アーキテクチャ概要
 
-- フロント（Vue.js）から Spring Boot API を呼び出して MySQL に保存。
-- WebSocket (Spring Boot + STOMP) を使い、同じリスト ID を持つクライアント間でリアルタイム更新。
-- URL がそのまま「共有鍵」となるシンプル設計。
+- フロント → REST API → DB の 3 層構成。更新系 API は `MutationResponse<T>` で `revision` を返し、WebSocket で同じ payload を配信する。
+- Command と Query のサービスを分離し、Mapper は DTO と Entity の変換に特化。業務ルールは Service 層で吸収する。
+- WebSocket はリスト単位の room を用い、`revision` を基準にクライアント側で差分適用する。
 
 ---
 
 ## ルーティング
 
-- `/new`
-  - 新しいリスト作成（UUID 生成 → DB 保存）
-  - `/list/:id` にリダイレクト
-- `/list/:id`
-  - アイテム追加/削除/チェック
-  - リアルタイム同期表示
+- `/new` : 新規リストの作成。リスト名と初期メンバー（1件以上）を入力→作成成功後に `/list/:id` へ遷移。
+- `/list/:id` : リストのスナップショットを取得し、アイテム・メンバーの追加/編集/削除を行うメイン画面。
 
 ---
 
-## API 設計（REST）
+## REST API（概要）
 
-- `POST /api/lists` → 新規作成
-- `GET /api/lists/:id` → リスト取得
-- `POST /api/lists/:id/items` → アイテム追加
-- `PATCH /api/lists/:id/items/:itemId` → アイテム更新
-- `DELETE /api/lists/:id/items/:itemId` → アイテム削除
+| Method                                          | Path                                                         | 主な役割 |
+| ----------------------------------------------- | ------------------------------------------------------------ | -------- |
+| `POST /api/lists`                               | リストと初期メンバーをまとめて作成する。                     |
+| `GET /api/lists/{listId}`                       | リスト、メンバー、アイテムをまとめたスナップショットを返す。 |
+| `PATCH /api/lists/{listId}`                     | リスト名を変更し、`revision` を更新する。                    |
+| `POST /api/lists/{listId}/members`              | メンバーを追加する。                                         |
+| `PATCH /api/lists/{listId}/members/{memberId}`  | メンバー名を変更する。                                       |
+| `DELETE /api/lists/{listId}/members/{memberId}` | メンバーを削除する。                                         |
+| `POST /api/lists/{listId}/items`                | アイテムを追加する（作成時は未完了固定）。                   |
+| `PATCH /api/lists/{listId}/items/{itemId}`      | アイテム名や完了状態を更新する。                             |
+| `DELETE /api/lists/{listId}/items/{itemId}`     | アイテムを削除する。                                         |
 
 ---
 
-## WebSocket 設計
+## WebSocket
 
 - ルーム: `list:{id}`
-- イベント例:
-  - `item:add`, `item:update`, `item:delete`
-- サーバーで DB 更新後、room 内全員にブロードキャスト
+- REST の更新完了後に、同じ `MutationResponse` をルーム内へ配信。
+- クライアントは `revision` を比較して重複適用を避ける。イベント種別は payload 内の type 追加で拡張予定。
 
 ---
 
-## データモデル (JPA + MySQL)
+## データモデル
 
-```java
-@Entity
-@Table(name = "item_list")
-public class ItemList {
-    @Id
-    private String id;  // UUID
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @OneToMany(mappedBy = "list", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Item> items = new ArrayList<>();
-}
-
-@Entity
-@Table(name = "item")
-public class Item {
-    @Id
-    private String id;  // UUID
-
-    private String name;
-
-    @Column(name = "is_completed")
-    private boolean completed = false;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @ManyToOne
-    @JoinColumn(name = "list_id")
-    private ItemList list;
-}
-```
-
-### データベーステーブル構成
-
-**詳細**: `db/init/01_create_tables.sql`
-
-- **item_list**: id(UUID), created_at, updated_at
-- **item**: id(UUID), name, is_completed, created_at, updated_at, list_id(FK)
+- `ItemList` : リスト本体。`revision` を持ち、`Item` と `Member` を束ねる。
+- `Member` : 表示名のみを管理し、権限は持たない。リスト内で `display_name` がユニーク。
+- `Item` : 名前・完了フラグ・完了者 ID・完了日時を保持する。完了時は必ずメンバー存在チェックを行う。
+- 正式な DDL は `db/init/01_create_tables.sql` を参照（UUID は `BINARY(16)`、FK や Sample Data も同ディレクトリにあり）。
 
 ---
 
-## UI 設計（Vue + Tailwind）
+## UI / 体験
 
-- **入力欄＋追加ボタン**
-- **リスト表示**
-  - チェックボックス
-  - アイテム名
-  - 削除ボタン（×）
-  - 購入済みは `line-through text-gray-400`
+- アイテム入力欄と登録ボタン、アイテム一覧（チェックボックス + 名前 + 削除）が基本構成。
+- 完了済みアイテムは打ち消し線で表示。メンバー名はドロップダウンで選択予定。
+- Vue + Tailwind を前提に、デザインシステムは `docs/design-system.md` を参照。
 
 ---
 
-## セキュリティ方針
+## セキュリティと利用方針
 
-**基本思想**: 機密情報を扱わない前提のシンプル設計
-
-- **UUID ベース URL**: 推測困難なリンクによる一時的なアクセス制御
-- **URL 保有者＝編集権限**: ログイン不要での簡単共有を実現
-- **機密情報非対応**: 個人情報や重要データの保存は想定外
-- **一時利用想定**: BBQ・旅行等の短期間イベント向け
-- **入力サニタイズ**: XSS 対策（基本的な Web セキュリティ）
-- **レート制限**: 簡易 DoS 対策（サービス安定性向上）
-
-**⚠️ 注意**: 機密情報や個人情報の記載は避けてください
+- URL 共有型でログイン不要。UUID を知る人が編集可能な軽量運用を前提とする。
+- 個人情報や機密データは扱わない。レート制限や XSS 対策は基本的な範囲で実施。
 
 ---
 
-## Docker 構成
+## Docker / 開発フロー
 
-### 開発環境構成
-
-開発効率を重視した構成：
-
-- `db/docker-compose.yml` - MySQL 専用（開発用）
-- **Backend**: ローカル実行（IDE/Gradle 直接実行でデバッグ・ホットリロード）
-- **Frontend**: ローカル実行（Vite 開発サーバー）
-- `docker-compose.yml` - 全サービス統合（本番・デプロイ用）
-
-### 開発フロー
-
-1. **DB 起動**: `cd db && docker-compose up -d`
-2. **Backend 起動**: IDE または `./gradlew bootRun`
-3. **Frontend 起動**: `npm run dev` (Vite 開発サーバー)
-
-### MySQL 設定
-
-- **設定ファイル**: `db/docker-compose.yml`
-- **初期化スクリプト**: `db/init/*.sql`
-- **MySQL 設定**: `db/my.cnf` (UTF-8、メモリ設定等)
-
-### Spring Boot 接続設定
-
-- **設定ファイル**: `backend/src/main/resources/application.properties`
-- **接続先**: localhost:3306 (Docker MySQL)
-- **データベース**: otsukailist
-- **JPA 設定**: hibernate.ddl-auto=validate (本番安全)
-
-### 開発環境のメリット
-
-- **Backend**: デバッガ接続・ホットリロード・ログ確認が容易
-- **Frontend**: Vite の高速 HMR（Hot Module Replacement）
-- **Database**: Docker で環境統一・データ永続化
-- **切り分け**: 各レイヤーの問題を独立して解決可能
+1. `cd db && docker-compose up -d` で MySQL を起動（初期化 SQL 自動実行）。
+2. `cd backend && ./gradlew bootRun` で API を起動。
+3. `cd frontend && npm install && npm run dev` でフロントを起動。
+4. 静的解析: `./gradlew checkstyleMain pmdMain spotbugsMain`。
 
 ---
 
 ## ロードマップ
 
-- **Phase 0**: UI プロト（Vue + Tailwind, state 管理のみ）
-- **Phase 1**: API + DB 連携（Spring Boot + MySQL）
-- **Phase 2**: リアルタイム同期（WebSocket / STOMP）
-- **Phase 3**: OSS 公開（README 整備, Docker Compose 対応）
+- **Phase 0**: Backend とは切り離した状態で UI プロトタイプを作成し、主要画面の体験を固める。
+- **Phase 1**: WebSocket 前提のデータモデルと REST API を完成させた暫定版を提供し、以降の実装基盤とする。
+- **Phase 2**: WebSocket を用いたリアルタイム同期を導入し、同時に UI/UX を磨き込む。
+- **Phase 3**: README や Docker Compose を含む周辺ドキュメントと環境整備を整え、OSS 公開可能な品質へ仕上げる。
+
+上記レベルを現状の正とし、必要に応じて各ドキュメントや実装を同期していく。

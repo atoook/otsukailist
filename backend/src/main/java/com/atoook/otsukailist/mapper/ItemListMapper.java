@@ -1,52 +1,32 @@
 package com.atoook.otsukailist.mapper;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.atoook.otsukailist.dto.CreateItemListRequest;
 import com.atoook.otsukailist.dto.ItemListResponse;
-import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.model.ItemList;
+
+import lombok.experimental.UtilityClass;
 
 /**
  * ItemList Entity ↔ DTO 変換用マッパー
  */
+@UtilityClass
 public class ItemListMapper {
 
     /**
      * Entity → Response DTO 変換
-     * 
-     * @param entity       ItemList Entity
-     * @param includeItems アイテム詳細を含めるかどうか
      */
-    public static ItemListResponse toResponse(ItemList entity, boolean includeItems) {
+    public static ItemListResponse toResponse(ItemList entity) {
         if (entity == null) {
             return null;
         }
 
-        ItemListResponse.ItemListResponseBuilder builder = ItemListResponse.builder()
+        return ItemListResponse.builder()
                 .id(entity.getId())
-                .name(entity.getName())
+                .name(entity.getName().trim())
+                .revision(entity.getRevision())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .itemCount(entity.getItems() != null ? entity.getItems().size() : 0);
-
-        // アイテムの詳細を含める場合
-        if (includeItems && entity.getItems() != null) {
-            List<ItemResponse> itemResponses = entity.getItems().stream()
-                    .map(ItemMapper::toResponse)
-                    .collect(Collectors.toList());
-            builder.items(itemResponses);
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Entity → Response DTO 変換（アイテム詳細なし）
-     */
-    public static ItemListResponse toResponse(ItemList entity) {
-        return toResponse(entity, false);
+                .build();
     }
 
     /**
@@ -58,8 +38,8 @@ public class ItemListMapper {
         }
 
         ItemList entity = new ItemList();
-        entity.setName(request.getName());
-
+        entity.setName(request.getName().trim());
+        // revision は DB default(0) / entity の初期値(0L) に任せる
         return entity;
     }
 
@@ -72,7 +52,7 @@ public class ItemListMapper {
         }
 
         if (request.getName() != null) {
-            entity.setName(request.getName());
+            entity.setName(request.getName().trim());
         }
     }
 }

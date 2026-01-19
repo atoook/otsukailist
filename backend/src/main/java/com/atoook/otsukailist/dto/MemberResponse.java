@@ -7,19 +7,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-/**
- * Item List のレスポンス用DTO
- */
 @Getter
 @AllArgsConstructor
 @Builder
-public class ItemListResponse {
+public class MemberResponse {
 
     private UUID id;
 
-    private String name;
-
-    private long revision;
+    private String displayName;
 
     private Instant createdAt;
 

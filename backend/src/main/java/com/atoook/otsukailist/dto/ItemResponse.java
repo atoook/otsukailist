@@ -1,19 +1,17 @@
 package com.atoook.otsukailist.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * Item のレスポンス用DTO
  */
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -25,10 +23,11 @@ public class ItemResponse {
 
     private boolean completed;
 
-    private LocalDateTime createdAt;
+    private UUID completedByMemberId;
 
-    private LocalDateTime updatedAt;
+    private Instant completedAt;
 
-    // Item List の ID も含める（必要に応じて）
-    private UUID listId;
+    private Instant createdAt;
+
+    private Instant updatedAt;
 }

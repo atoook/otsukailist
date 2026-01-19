@@ -2,6 +2,7 @@
 Thumbs.db
 .idea/
 .vscode/
+.gradle/
 
 # Environment variables
 .env
