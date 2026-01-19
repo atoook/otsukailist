@@ -12,8 +12,9 @@ otsukailist/
 │   │   │   │   ├── model/        # JPAエンティティ
 │   │   │   │   └── repository/   # Spring Data JPA
 │   │   │   └── resources/
-│   │   │       ├── application.yml   # MySQL 接続設定
-│   │   │       └── schema.sql        # 初期スキーマ（必要なら）
+│   │   │       ├── application.yml / application.properties   # DB・ログ設定
+│   │   │       ├── static/, templates/                        # Webリソース
+│   │   │       └── env周りのサンプル                          # 必要に応じて追加
 │   │   └── test/   # JUnit テスト
 │   ├── build.gradle / pom.xml
 │   └── Dockerfile
@@ -22,7 +23,7 @@ otsukailist/
 │   ├── src/
 │   │   ├── components/       # Vue コンポーネント
 │   │   ├── pages/            # 各ページ (/new, /list/:id)
-│   │   ├── store/            # 状態管理 (Pinia など)
+│   │   ├── store/            # 状態管理（選定中）
 │   │   └── main.ts           # エントリポイント
 │   ├── index.html
 │   ├── vite.config.ts
@@ -30,8 +31,8 @@ otsukailist/
 │   └── Dockerfile
 │
 ├── db/                       # MySQL 用
-│   ├── init.sql              # 初期化用SQL（ユーザー・DB作成など）
-│   └── data/                 # 永続化ボリュームマウント先
+│   ├── docker-compose*.yml   # 開発/CI/本番向け設定
+│   └── init/                 # 初期化SQL（テーブル定義・サンプルデータ）
 │
 ├── docs/                     # ドキュメント類
 │   ├── otsukailist企画書.md
