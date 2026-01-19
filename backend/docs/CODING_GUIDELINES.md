@@ -84,7 +84,7 @@ public class ItemService {
 
 ```java
 @RestController
-@RequestMapping("/api/shopping-lists/{listId}/items")
+@RequestMapping("/api/lists/{listId}/items")
 @Validated
 public class ItemController {
 
@@ -177,16 +177,16 @@ int deleteAllByListId(@Param("listId") UUID listId);
 **⚠️ 例外：`@Modifying` が適切な場面**
 
 ```java
-// ✅ 例外的に許可：大量データの一括処理（パフォーマンス重視）
-@Modifying(clearAutomatically = true)
-@Query("UPDATE Item i SET i.isCompleted = false WHERE i.itemList.id = :listId")
-int uncheckAllItemsInList(@Param("listId") UUID listId);
+// ✅ 例外的に許可：ListRevision のように DB カウンタを原子的に更新するケース
+@Modifying(clearAutomatically = true, flushAutomatically = true)
+@Query("update ItemList l set l.revision = l.revision + 1 where l.id = :listId")
+int incrementRevision(@Param("listId") UUID listId);
 
 // 使用時の注意事項：
-// 1. clearAutomatically = true でキャッシュクリア
-// 2. 大量データ処理でのみ使用
-// 3. 関連エンティティへの影響を十分検討
-// 4. テストで整合性を確認
+// 1. clearAutomatically/flushAutomatically で 1 次キャッシュと同期を取る
+// 2. 更新後に Repository 経由で再読込し、新しい revision を返却する
+// 3. 例外は ListRevisionService など専用のユースケースだけに限定する
+// 4. 必ず単体テストで整合性を確認
 ```
 
 **✅ 推奨：Entity を使用した標準的な更新・削除**
@@ -194,7 +194,7 @@ int uncheckAllItemsInList(@Param("listId") UUID listId);
 ```java
 // ✅ 推奨パターン - Entityベースの操作
 @Transactional
-public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
+public Optional<MutationResponse<ItemResponse>> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
     Optional<Item> existingOpt = this.itemRepository.findByIdAndItemListId(itemId, listId);
 
     if (existingOpt.isEmpty()) {
@@ -202,10 +202,14 @@ public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemReq
     }
 
     Item existing = existingOpt.get();
-    existing.setName(request.getName());  // Entityの変更
+    ItemMapper.updateEntity(existing, request);  // 名前などの変更
 
     Item saved = this.itemRepository.save(existing);  // Hibernateが自動でUPDATE
-    return Optional.of(ItemMapper.toResponse(saved));
+    long revision = listRevisionService.incrementAndGet(listId);
+    return Optional.of(MutationResponse.<ItemResponse>builder()
+            .revision(revision)
+            .data(ItemMapper.toResponse(saved))
+            .build());
 }
 ```
 
@@ -252,7 +256,7 @@ boolean existsByIdAndItemListId(UUID itemId, UUID listId);
 
 ```java
 @Transactional
-public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
+public Optional<MutationResponse<ItemResponse>> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
     // 1. 認証: listId + itemId での厳格チェック
     Optional<Item> existingOpt = this.itemRepository.findByIdAndItemListId(itemId, listId);
 
@@ -260,13 +264,21 @@ public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemReq
         return Optional.empty();  // アクセス権限なし
     }
 
-    // 2. ビジネスロジック実行
-    Item existing = existingOpt.get();
-    ItemMapper.updateEntity(existing, request);
+    Item item = existingOpt.get();
+    // 2. ビジネスロジック実行（名称更新 + 完了ロジック）
+    ItemMapper.updateEntity(item, request);
+    if (request.getCompleted() != null) {
+        applyCompletionRules(item, request); // Service 内で完了者存在チェックや timestamp 設定
+    }
 
-    // 3. 保存とレスポンス
-    Item saved = this.itemRepository.save(existing);
-    return Optional.of(ItemMapper.toResponse(saved));
+    // 3. 保存と revision 生成
+    Item saved = this.itemRepository.save(item);
+    long revision = listRevisionService.incrementAndGet(listId);
+
+    return Optional.of(MutationResponse.<ItemResponse>builder()
+            .revision(revision)
+            .data(ItemMapper.toResponse(saved))
+            .build());
 }
 ```
 
@@ -274,6 +286,7 @@ public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemReq
 
 - **トランザクション統合**: 認証・更新・保存を単一トランザクションで実行
 - **早期リターン**: 認証失敗時は即座に`Optional.empty()`で終了
+- **Revision一貫性**: `ListRevisionService` を必ず経由し、REST/WebSocket 両方で同じ revision を利用
 - **パフォーマンス**: 同一トランザクション内での`save()`は効率的
 
 ## DTO パターン設計
@@ -283,6 +296,7 @@ public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemReq
 - **リクエスト/レスポンス分離**: セキュリティと責任の明確化
 - **Entity 隠蔽**: JPA Entity を直接外部公開しない
 - **バリデーション統合**: DTO レベルでの入力検証
+- **正規化処理は Service で担当**: `trim()` や重複チェックなどの業務的ルールは `ListCommandService` / `ItemCommandService` などで行い、Mapper は純粋に値コピーへ専念させる。
 
 ### ディレクトリ構成
 
@@ -388,7 +402,7 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
 public class ItemService {
 
     @Transactional  // 書き込み操作でオーバーライド
-    public Optional<ItemResponse> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
+    public Optional<MutationResponse<ItemResponse>> updateItem(UUID listId, UUID itemId, UpdateItemRequest request) {
         // 認証・取得・更新を単一トランザクションで実行
         Optional<Item> existingOpt = this.itemRepository.findByIdAndItemListId(itemId, listId);
 
@@ -401,7 +415,11 @@ public class ItemService {
 
         // 同一トランザクション内での save は効率的
         Item saved = this.itemRepository.save(existing);
-        return Optional.of(ItemMapper.toResponse(saved));
+        long revision = listRevisionService.incrementAndGet(listId);
+        return Optional.of(MutationResponse.<ItemResponse>builder()
+                .revision(revision)
+                .data(ItemMapper.toResponse(saved))
+                .build());
     }
 }
 ```
@@ -418,14 +436,14 @@ public class ItemService {
 
 ```java
 // ✅ 推奨：リソース指向
-GET    /api/shopping-lists/{listId}/items          // アイテム一覧
-GET    /api/shopping-lists/{listId}/items/{itemId} // 特定アイテム取得
-POST   /api/shopping-lists/{listId}/items          // アイテム作成
-PUT    /api/shopping-lists/{listId}/items/{itemId} // アイテム更新
-DELETE /api/shopping-lists/{listId}/items/{itemId} // アイテム削除
+GET    /api/lists/{listId}/items          // アイテム一覧
+GET    /api/lists/{listId}/items/{itemId} // 特定アイテム取得
+POST   /api/lists/{listId}/items          // アイテム作成
+PATCH  /api/lists/{listId}/items/{itemId} // アイテム更新
+DELETE /api/lists/{listId}/items/{itemId} // アイテム削除
 
 // ❌ 非推奨：ID をボディに含める
-PUT /api/shopping-lists/{listId}/items
+PUT /api/lists/{listId}/items
 {
   "id": "item-123",        // URLで指定すべき
   "name": "更新後の名前"
@@ -438,23 +456,29 @@ PUT /api/shopping-lists/{listId}/items
 | ---------- | -------------- | ------------------------------ |
 | **GET**    | 200 OK         | 404 Not Found                  |
 | **POST**   | 201 Created    | 400 Bad Request                |
-| **PUT**    | 200 OK         | 404 Not Found, 400 Bad Request |
+| **PATCH**  | 200 OK         | 404 Not Found, 400 Bad Request |
 | **DELETE** | 204 No Content | 404 Not Found                  |
+
+### MutationResponse / Revision
+
+- 更新系 API は `MutationResponse<T>` を返却して `revision` と変更内容を1つにまとめる。
+- `revision` は `item_list.revision` の数値で、`ListRevisionService.incrementAndGet(listId)` で更新してからレスポンスを組み立てる。
+- WebSocket 通知も同じ `MutationResponse` を再利用し、クライアントは `revision` を比較して二重反映を避ける。
 
 ### Controller 実装パターン
 
 ```java
 @RestController
-@RequestMapping("/api/shopping-lists")
+@RequestMapping("/api/lists")
 public class ItemController {
 
-    @PutMapping("/{listId}/items/{itemId}")
-    public ResponseEntity<ItemResponse> updateItem(
+    @PatchMapping("/{listId}/items/{itemId}")
+    public ResponseEntity<MutationResponse<ItemResponse>> updateItem(
             @PathVariable UUID listId,                   // URLパスから
             @PathVariable UUID itemId,                   // URLパスから
             @RequestBody @Valid UpdateItemRequest request  // ボディから
     ) {
-        Optional<ItemResponse> updated = itemService.updateItem(listId, itemId, request);
+        Optional<MutationResponse<ItemResponse>> updated = itemService.updateItem(listId, itemId, request);
         return updated.map(ResponseEntity::ok)
                       .orElse(ResponseEntity.notFound().build());
     }
