@@ -26,6 +26,12 @@ public class ListQueryService {
     private final MemberRepository memberRepo;
     private final ItemRepository itemRepo;
 
+    /**
+     * Retrieve the latest snapshot of a list including members and items.
+     *
+     * @param listId target list ID
+     * @return aggregated snapshot response
+     */
     @Transactional(readOnly = true)
     public ItemListSnapshotResponse snapshot(UUID listId) {
         ItemList list = itemListRepo.findById(listId)

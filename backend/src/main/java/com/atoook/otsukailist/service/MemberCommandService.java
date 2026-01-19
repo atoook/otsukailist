@@ -26,6 +26,13 @@ public class MemberCommandService {
     private final ItemListRepository itemListRepo;
     private final MemberRepository memberRepo;
 
+    /**
+     * Add a member to the specified list.
+     *
+     * @param listId target list ID
+     * @param req request body with the display name
+     * @return created member payload with the new revision number
+     */
     @Transactional
     public MutationResponse<MemberResponse> addMember(UUID listId, CreateMemberRequest req) {
         ItemList list = itemListRepo.findById(listId)
@@ -45,6 +52,14 @@ public class MemberCommandService {
                 .build();
     }
 
+    /**
+     * Rename an existing member that belongs to the specified list.
+     *
+     * @param listId target list ID
+     * @param memberId member identifier
+     * @param req request body
+     * @return updated member payload with the new revision number
+     */
     @Transactional
     public MutationResponse<MemberResponse> renameMember(UUID listId, UUID memberId, CreateMemberRequest req) {
         Member member = memberRepo.findByIdAndItemListId(memberId, listId)
@@ -63,6 +78,13 @@ public class MemberCommandService {
                 .build();
     }
 
+    /**
+     * Remove a member from the specified list.
+     *
+     * @param listId target list ID
+     * @param memberId member identifier
+     * @return deletion response with the new revision number
+     */
     @Transactional
     public MutationResponse<DeleteMemberResponse> deleteMember(UUID listId, UUID memberId) {
         Member member = memberRepo.findByIdAndItemListId(memberId, listId)
@@ -81,8 +103,9 @@ public class MemberCommandService {
 
     private long incrementAndGetRevision(UUID listId) {
         int updated = itemListRepo.incrementRevision(listId);
-        if (updated != 1)
+        if (updated != 1) {
             throw new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト"));
+        }
         return itemListRepo.findRevision(listId).orElseThrow();
     }
 }

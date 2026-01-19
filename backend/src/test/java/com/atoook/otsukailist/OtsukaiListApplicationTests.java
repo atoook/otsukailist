@@ -8,8 +8,8 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class OtsukaiListApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }
