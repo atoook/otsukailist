@@ -32,8 +32,8 @@ public class ItemCommandService {
 
     private final ListRevisionService listRevisionService;
 
-    private final static String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
-    private final static String MSG_COMPLETED_BY_NOT_SPECIFIED = "完了者が未指定です";
+    private static final String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
+    private static final String MSG_COMPLETED_BY_NOT_SPECIFIED = "完了者が未指定です";
 
     /**
      * Item追加（listIdスコープ）

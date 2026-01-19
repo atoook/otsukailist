@@ -34,6 +34,12 @@ public class ListCommandService {
 
     private final ListRevisionService listRevisionService;
 
+    /**
+     * Create a list with its initial member set.
+     *
+     * @param req list and member creation request
+     * @return response that contains stored entities
+     */
     @Transactional
     public CreateItemListWithMembersResponse createListWithMembers(CreateItemListWithMembersRequest req) {
         String listName = req.getName().trim();
@@ -50,8 +56,9 @@ public class ListCommandService {
 
         Set<String> seen = new HashSet<>();
         for (String n : names) {
-            if (!seen.add(n))
+            if (!seen.add(n)) {
                 throw new IllegalArgumentException(String.format(ErrorMessages.MEMBER_DUPLICATED, n));
+            }
         }
 
         List<Member> members = new ArrayList<>();
@@ -71,6 +78,13 @@ public class ListCommandService {
                 .build();
     }
 
+    /**
+     * Rename an existing list and return the latest revision.
+     *
+     * @param listId identifier of the target list
+     * @param req rename request payload
+     * @return renamed list payload with the incremented revision
+     */
     @Transactional
     public MutationResponse<ItemListResponse> renameList(UUID listId, UpdateItemListRequest req) {
         ItemList list = itemListRepo.findById(listId)

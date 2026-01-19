@@ -14,8 +14,9 @@ import lombok.experimental.UtilityClass;
 public class MemberMapper {
 
     public static MemberResponse toResponse(Member entity) {
-        if (entity == null)
+        if (entity == null) {
             return null;
+        }
 
         return MemberResponse.builder()
                 .id(entity.getId())
@@ -29,8 +30,9 @@ public class MemberMapper {
      * 新規作成時：list は Service が確定させて渡す（N+1回避＆存在確認）
      */
     public static Member toEntity(CreateMemberRequest request, ItemList itemList) {
-        if (request == null)
+        if (request == null) {
             return null;
+        }
 
         Member entity = new Member();
         entity.setDisplayName(request.getDisplayName().trim());
@@ -42,8 +44,9 @@ public class MemberMapper {
      * 既存更新: displayName のみ
      */
     public static void updateEntity(Member entity, CreateMemberRequest request) {
-        if (entity == null || request == null)
+        if (entity == null || request == null) {
             return;
+        }
 
         if (request.getDisplayName() != null) {
             entity.setDisplayName(request.getDisplayName().trim());
