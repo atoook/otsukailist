@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.atoook.otsukailist.api.dto.ApiError;
 import com.atoook.otsukailist.api.dto.ApiErrorCode;
+import com.atoook.otsukailist.exception.BadRequestException;
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
 
 @RestControllerAdvice(basePackages = "com.atoook.otsukailist.api.controller")
@@ -30,13 +31,13 @@ public class ApiExceptionHandler {
     }
 
     /**
-     * Handle generic bad request scenarios such as invalid arguments.
+     * Handle application-defined bad request scenarios.
      *
      * @param e thrown exception
      * @return 400 response body
      */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiError> handleBadRequest(IllegalArgumentException e) {
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiError> handleBadRequest(BadRequestException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiError.of(ApiErrorCode.BAD_REQUEST, e.getMessage()));
     }
