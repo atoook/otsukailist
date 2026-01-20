@@ -5,11 +5,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.atoook.otsukailist.model.Item;
 
-@Repository
 public interface ItemRepository extends JpaRepository<Item, UUID> {
     // 基本的なCRUD操作は JpaRepository が自動提供
     // ※ findAll() や条件なし検索は使用禁止（設計思想に反する）

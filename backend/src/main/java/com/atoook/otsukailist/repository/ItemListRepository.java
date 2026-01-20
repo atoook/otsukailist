@@ -7,11 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import com.atoook.otsukailist.model.ItemList;
 
-@Repository
 public interface ItemListRepository extends JpaRepository<ItemList, UUID> {
     // 基本的なCRUD操作は JpaRepository が自動提供
     // - findById(UUID id)

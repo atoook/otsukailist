@@ -18,6 +18,7 @@ import com.atoook.otsukailist.dto.DeleteItemResponse;
 import com.atoook.otsukailist.model.ItemList;
 import com.atoook.otsukailist.mapper.ItemMapper;
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
+import com.atoook.otsukailist.exception.BadRequestException;
 import com.atoook.otsukailist.service.message.ErrorMessages;
 
 import lombok.RequiredArgsConstructor;
@@ -79,11 +80,11 @@ public class ItemCommandService {
         if (req.getCompleted() != null) {
             if (req.getCompleted()) {
                 if (req.getCompletedByMemberId() == null) {
-                    throw new IllegalArgumentException(MSG_COMPLETED_BY_NOT_SPECIFIED);
+                    throw new BadRequestException(MSG_COMPLETED_BY_NOT_SPECIFIED);
                 }
                 boolean exists = memberRepo.existsByIdAndItemListId(req.getCompletedByMemberId(), listId);
                 if (!exists) {
-                    throw new IllegalArgumentException(MSG_MEMBER_NOT_IN_LIST);
+                    throw new BadRequestException(MSG_MEMBER_NOT_IN_LIST);
                 }
                 item.setCompleted(true);
                 item.setCompletedByMemberId(req.getCompletedByMemberId());

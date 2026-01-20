@@ -17,6 +17,7 @@ import com.atoook.otsukailist.repository.MemberRepository;
 import com.atoook.otsukailist.dto.ItemListResponse;
 import com.atoook.otsukailist.mapper.ItemListMapper;
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
+import com.atoook.otsukailist.exception.BadRequestException;
 import com.atoook.otsukailist.dto.CreateItemListWithMembersRequest;
 import com.atoook.otsukailist.dto.CreateItemListWithMembersResponse;
 import com.atoook.otsukailist.dto.MutationResponse;
@@ -57,7 +58,7 @@ public class ListCommandService {
         Set<String> seen = new HashSet<>();
         for (String n : names) {
             if (!seen.add(n)) {
-                throw new IllegalArgumentException(String.format(ErrorMessages.MEMBER_DUPLICATED, n));
+                throw new BadRequestException(String.format(ErrorMessages.MEMBER_DUPLICATED, n));
             }
         }
 
