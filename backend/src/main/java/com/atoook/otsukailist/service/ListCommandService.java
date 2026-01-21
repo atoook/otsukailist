@@ -42,7 +42,8 @@ public class ListCommandService {
      * @return response that contains stored entities
      */
     @Transactional
-    public CreateItemListWithMembersResponse createListWithMembers(CreateItemListWithMembersRequest req) {
+    public MutationResponse<CreateItemListWithMembersResponse> createListWithMembers(
+            CreateItemListWithMembersRequest req) {
         String listName = req.getName().trim();
 
         ItemList list = new ItemList();
@@ -71,11 +72,15 @@ public class ListCommandService {
         }
         List<Member> savedMembers = memberRepo.saveAll(members);
 
-        return CreateItemListWithMembersResponse.builder()
+        CreateItemListWithMembersResponse data = CreateItemListWithMembersResponse.builder()
                 .listId(savedList.getId())
                 .name(savedList.getName())
-                .revision(savedList.getRevision())
                 .members(savedMembers.stream().map(MemberMapper::toResponse).toList())
+                .build();
+
+        return MutationResponse.<CreateItemListWithMembersResponse>builder()
+                .revision(savedList.getRevision())
+                .data(data)
                 .build();
     }
 
@@ -83,7 +88,7 @@ public class ListCommandService {
      * Rename an existing list and return the latest revision.
      *
      * @param listId identifier of the target list
-     * @param req rename request payload
+     * @param req    rename request payload
      * @return renamed list payload with the incremented revision
      */
     @Transactional
