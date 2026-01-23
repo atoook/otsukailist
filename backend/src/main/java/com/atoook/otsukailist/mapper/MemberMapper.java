@@ -11,39 +11,37 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class MemberMapper {
 
-  public static MemberResponse toResponse(Member entity) {
-    if (entity == null) {
-      return null;
+    public static MemberResponse toResponse(Member entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        return MemberResponse.builder()
+                .id(entity.getId())
+                .displayName(entity.getDisplayName().trim())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 
-    return MemberResponse.builder()
-        .id(entity.getId())
-        .displayName(entity.getDisplayName().trim())
-        .createdAt(entity.getCreatedAt())
-        .updatedAt(entity.getUpdatedAt())
-        .build();
-  }
+    /** 新規作成時：list は Service が確定させて渡す（N+1回避＆存在確認） */
+    public static Member toEntity(CreateMemberRequest request, ItemList itemList) {
+        if (request == null) {
+            return null;
+        }
 
-  /** 新規作成時：list は Service が確定させて渡す（N+1回避＆存在確認） */
-  public static Member toEntity(CreateMemberRequest request, ItemList itemList) {
-    if (request == null) {
-      return null;
+        Member entity = new Member();
+        entity.setDisplayName(request.getDisplayName().trim());
+        entity.setItemList(itemList);
+        return entity;
     }
 
-    Member entity = new Member();
-    entity.setDisplayName(request.getDisplayName().trim());
-    entity.setItemList(itemList);
-    return entity;
-  }
+    /** 既存更新: displayName のみ */
+    public static void updateEntity(Member entity, CreateMemberRequest request) {
+        if (entity == null || request == null) {
+            return;
+        }
 
-  /** 既存更新: displayName のみ */
-  public static void updateEntity(Member entity, CreateMemberRequest request) {
-    if (entity == null || request == null) {
-      return;
+        entity.setDisplayName(request.getDisplayName().trim());
     }
-
-    if (request.getDisplayName() != null) {
-      entity.setDisplayName(request.getDisplayName().trim());
-    }
-  }
 }
