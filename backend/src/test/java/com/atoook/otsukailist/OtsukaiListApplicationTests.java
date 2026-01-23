@@ -10,5 +10,5 @@ import org.junit.jupiter.api.Test;
 class OtsukaiListApplicationTests {
 
   @Test
-  void contextLoads() {}
+  void contextLoads() { }
 }

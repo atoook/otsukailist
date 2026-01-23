@@ -27,6 +27,13 @@ public class ItemCommandController {
 
     private final ItemCommandService itemCommandService;
 
+    /**
+     * Creates a new item under the given list.
+     *
+     * @param listId list identifier
+     * @param req creation payload
+     * @return created item response
+     */
     @PostMapping
     public MutationResponse<ItemResponse> create(
             @PathVariable("listId") UUID listId,
@@ -34,6 +41,14 @@ public class ItemCommandController {
         return itemCommandService.createItem(listId, req);
     }
 
+    /**
+     * Updates an existing item.
+     *
+     * @param listId parent list identifier
+     * @param itemId item identifier
+     * @param req update payload
+     * @return updated item response
+     */
     @PatchMapping("/{itemId}")
     public MutationResponse<ItemResponse> update(
             @PathVariable("listId") UUID listId,
@@ -42,6 +57,13 @@ public class ItemCommandController {
         return itemCommandService.updateItem(listId, itemId, req);
     }
 
+    /**
+     * Deletes the specified item.
+     *
+     * @param listId parent list identifier
+     * @param itemId item identifier
+     * @return deletion response
+     */
     @DeleteMapping("/{itemId}")
     public MutationResponse<DeleteItemResponse> delete(
             @PathVariable("listId") UUID listId,

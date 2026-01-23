@@ -26,6 +26,13 @@ public class MemberCommandController {
 
     private final MemberCommandService memberCommandService;
 
+    /**
+     * Adds a new member to the specified list.
+     *
+     * @param listId target list identifier
+     * @param req creation request payload
+     * @return created member details wrapped in a mutation response
+     */
     @PostMapping
     public MutationResponse<MemberResponse> add(
             @PathVariable("listId") UUID listId,
@@ -33,6 +40,14 @@ public class MemberCommandController {
         return memberCommandService.addMember(listId, req);
     }
 
+    /**
+     * Renames an existing member.
+     *
+     * @param listId parent list identifier
+     * @param memberId member identifier
+     * @param req rename request payload
+     * @return updated member information
+     */
     @PatchMapping("/{memberId}")
     public MutationResponse<MemberResponse> rename(
             @PathVariable("listId") UUID listId,
@@ -41,6 +56,13 @@ public class MemberCommandController {
         return memberCommandService.renameMember(listId, memberId, req);
     }
 
+    /**
+     * Deletes a member from the list.
+     *
+     * @param listId parent list identifier
+     * @param memberId member identifier
+     * @return deletion result
+     */
     @DeleteMapping("/{memberId}")
     public MutationResponse<DeleteMemberResponse> delete(
             @PathVariable("listId") UUID listId, @PathVariable("memberId") UUID memberId) {

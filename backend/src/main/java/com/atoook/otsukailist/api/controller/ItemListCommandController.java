@@ -26,12 +26,25 @@ import lombok.RequiredArgsConstructor;
 public class ItemListCommandController {
   private final ListCommandService listCommandService;
 
+  /**
+   * Creates a list together with its initial members.
+   *
+   * @param req list and member creation payload
+   * @return created list information
+   */
   @PostMapping
   public MutationResponse<CreateItemListWithMembersResponse> createItemList(
       @Valid @RequestBody CreateItemListWithMembersRequest req) {
     return listCommandService.createListWithMembers(req);
   }
 
+  /**
+   * Renames the specified list.
+   *
+   * @param listId target list identifier
+   * @param req rename payload
+   * @return updated list response
+   */
   @PatchMapping("/{listId}")
   public MutationResponse<ItemListResponse> rename(
       @PathVariable("listId") UUID listId, @Valid @RequestBody UpdateItemListRequest req) {
