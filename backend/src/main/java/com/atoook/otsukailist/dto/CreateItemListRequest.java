@@ -2,14 +2,13 @@ package com.atoook.otsukailist.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/** Item List の作成・更新リクエスト用DTO */
+/** Item List の作成リクエスト用DTO */
 @Getter
 @Setter
 @NoArgsConstructor
