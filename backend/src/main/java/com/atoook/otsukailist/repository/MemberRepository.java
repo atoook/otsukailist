@@ -9,10 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.atoook.otsukailist.model.Member;
 
 public interface MemberRepository extends JpaRepository<Member, UUID> {
-    List<Member> findByItemListId(UUID listId);
+  List<Member> findByItemListId(UUID listId);
 
-    Optional<Member> findByIdAndItemListId(UUID id, UUID listId);
+  Optional<Member> findByIdAndItemListId(UUID id, UUID listId);
 
-    boolean existsByIdAndItemListId(UUID id, UUID listId);
-
+  boolean existsByIdAndItemListId(UUID id, UUID listId);
 }

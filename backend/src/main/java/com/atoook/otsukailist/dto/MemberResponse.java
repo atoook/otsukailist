@@ -12,11 +12,11 @@ import lombok.Getter;
 @Builder
 public class MemberResponse {
 
-    private UUID id;
+  private UUID id;
 
-    private String displayName;
+  private String displayName;
 
-    private Instant createdAt;
+  private Instant createdAt;
 
-    private Instant updatedAt;
+  private Instant updatedAt;
 }

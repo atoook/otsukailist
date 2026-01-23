@@ -7,19 +7,17 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-/**
- * Item List のレスポンス用DTO
- */
+/** Item List のレスポンス用DTO */
 @Getter
 @AllArgsConstructor
 @Builder
 public class ItemListResponse {
 
-    private UUID id;
+  private UUID id;
 
-    private String name;
+  private String name;
 
-    private Instant createdAt;
+  private Instant createdAt;
 
-    private Instant updatedAt;
+  private Instant updatedAt;
 }

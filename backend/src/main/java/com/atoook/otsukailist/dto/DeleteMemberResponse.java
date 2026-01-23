@@ -1,6 +1,7 @@
 package com.atoook.otsukailist.dto;
 
 import java.util.UUID;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,5 +10,5 @@ import lombok.Getter;
 @AllArgsConstructor
 @Builder
 public class DeleteMemberResponse {
-    private UUID deletedMemberId;
+  private UUID deletedMemberId;
 }

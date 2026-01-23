@@ -8,11 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Item の更新リクエスト用DTO
- * - 完了状態の変更
- * - 名前の変更
- */
+/** Item の更新リクエスト用DTO - 完了状態の変更 - 名前の変更 */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,12 +16,12 @@ import lombok.Setter;
 @Builder
 public class UpdateItemRequest {
 
-    // 名前は任意更新（nullの場合は更新しない）
-    private String name;
+  // 名前は任意更新（nullの場合は更新しない）
+  private String name;
 
-    // 完了状態（nullの場合は更新しない）
-    private Boolean completed;
+  // 完了状態（nullの場合は更新しない）
+  private Boolean completed;
 
-    // completed=true のとき必須（未完了に戻すときは不要）
-    private UUID completedByMemberId;
+  // completed=true のとき必須（未完了に戻すときは不要）
+  private UUID completedByMemberId;
 }

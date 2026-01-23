@@ -10,5 +10,5 @@ import lombok.Getter;
 @AllArgsConstructor
 @Builder
 public class DeleteItemResponse {
-    private UUID deletedItemId;
+  private UUID deletedItemId;
 }

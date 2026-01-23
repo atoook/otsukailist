@@ -8,26 +8,24 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * Item のレスポンス用DTO
- */
+/** Item のレスポンス用DTO */
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ItemResponse {
 
-    private UUID id;
+  private UUID id;
 
-    private String name;
+  private String name;
 
-    private boolean completed;
+  private boolean completed;
 
-    private UUID completedByMemberId;
+  private UUID completedByMemberId;
 
-    private Instant completedAt;
+  private Instant completedAt;
 
-    private Instant createdAt;
+  private Instant createdAt;
 
-    private Instant updatedAt;
+  private Instant updatedAt;
 }
