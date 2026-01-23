@@ -48,7 +48,7 @@ public class ListCommandService {
 
         ItemList list = new ItemList();
         list.setName(listName);
-        ItemList savedList = itemListRepo.save(list);
+        ItemList savedList = itemListRepo.saveAndFlush(list);
 
         // 正規化 + 重複チェック（アプリ側で早期に分かりやすく）
         List<String> names = req.getMemberNames().stream()
@@ -70,7 +70,7 @@ public class ListCommandService {
             m.setItemList(savedList);
             members.add(m);
         }
-        List<Member> savedMembers = memberRepo.saveAll(members);
+        List<Member> savedMembers = memberRepo.saveAllAndFlush(members);
 
         CreateItemListWithMembersResponse data = CreateItemListWithMembersResponse.builder()
                 .listId(savedList.getId())
@@ -99,7 +99,7 @@ public class ListCommandService {
         list.setName(req.getName().trim());
 
         // list保存（updated_at更新）
-        ItemList saved = itemListRepo.save(list);
+        ItemList saved = itemListRepo.saveAndFlush(list);
 
         long revision = listRevisionService.incrementAndGet(listId);
 

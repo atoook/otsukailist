@@ -20,19 +20,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/list")
+@RequestMapping("/api/lists")
 public class ItemListCommandController {
     private final ListCommandService listCommandService;
 
     @PostMapping
     public MutationResponse<CreateItemListWithMembersResponse> createItemList(
-            @RequestBody CreateItemListWithMembersRequest req) {
+            @Valid @RequestBody CreateItemListWithMembersRequest req) {
         return listCommandService.createListWithMembers(req);
     }
 
     @PostMapping("/{listId}")
     public MutationResponse<ItemListResponse> rename(
-            @PathVariable UUID listId,
+            @PathVariable("listId") UUID listId,
             @Valid @RequestBody UpdateItemListRequest req) {
         return listCommandService.renameList(listId, req);
     }

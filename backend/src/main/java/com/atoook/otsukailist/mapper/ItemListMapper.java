@@ -23,7 +23,6 @@ public class ItemListMapper {
         return ItemListResponse.builder()
                 .id(entity.getId())
                 .name(entity.getName().trim())
-                .revision(entity.getRevision())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
