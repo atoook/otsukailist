@@ -16,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
@@ -30,7 +31,7 @@ public class ItemListCommandController {
         return listCommandService.createListWithMembers(req);
     }
 
-    @PostMapping("/{listId}")
+    @PatchMapping("/{listId}")
     public MutationResponse<ItemListResponse> rename(
             @PathVariable("listId") UUID listId,
             @Valid @RequestBody UpdateItemListRequest req) {
