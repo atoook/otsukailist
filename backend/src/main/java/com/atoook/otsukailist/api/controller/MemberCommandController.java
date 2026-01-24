@@ -2,7 +2,6 @@ package com.atoook.otsukailist.api.controller;
 
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -38,7 +37,7 @@ public class MemberCommandController {
     public ResponseEntity<MutationResponse<MemberResponse>> add(
             @PathVariable("listId") UUID listId,
             @Valid @RequestBody CreateMemberRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(memberCommandService.addMember(listId, req));
+        return ResponseEntity.created(null).body(memberCommandService.addMember(listId, req));
     }
 
     /**
@@ -54,7 +53,7 @@ public class MemberCommandController {
             @PathVariable("listId") UUID listId,
             @PathVariable("memberId") UUID memberId,
             @Valid @RequestBody CreateMemberRequest req) {
-        return ResponseEntity.status(HttpStatus.OK).body(memberCommandService.renameMember(listId, memberId, req));
+        return ResponseEntity.ok(memberCommandService.renameMember(listId, memberId, req));
     }
 
     /**
@@ -68,6 +67,6 @@ public class MemberCommandController {
     public ResponseEntity<Void> delete(
             @PathVariable("listId") UUID listId, @PathVariable("memberId") UUID memberId) {
         memberCommandService.deleteMember(listId, memberId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.noContent().build();
     }
 }

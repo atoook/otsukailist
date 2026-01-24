@@ -2,7 +2,6 @@ package com.atoook.otsukailist.api.controller;
 
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,7 +38,7 @@ public class ItemCommandController {
     public ResponseEntity<MutationResponse<ItemResponse>> create(
             @PathVariable("listId") UUID listId,
             @Valid @RequestBody CreateItemRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(itemCommandService.createItem(listId, req));
+        return ResponseEntity.created(null).body(itemCommandService.createItem(listId, req));
     }
 
     /**
@@ -55,7 +54,7 @@ public class ItemCommandController {
             @PathVariable("listId") UUID listId,
             @PathVariable("itemId") UUID itemId,
             @Valid @RequestBody UpdateItemRequest req) {
-        return ResponseEntity.status(HttpStatus.OK).body(itemCommandService.updateItem(listId, itemId, req));
+        return ResponseEntity.ok(itemCommandService.updateItem(listId, itemId, req));
     }
 
     /**
@@ -70,6 +69,6 @@ public class ItemCommandController {
             @PathVariable("listId") UUID listId,
             @PathVariable("itemId") UUID itemId) {
         itemCommandService.deleteItem(listId, itemId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.noContent().build();
     }
 }
