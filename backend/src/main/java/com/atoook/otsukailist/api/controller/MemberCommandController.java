@@ -1,5 +1,6 @@
 package com.atoook.otsukailist.api.controller;
 
+import java.net.URI;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.atoook.otsukailist.dto.CreateMemberRequest;
 import com.atoook.otsukailist.dto.MemberResponse;
@@ -37,7 +39,12 @@ public class MemberCommandController {
     public ResponseEntity<MutationResponse<MemberResponse>> add(
             @PathVariable("listId") UUID listId,
             @Valid @RequestBody CreateMemberRequest req) {
-        return ResponseEntity.created(null).body(memberCommandService.addMember(listId, req));
+        MutationResponse<MemberResponse> payload = memberCommandService.addMember(listId, req);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{memberId}")
+                .buildAndExpand(payload.getData().getId())
+                .toUri();
+        return ResponseEntity.created(location).body(payload);
     }
 
     /**
