@@ -2,8 +2,8 @@ package com.atoook.otsukailist.api.controller;
 
 import java.util.UUID;
 
-import jakarta.validation.Valid;
-
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +18,7 @@ import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.dto.UpdateItemListRequest;
 import com.atoook.otsukailist.service.ListCommandService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -30,24 +31,24 @@ public class ItemListCommandController {
    * Creates a list together with its initial members.
    *
    * @param req list and member creation payload
-   * @return created list information
+   * @return 201 created list response
    */
   @PostMapping
-  public MutationResponse<CreateItemListWithMembersResponse> createItemList(
+  public ResponseEntity<MutationResponse<CreateItemListWithMembersResponse>> createItemList(
       @Valid @RequestBody CreateItemListWithMembersRequest req) {
-    return listCommandService.createListWithMembers(req);
+    return ResponseEntity.status(HttpStatus.CREATED).body(listCommandService.createListWithMembers(req));
   }
 
   /**
    * Renames the specified list.
    *
    * @param listId target list identifier
-   * @param req rename payload
-   * @return updated list response
+   * @param req    rename payload
+   * @return 200 updated list response
    */
   @PatchMapping("/{listId}")
-  public MutationResponse<ItemListResponse> rename(
+  public ResponseEntity<MutationResponse<ItemListResponse>> rename(
       @PathVariable("listId") UUID listId, @Valid @RequestBody UpdateItemListRequest req) {
-    return listCommandService.renameList(listId, req);
+    return ResponseEntity.status(HttpStatus.OK).body(listCommandService.renameList(listId, req));
   }
 }

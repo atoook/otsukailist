@@ -2,6 +2,8 @@ package com.atoook.otsukailist.api.controller;
 
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.atoook.otsukailist.dto.CreateMemberRequest;
-import com.atoook.otsukailist.dto.DeleteMemberResponse;
 import com.atoook.otsukailist.dto.MemberResponse;
 import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.service.MemberCommandService;
@@ -30,42 +31,43 @@ public class MemberCommandController {
      * Adds a new member to the specified list.
      *
      * @param listId target list identifier
-     * @param req creation request payload
-     * @return created member details wrapped in a mutation response
+     * @param req    creation request payload
+     * @return 201 created member details wrapped in a mutation response
      */
     @PostMapping
-    public MutationResponse<MemberResponse> add(
+    public ResponseEntity<MutationResponse<MemberResponse>> add(
             @PathVariable("listId") UUID listId,
             @Valid @RequestBody CreateMemberRequest req) {
-        return memberCommandService.addMember(listId, req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(memberCommandService.addMember(listId, req));
     }
 
     /**
      * Renames an existing member.
      *
-     * @param listId parent list identifier
+     * @param listId   parent list identifier
      * @param memberId member identifier
-     * @param req rename request payload
-     * @return updated member information
+     * @param req      rename request payload
+     * @return 200 updated member information
      */
     @PatchMapping("/{memberId}")
-    public MutationResponse<MemberResponse> rename(
+    public ResponseEntity<MutationResponse<MemberResponse>> rename(
             @PathVariable("listId") UUID listId,
             @PathVariable("memberId") UUID memberId,
             @Valid @RequestBody CreateMemberRequest req) {
-        return memberCommandService.renameMember(listId, memberId, req);
+        return ResponseEntity.status(HttpStatus.OK).body(memberCommandService.renameMember(listId, memberId, req));
     }
 
     /**
      * Deletes a member from the list.
      *
-     * @param listId parent list identifier
+     * @param listId   parent list identifier
      * @param memberId member identifier
-     * @return deletion result
+     * @return 204 deletion result
      */
     @DeleteMapping("/{memberId}")
-    public MutationResponse<DeleteMemberResponse> delete(
+    public ResponseEntity<Void> delete(
             @PathVariable("listId") UUID listId, @PathVariable("memberId") UUID memberId) {
-        return memberCommandService.deleteMember(listId, memberId);
+        memberCommandService.deleteMember(listId, memberId);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
