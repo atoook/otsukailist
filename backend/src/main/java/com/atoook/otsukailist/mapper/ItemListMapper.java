@@ -6,53 +6,44 @@ import com.atoook.otsukailist.model.ItemList;
 
 import lombok.experimental.UtilityClass;
 
-/**
- * ItemList Entity ↔ DTO 変換用マッパー
- */
+/** ItemList Entity ↔ DTO 変換用マッパー */
 @UtilityClass
 public class ItemListMapper {
 
-    /**
-     * Entity → Response DTO 変換
-     */
-    public static ItemListResponse toResponse(ItemList entity) {
-        if (entity == null) {
-            return null;
-        }
-
-        return ItemListResponse.builder()
-                .id(entity.getId())
-                .name(entity.getName().trim())
-                .revision(entity.getRevision())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
+  /** Entity → Response DTO 変換 */
+  public static ItemListResponse toResponse(ItemList entity) {
+    if (entity == null) {
+      return null;
     }
 
-    /**
-     * Request DTO → Entity 変換（新規作成時）
-     */
-    public static ItemList toEntity(CreateItemListRequest request) {
-        if (request == null) {
-            return null;
-        }
+    return ItemListResponse.builder()
+        .id(entity.getId())
+        .name(entity.getName().trim())
+        .createdAt(entity.getCreatedAt())
+        .updatedAt(entity.getUpdatedAt())
+        .build();
+  }
 
-        ItemList entity = new ItemList();
-        entity.setName(request.getName().trim());
-        // revision は DB default(0) / entity の初期値(0L) に任せる
-        return entity;
+  /** Request DTO → Entity 変換（新規作成時） */
+  public static ItemList toEntity(CreateItemListRequest request) {
+    if (request == null) {
+      return null;
     }
 
-    /**
-     * Request DTO で既存 Entity を更新
-     */
-    public static void updateEntity(ItemList entity, CreateItemListRequest request) {
-        if (entity == null || request == null) {
-            return;
-        }
+    ItemList entity = new ItemList();
+    entity.setName(request.getName().trim());
+    // revision は DB default(0) / entity の初期値(0L) に任せる
+    return entity;
+  }
 
-        if (request.getName() != null) {
-            entity.setName(request.getName().trim());
-        }
+  /** Request DTO で既存 Entity を更新 */
+  public static void updateEntity(ItemList entity, CreateItemListRequest request) {
+    if (entity == null || request == null) {
+      return;
     }
+
+    if (request.getName() != null) {
+      entity.setName(request.getName().trim());
+    }
+  }
 }

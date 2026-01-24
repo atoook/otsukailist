@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Item の作成リクエスト用DTO
- */
+/** Item の作成リクエスト用DTO */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,11 +16,11 @@ import lombok.Setter;
 @Builder
 public class CreateItemRequest {
 
-    @NotBlank(message = "アイテム名は必須です")
-    @Size(max = 200, message = "アイテム名は200文字以下にしてください")
-    private String name;
+  @NotBlank(message = "アイテム名は必須です")
+  @Size(max = 100, message = "アイテム名は100文字以下にしてください")
+  private String name;
 
-    // 作成時に完了状態を指定可能（デフォルト: false）
-    @Builder.Default
-    private boolean completed = false;
+  // 作成時に完了状態を指定可能（デフォルト: false）
+  @Builder.Default
+  private boolean completed = false;
 }

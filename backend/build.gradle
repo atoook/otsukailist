@@ -5,6 +5,7 @@ plugins {
 	id 'checkstyle'
 	id 'pmd'
 	id 'com.github.spotbugs' version '6.0.26'
+	id 'com.diffplug.spotless' version '6.25.0'
 }
 
 // テスト環境管理タスクをインポート
@@ -138,4 +139,16 @@ task fixCodeStyle {
 // テスト前に軽い静的解析を実行
 check {
 	dependsOn 'checkstyleMain', 'pmdMain'
+}
+
+// Spotless (コードフォーマッタ)
+spotless {
+	java {
+		target 'src/**/*.java'
+		googleJavaFormat('1.17.0')
+		importOrder 'java', 'jakarta', 'org.springframework', 'com.atoook', ''
+		removeUnusedImports()
+		trimTrailingWhitespace()
+		endWithNewline()
+	}
 }

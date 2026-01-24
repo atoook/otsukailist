@@ -8,9 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Item List の作成・更新リクエスト用DTO
- */
+/** Item List の作成リクエスト用DTO */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,7 +16,7 @@ import lombok.Setter;
 @Builder
 public class CreateItemListRequest {
 
-    @NotBlank(message = "リスト名は必須です")
-    @Size(max = 100, message = "リスト名は100文字以下にしてください")
-    private String name;
+  @NotBlank(message = "リスト名は必須です")
+  @Size(max = 100, message = "リスト名は100文字以下にしてください")
+  private String name;
 }

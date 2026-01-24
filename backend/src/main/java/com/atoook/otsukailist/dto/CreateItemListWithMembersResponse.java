@@ -12,9 +12,8 @@ import lombok.Getter;
 @Builder
 public class CreateItemListWithMembersResponse {
 
-    private UUID listId;
-    private String name;
-    private long revision;
+  private UUID listId;
+  private String name;
 
-    private List<MemberResponse> members;
+  private List<MemberResponse> members;
 }

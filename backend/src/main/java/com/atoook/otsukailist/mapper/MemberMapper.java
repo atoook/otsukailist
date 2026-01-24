@@ -7,9 +7,7 @@ import com.atoook.otsukailist.model.Member;
 
 import lombok.experimental.UtilityClass;
 
-/**
- * Member Entity ↔ DTO 変換用マッパー
- */
+/** Member Entity ↔ DTO 変換用マッパー */
 @UtilityClass
 public class MemberMapper {
 
@@ -26,9 +24,7 @@ public class MemberMapper {
                 .build();
     }
 
-    /**
-     * 新規作成時：list は Service が確定させて渡す（N+1回避＆存在確認）
-     */
+    /** 新規作成時：list は Service が確定させて渡す（N+1回避＆存在確認） */
     public static Member toEntity(CreateMemberRequest request, ItemList itemList) {
         if (request == null) {
             return null;
@@ -40,16 +36,12 @@ public class MemberMapper {
         return entity;
     }
 
-    /**
-     * 既存更新: displayName のみ
-     */
+    /** 既存更新: displayName のみ */
     public static void updateEntity(Member entity, CreateMemberRequest request) {
         if (entity == null || request == null) {
             return;
         }
 
-        if (request.getDisplayName() != null) {
-            entity.setDisplayName(request.getDisplayName().trim());
-        }
+        entity.setDisplayName(request.getDisplayName().trim());
     }
 }
