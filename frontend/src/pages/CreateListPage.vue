@@ -1,14 +1,17 @@
 <script lang="ts">
+import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import type { Member, MemberId } from '../types/member';
-import type { ItemListId } from '../types/item-list';
+import type { ItemList } from '../types/item-list';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
+import { createItemList } from '@/api/list';
+import { useListStore } from '@/stores/list';
 
-export default {
+export default defineComponent({
   name: 'CreateListPage',
   components: {
     ContentArea,
@@ -28,26 +31,44 @@ export default {
       newMemberName: ''
     };
   },
+  setup() {
+    const listStore = useListStore();
+    return { listStore };
+  },
   methods: {
-    createList(): void {
+    async createList(): Promise<void> {
       const normalizedListName = normalizeText(this.listName);
-      if (normalizedListName) {
-        // リストIDを生成（実際のプロジェクトではAPIから取得）
-        const listId: ItemListId = Date.now().toString();
+      if (!normalizedListName) {
+        return;
+      }
 
-        // 正規化されたリスト名で保存
-        this.listName = normalizedListName;
+      this.listName = normalizedListName;
 
-        // TODO: APIでリストを作成
-        console.log('リスト名:', this.listName);
-        console.log('リストID:', listId);
+      try {
+        const res = await createItemList({
+          name: this.listName,
+          memberNames: this.members.map((member) => member.displayName)
+        });
+
+        const snapshot: ItemList = {
+          listId: res.data.listId,
+          name: res.data.name,
+          revision: res.revision,
+          itemCount: 0,
+          members: res.data.members,
+          items: []
+        };
+
+        this.listStore.applySnapshot(snapshot);
 
         // リスト共有画面に遷移
         this.$router.push({
           name: 'ShareList',
-          params: { id: listId },
-          query: { name: this.listName }
+          params: { id: res.data.listId },
+          query: { name: res.data.name }
         });
+      } catch (err) {
+        console.error('Failed to create list', err);
       }
     },
     addMember(): void {
@@ -55,7 +76,7 @@ export default {
       if (normalizedName) {
         this.members.push({
           id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
-          name: normalizedName
+          displayName: normalizedName
         });
         this.newMemberName = '';
       }
@@ -79,7 +100,7 @@ export default {
       return !!normalizeText(this.newMemberName);
     }
   }
-};
+});
 </script>
 
 <template>
@@ -121,7 +142,7 @@ export default {
           <BadgeTag
             v-for="member in members"
             :key="member.id"
-            :text="member.name"
+            :text="member.displayName"
             icon="👤"
             :removable="true"
             @remove="removeMember(member.id)"

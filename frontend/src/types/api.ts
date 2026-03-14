@@ -44,6 +44,13 @@ export type CreateItemListWithMembersResponse = {
   members: Member[];
 };
 
+export type ItemListResponse = {
+  id: UUID;
+  name: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type DeleteResponse = {
   deletedItemId?: UUID;
   deletedMemberId?: UUID;

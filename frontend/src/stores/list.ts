@@ -77,6 +77,14 @@ export const useListStore = defineStore('list', {
       );
     },
 
+    updateListDetails(payload: { name: string; members: Member[]; revision?: number }) {
+      this.name = payload.name;
+      this.members = [...payload.members];
+      if (payload.revision !== undefined) {
+        this.revision = payload.revision;
+      }
+    },
+
     reset() {
       this.listId = null;
       this.name = '';

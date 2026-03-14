@@ -6,6 +6,7 @@ import { useListStore } from '@/stores/list';
 export type MutationRunResult<T> = {
   data: T;
   applied: boolean;
+  revision: number;
 };
 
 export function useMutation() {
@@ -26,7 +27,7 @@ export function useMutation() {
       const gap = nextRevision - currentRevision;
 
       if (nextRevision <= currentRevision) {
-        return { data: res.data, applied: false };
+        return { data: res.data, applied: false, revision: nextRevision };
       }
 
       listStore.setRevision(nextRevision);
@@ -34,10 +35,10 @@ export function useMutation() {
       if (gap > 1 && listStore.listId) {
         const snapshot = await fetchSnapshot(listStore.listId);
         listStore.applySnapshot(snapshot);
-        return { data: res.data, applied: false };
+        return { data: res.data, applied: false, revision: nextRevision };
       }
 
-      return { data: res.data, applied: true };
+      return { data: res.data, applied: true, revision: nextRevision };
     } catch (err) {
       error.value = err as ApiError;
       throw err;
