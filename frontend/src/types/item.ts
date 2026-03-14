@@ -1,53 +1,25 @@
-import type { Member } from './member';
-import { isMember } from './member';
+import type { Item as ApiItem, UUID } from './api';
 
-// アイテムの型定義
-export interface Item {
-  id: ItemId;
-  name: string;
-  status: ItemStatus;
-  assignedMember?: Member; // 完了時に割り当てられたメンバー
-}
+export type Item = ApiItem;
+export type ItemId = UUID;
 
-// アイテムのステータスをenumで定義
-export enum ItemStatus {
-  PENDING = 'pending',
-  COMPLETED = 'completed',
-  ARCHIVED = 'archived'
-}
-
-// 型ガード関数（ランタイムでの型チェック）
-export function isItem(obj: any): obj is Item {
+export function isItem(value: unknown): value is Item {
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'id' in obj &&
-    isItemId(obj.id) &&
-    'name' in obj &&
-    typeof obj.name === 'string' &&
-    'status' in obj &&
-    Object.values(ItemStatus).includes(obj.status) &&
-    (obj.assignedMember === undefined || obj.assignedMember === null || isMember(obj.assignedMember))
+    value != null &&
+    typeof value === 'object' &&
+    'id' in value &&
+    isItemId((value as Item).id) &&
+    'name' in value &&
+    typeof (value as Item).name === 'string' &&
+    'completed' in value &&
+    typeof (value as Item).completed === 'boolean'
   );
 }
 
-// その他のアイテム関連の型定義
-export type ItemId = string;
-
-// ItemIdの型ガード関数
-export function isItemId(value: any): value is ItemId {
+export function isItemId(value: unknown): value is ItemId {
   return typeof value === 'string';
 }
 
-// ステータス関連のヘルパー関数
-export function isCompletedStatus(status: ItemStatus): boolean {
-  return status === ItemStatus.COMPLETED;
-}
-
-export function isPendingStatus(status: ItemStatus): boolean {
-  return status === ItemStatus.PENDING;
-}
-
-export function isArchivedStatus(status: ItemStatus): boolean {
-  return status === ItemStatus.ARCHIVED;
+export function isItemCompleted(item: Item): boolean {
+  return item.completed === true;
 }

@@ -1,22 +1,19 @@
-export interface Member {
-  id: MemberId;
-  name: string;
-}
+import type { Member as ApiMember, UUID } from './api';
 
-export type MemberId = string;
+export type Member = ApiMember;
+export type MemberId = UUID;
 
-export function isMember(obj: any): obj is Member {
+export function isMember(value: unknown): value is Member {
   return (
-    obj !== null &&
-    typeof obj === 'object' &&
-    'id' in obj &&
-    isMemberId(obj.id) &&
-    'name' in obj &&
-    typeof obj.name === 'string'
+    value != null &&
+    typeof value === 'object' &&
+    'id' in value &&
+    isMemberId((value as Member).id) &&
+    'displayName' in value &&
+    typeof (value as Member).displayName === 'string'
   );
 }
 
-// MemberIdの型ガード関数
-export function isMemberId(value: any): value is MemberId {
+export function isMemberId(value: unknown): value is MemberId {
   return typeof value === 'string';
 }
