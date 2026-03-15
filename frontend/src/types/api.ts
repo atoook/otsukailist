@@ -21,10 +21,10 @@ export type Item = {
   id: UUID;
   name: string;
   completed: boolean;
-  completedByMemberId?: UUID | null;
-  completedAt?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
+  completedByMemberId: UUID | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ItemListSnapshot = {
@@ -51,7 +51,16 @@ export type ItemListResponse = {
   updatedAt?: string;
 };
 
-export type DeleteResponse = {
-  deletedItemId?: UUID;
-  deletedMemberId?: UUID;
-};
+/**
+ * Delete API response invariant:
+ * at least one deleted target id is always present.
+ */
+export type DeleteResponse =
+  | {
+      deletedItemId: UUID;
+      deletedMemberId?: never;
+    }
+  | {
+      deletedMemberId: UUID;
+      deletedItemId?: never;
+    };

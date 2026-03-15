@@ -24,11 +24,15 @@ export default defineComponent({
     listName: string;
     members: Member[];
     newMemberName: string;
+    errorMessage: string;
+    creating: boolean;
   } {
     return {
       listName: '',
       members: [],
-      newMemberName: ''
+      newMemberName: '',
+      errorMessage: '',
+      creating: false
     };
   },
   setup() {
@@ -42,7 +46,9 @@ export default defineComponent({
         return;
       }
 
+      this.errorMessage = '';
       this.listName = normalizedListName;
+      this.creating = true;
 
       try {
         const res = await createItemList({
@@ -67,8 +73,11 @@ export default defineComponent({
           params: { id: res.data.listId },
           query: { name: res.data.name }
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to create list', err);
+        this.errorMessage = `リストの作成に失敗しました。${err?.message ? ` (${err.message})` : ''}`;
+      } finally {
+        this.creating = false;
       }
     },
     addMember(): void {
@@ -121,6 +130,10 @@ export default defineComponent({
       />
     </div>
 
+    <div v-if="errorMessage" class="mb-4 p-3 bg-ember-100 border border-ember-300 text-ember-700 rounded-lg text-sm">
+      {{ errorMessage }}
+    </div>
+
     <div class="mb-6">
       <label class="block text-sm font-medium text-charcoal-700 mb-2">👥 メンバー</label>
       <div class="flex gap-2 px-2 py-1 border border-wood-200 bg-wood-50 rounded-md">
@@ -152,7 +165,7 @@ export default defineComponent({
     </div>
 
     <div class="flex flex-col gap-3">
-      <MainButton @click="createList" :disabled="!hasRequiredInput"> リストを作成 </MainButton>
+      <MainButton @click="createList" :disabled="!hasRequiredInput || creating"> リストを作成 </MainButton>
     </div>
   </ContentArea>
 </template>

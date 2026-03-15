@@ -86,9 +86,7 @@ export default defineComponent({
       }
 
       try {
-        const result = await this.mutationRun(() =>
-          createMember(this.currentListId!, { displayName: normalizedName })
-        );
+        const result = await this.mutationRun(() => createMember(this.currentListId!, { displayName: normalizedName }));
         if (result.applied) {
           this.listStore.upsertMember(result.data);
           this.refreshMembersFromStore();
@@ -135,14 +133,15 @@ export default defineComponent({
 
       this.listName = normalizedListName;
 
-      const shouldRename =
-        this.listStore.listId === this.currentListId && this.listStore.name !== normalizedListName;
+      const shouldRename = this.listStore.listId === this.currentListId && this.listStore.name !== normalizedListName;
 
       if (shouldRename) {
         try {
-          const result = await this.mutationRun(() =>
-            renameList(this.currentListId!, { name: normalizedListName })
-          );
+          const result = await this.mutationRun(() => renameList(this.currentListId!, { name: normalizedListName }));
+          if (!result.applied) {
+            this.errorMessage = 'リスト名の更新が反映されませんでした。時間をおいて再試行してください。';
+            return;
+          }
         } catch (err: any) {
           console.error('Failed to rename list', err);
           this.errorMessage = err?.message ?? 'リスト名の更新に失敗しました。';
@@ -223,9 +222,7 @@ export default defineComponent({
           variant="inline"
         />
 
-        <MainButton @click="addMember" :disabled="!hasValidMemberName || isLoading" size="small">
-          追加
-        </MainButton>
+        <MainButton @click="addMember" :disabled="!hasValidMemberName || isLoading" size="small"> 追加 </MainButton>
       </div>
 
       <!-- メンバーバッジ表示 -->
@@ -245,9 +242,7 @@ export default defineComponent({
     </div>
 
     <div class="flex flex-col gap-3">
-      <MainButton @click="updateList" :disabled="!hasRequiredInput || isLoading" variant="primary">
-        更新
-      </MainButton>
+      <MainButton @click="updateList" :disabled="!hasRequiredInput || isLoading" variant="primary"> 更新 </MainButton>
       <MainButton @click="cancelUpdate" variant="secondary"> キャンセル </MainButton>
     </div>
   </ContentArea>

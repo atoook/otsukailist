@@ -154,8 +154,8 @@ export default defineComponent({
         const result = await this.mutationRun(() => createItem(listId, { name: normalizedName }));
         if (result.applied) {
           this.listStore.upsertItem(result.data);
+          this.newItemName = '';
         }
-        this.newItemName = '';
       } catch (err: any) {
         console.error('Failed to create item', err);
         this.errorMessage = err?.message ?? 'アイテムの作成に失敗しました。';

@@ -30,13 +30,14 @@ export function useMutation() {
         return { data: res.data, applied: false, revision: nextRevision };
       }
 
-      listStore.setRevision(nextRevision);
-
       if (gap > 1 && listStore.listId) {
         const snapshot = await fetchSnapshot(listStore.listId);
         listStore.applySnapshot(snapshot);
+        listStore.setRevision(Math.max(listStore.revision, nextRevision));
         return { data: res.data, applied: false, revision: nextRevision };
       }
+
+      listStore.setRevision(nextRevision);
 
       return { data: res.data, applied: true, revision: nextRevision };
     } catch (err) {
