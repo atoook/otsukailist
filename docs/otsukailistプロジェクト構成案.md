@@ -30,7 +30,7 @@ otsukailist/
 │   ├── package.json
 │   └── Dockerfile
 │
-├── db/                       # MySQL 用
+├── db/                       # PostgreSQL 用
 │   ├── docker-compose*.yml   # 開発/CI/本番向け設定
 │   └── init/                 # 初期化SQL（テーブル定義・サンプルデータ）
 │
