@@ -2,40 +2,28 @@
 version: "3.8"
 
 services:
-  mysql-test:
-    image: mysql:8.0
-    container_name: otsukailist_mysql_test
+  postgres-test:
+    image: postgres:16
+    container_name: otsukailist_postgres_test
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: otsukailist_test
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      POSTGRES_DB: otsukailist_test
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "3307:3306" # 開発環境と競合しないポート
+      - "5433:5432" # 開発環境と競合しないポート
     volumes:
       - ./init/01_create_tables_test.sql:/docker-entrypoint-initdb.d/01_create_tables.sql # テスト専用スキーマ
-      - ./my-test.cnf:/etc/mysql/conf.d/my.cnf # テスト用軽量設定を使用
       # データボリュームなし（テスト後に削除）
     networks:
       - otsukailist_test_network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-p${MYSQL_ROOT_PASSWORD}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d otsukailist_test"]
       interval: 5s
       timeout: 10s
       retries: 6
       start_period: 30s
     tmpfs:
-      - /var/lib/mysql:rw,noexec,nosuid,size=2g # MySQL 8.0の初期化に必要な容量を確保
+      - /var/lib/postgresql/data:rw,noexec,nosuid,size=2g # PostgreSQLのデータ領域
 
 networks:
   otsukailist_test_network:
