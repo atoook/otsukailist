@@ -1,10 +1,10 @@
 spring:
   # データベース設定
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:otsukailist}${MYSQL_PARAMS:?useSSL=false&serverTimezone=UTC}
-    username: ${MYSQL_USER:otsukailist_user}
-    password: ${MYSQL_PASSWORD:otsukailist_password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:otsukailist}${POSTGRES_PARAMS:?sslmode=disable}
+    username: ${POSTGRES_USER:otsukailist_user}
+    password: ${POSTGRES_PASSWORD:otsukailist_password}
+    driver-class-name: org.postgresql.Driver
 
   # JPA設定
   jpa:
@@ -14,10 +14,10 @@ spring:
     properties:
       hibernate:
         "[format_sql]": true
-        dialect: org.hibernate.dialect.MySQL8Dialect
-        # UUID効率化設定 - BINARY(16)での保存
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # UUID設定
         type:
-          "[preferred_uuid_jdbc_type]": BINARY
+          "[preferred_uuid_jdbc_type]": UUID
 
 # ログ設定
 logging:
