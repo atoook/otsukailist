@@ -12,7 +12,7 @@ public class WebConfig {
     private final String[] allowedOrigins;
 
     public WebConfig(@Value("${app.cors.allowed-origins}") String[] allowedOrigins) {
-        this.allowedOrigins = allowedOrigins;
+        this.allowedOrigins = allowedOrigins.clone();
     }
 
     @Bean
