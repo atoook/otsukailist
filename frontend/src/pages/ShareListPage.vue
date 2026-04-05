@@ -10,7 +10,6 @@ export default {
   },
   data() {
     return {
-      listName: '',
       listId: '',
       listURL: '',
       copySuccess: false,
@@ -28,7 +27,7 @@ export default {
   },
   methods: {
     initializeFromRoute() {
-      const { isValid, listId, listName } = this.validateRouteParams();
+      const { isValid, listId } = this.validateRouteParams();
 
       if (!isValid) {
         console.error('Invalid route parameters');
@@ -37,33 +36,26 @@ export default {
       }
 
       this.listId = listId;
-      this.listName = listName;
       this.generateShareUrl();
     },
 
     validateRouteParams() {
       const routeId = this.$route.params.id;
-      const routeName = this.$route.query.name;
 
       // IDの検証
       if (!routeId || typeof routeId !== 'string' || !routeId.trim()) {
         return { isValid: false };
       }
 
-      // 名前の検証とデフォルト値設定
-      const validatedName =
-        routeName && typeof routeName === 'string' && routeName.trim() ? routeName.trim() : 'リスト';
-
       return {
         isValid: true,
-        listId: routeId.trim(),
-        listName: validatedName
+        listId: routeId.trim()
       };
     },
 
     generateShareUrl() {
       const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
-      this.listURL = `${baseUrl}/lists/${this.listId}?name=${encodeURIComponent(this.listName)}`;
+      this.listURL = `${baseUrl}/lists/${this.listId}`;
     },
     copyUrl() {
       navigator.clipboard
@@ -88,8 +80,7 @@ export default {
     navigateToItemList() {
       this.$router.push({
         name: 'ItemList',
-        params: { id: this.listId },
-        query: { name: this.listName }
+        params: { id: this.listId }
       });
     }
   }

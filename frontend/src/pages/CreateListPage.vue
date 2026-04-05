@@ -70,8 +70,7 @@ export default defineComponent({
         // リスト共有画面に遷移
         this.$router.push({
           name: 'ShareList',
-          params: { id: res.data.listId },
-          query: { name: res.data.name }
+          params: { id: res.data.listId }
         });
       } catch (err: any) {
         console.error('Failed to create list', err);
