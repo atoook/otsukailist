@@ -4,15 +4,20 @@ export type Item = ApiItem;
 export type ItemId = UUID;
 
 export function isItem(value: unknown): value is Item {
+  if (value == null || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Item;
+
   return (
-    value != null &&
-    typeof value === 'object' &&
-    'id' in value &&
-    isItemId((value as Item).id) &&
-    'name' in value &&
-    typeof (value as Item).name === 'string' &&
-    'completed' in value &&
-    typeof (value as Item).completed === 'boolean'
+    isItemId(candidate.id) &&
+    typeof candidate.name === 'string' &&
+    typeof candidate.completed === 'boolean' &&
+    (candidate.completedByMemberId === null || isItemId(candidate.completedByMemberId)) &&
+    (candidate.completedAt === null || typeof candidate.completedAt === 'string') &&
+    typeof candidate.createdAt === 'string' &&
+    typeof candidate.updatedAt === 'string'
   );
 }
 
