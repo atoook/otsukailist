@@ -69,7 +69,7 @@ public class MemberCommandController {
      *
      * @param listId   parent list identifier
      * @param memberId member identifier
-     * @return 204 deletion result
+     * @return 200 deletion result with mutation payload
      */
     @DeleteMapping("/{memberId}")
     public ResponseEntity<MutationResponse<DeleteMemberResponse>> delete(

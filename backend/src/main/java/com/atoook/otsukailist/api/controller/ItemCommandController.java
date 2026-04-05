@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.atoook.otsukailist.dto.CreateItemRequest;
+import com.atoook.otsukailist.dto.DeleteItemResponse;
 import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
@@ -69,13 +70,12 @@ public class ItemCommandController {
      *
      * @param listId parent list identifier
      * @param itemId item identifier
-     * @return 204 deletion response
+     * @return 200 deletion response with mutation payload
      */
     @DeleteMapping("/{itemId}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<MutationResponse<DeleteItemResponse>> delete(
             @PathVariable("listId") UUID listId,
             @PathVariable("itemId") UUID itemId) {
-        itemCommandService.deleteItem(listId, itemId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(itemCommandService.deleteItem(listId, itemId));
     }
 }
