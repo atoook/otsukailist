@@ -17,15 +17,15 @@ fi
 case $ENV in
     dev)
         COMPOSE_FILE="docker-compose.dev.yml"
-        PORT="3306"
+        PORT="5432"
         ;;
     test)
         COMPOSE_FILE="docker-compose.test.yml"
-        PORT="3307"
+        PORT="5433"
         ;;
     ci)
         COMPOSE_FILE="docker-compose.ci.yml"
-        PORT="3306"
+        PORT="5432"
         ;;
     *)
         echo "Error: Unknown environment '$ENV'. Use: dev, test, or ci"

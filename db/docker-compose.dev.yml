@@ -2,40 +2,28 @@
 version: "3.8"
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: otsukailist_mysql_dev
+  postgres:
+    image: postgres:16
+    container_name: otsukailist_postgres_dev
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - mysql_dev_data:/var/lib/mysql
+      - postgres_dev_data:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d
-      - ./my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - otsukailist_dev_network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mysqladmin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-p${MYSQL_ROOT_PASSWORD}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       timeout: 20s
       retries: 10
 
 volumes:
-  mysql_dev_data:
+  postgres_dev_data:
 
 networks:
   otsukailist_dev_network:

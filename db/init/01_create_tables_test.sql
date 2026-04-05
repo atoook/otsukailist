@@ -1,48 +1,53 @@
 -- otsukailist_testデータベースの初期化スクリプト（テスト環境専用）
 
-USE otsukailist_test;
+-- PostgreSQLでは接続先DB（POSTGRES_DB=otsukailist_test）に対して本スクリプトが実行される
 
 -- お使いリストテーブル（ログイン不要、UUID使用）
 CREATE TABLE IF NOT EXISTS item_list (
-    id BINARY(16) PRIMARY KEY,                          -- UUID (BINARY形式)
-    name VARCHAR(100) NOT NULL,                         -- リスト名
-    revision BIGINT UNSIGNED NOT NULL DEFAULT 0,        -- Socket差分/欠け検知用（リスト単位）
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-    INDEX idx_item_list_updated_at (updated_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        id UUID PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        revision BIGINT NOT NULL DEFAULT 0 CHECK (revision >= 0),
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+);
+
+CREATE INDEX IF NOT EXISTS idx_item_list_updated_at ON item_list (updated_at);
 
 -- メンバー（権限制御なし：リスト内のラベル用）
 CREATE TABLE IF NOT EXISTS member (
-    id BINARY(16) PRIMARY KEY,                 -- UUID (BINARY形式)
-    list_id BINARY(16) NOT NULL,               -- item_list へのFK
-    display_name VARCHAR(80) NOT NULL,         -- ドロップダウン表示名
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+        id UUID PRIMARY KEY,
+        list_id UUID NOT NULL,
+        display_name VARCHAR(80) NOT NULL,
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    FOREIGN KEY (list_id) REFERENCES item_list(id) ON DELETE CASCADE,
+        CONSTRAINT fk_member_list_id
+            FOREIGN KEY (list_id) REFERENCES item_list(id) ON DELETE CASCADE,
+        CONSTRAINT uq_member_list_name
+            UNIQUE (list_id, display_name)
+);
 
-    INDEX idx_member_list_id (list_id)
-    ,UNIQUE KEY uq_member_list_name (list_id, display_name)     -- 同一リスト内の重複名を防ぐためのユニーク制約
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS idx_member_list_id ON member (list_id);
 
 -- アイテムテーブル
 CREATE TABLE IF NOT EXISTS item (
-    id BINARY(16) PRIMARY KEY,                         -- UUID (BINARY形式)
-    name VARCHAR(255) NOT NULL,
-    is_completed TINYINT(1) NOT NULL DEFAULT 0,
-    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+        id UUID PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    list_id BINARY(16) NOT NULL,                        -- item_listへの外部キー
-    completed_by_member_id BINARY(16) NULL,             -- 誰が完了させたか（member.id）
-    completed_at DATETIME(3) NULL,                      -- いつ完了させたか
+        list_id UUID NOT NULL,
+        completed_by_member_id UUID NULL,
+        completed_at TIMESTAMP(3) NULL,
 
-    FOREIGN KEY (list_id) REFERENCES item_list(id) ON DELETE CASCADE,
-    FOREIGN KEY (completed_by_member_id) REFERENCES member(id) ON DELETE SET NULL,
+        CONSTRAINT fk_item_list_id
+            FOREIGN KEY (list_id) REFERENCES item_list(id) ON DELETE CASCADE,
+        CONSTRAINT fk_item_completed_by_member_id
+            FOREIGN KEY (completed_by_member_id) REFERENCES member(id) ON DELETE SET NULL
+);
 
-    INDEX idx_list_id (list_id),
-    INDEX idx_list_completed (list_id, is_completed),
-    INDEX idx_completed_by (completed_by_member_id),
-    INDEX idx_created_at (created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS idx_list_id ON item (list_id);
+CREATE INDEX IF NOT EXISTS idx_list_completed ON item (list_id, is_completed);
+CREATE INDEX IF NOT EXISTS idx_completed_by ON item (completed_by_member_id);
+CREATE INDEX IF NOT EXISTS idx_created_at ON item (created_at);

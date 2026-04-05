@@ -30,7 +30,7 @@ cd ../db && docker-compose up -d
 ### 技術スタック
 
 - **Framework**: Spring Boot 3.5.7
-- **Database**: MySQL 8.0
+- **Database**: PostgreSQL 16
 - **ORM**: Spring Data JPA (Hibernate)
 - **Build**: Gradle
 - **Java**: 17+
@@ -112,9 +112,9 @@ PATCH  /api/lists/{listId}/items/{itemId}/toggle  # チェック状態切り替�
 
 ```properties
 # Database
-spring.datasource.url=jdbc:mysql://localhost:3306/otsukailist
-spring.datasource.username=${DB_USER:user}
-spring.datasource.password=${DB_PASSWORD:password}
+spring.datasource.url=jdbc:postgresql://localhost:5432/otsukailist
+spring.datasource.username=${POSTGRES_USER:otsukailist_user}
+spring.datasource.password=${POSTGRES_PASSWORD:otsukailist_password}
 
 # JPA
 spring.jpa.hibernate.ddl-auto=validate
@@ -153,11 +153,11 @@ style: フォーマット変更
 **Q: データベース接続エラー**
 
 ```bash
-# MySQL コンテナの状態確認
-cd ../db && docker-compose ps
+# PostgreSQL コンテナの状態確認
+cd ../db && docker compose ps
 
 # ログ確認
-cd ../db && docker-compose logs mysql
+cd ../db && docker compose logs postgres
 ```
 
 **Q: ビルドエラー**
