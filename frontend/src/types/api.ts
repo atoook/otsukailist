@@ -40,7 +40,6 @@ export type ItemListSnapshot = {
 export type CreateItemListWithMembersResponse = {
   listId: UUID;
   name: string;
-  revision: number;
   members: Member[];
 };
 
