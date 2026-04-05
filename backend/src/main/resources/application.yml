@@ -1,7 +1,7 @@
 spring:
   # データベース設定
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:otsukailist}${POSTGRES_PARAMS:?sslmode=disable}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:otsukailist}?sslmode=${POSTGRES_SSL_MODE:require}${POSTGRES_PARAMS:}
     username: ${POSTGRES_USER:otsukailist_user}
     password: ${POSTGRES_PASSWORD:otsukailist_password}
     driver-class-name: org.postgresql.Driver
@@ -28,7 +28,7 @@ logging:
 
 # アプリケーション設定
 server:
-  port: ${SERVER_PORT}
+  port: ${SERVER_PORT:8080}
 
 app:
   cors:
