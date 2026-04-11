@@ -1,5 +1,11 @@
+type AssetsEnv = {
+  ASSETS: {
+    fetch: (request: Request) => Promise<Response>;
+  };
+};
+
 export default {
-  async fetch(request, env) {
+  async fetch(request: Request, env: AssetsEnv) {
     // Try asset first
     const assetResponse = await env.ASSETS.fetch(request);
     if (assetResponse && assetResponse.status !== 404) {
