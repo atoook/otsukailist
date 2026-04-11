@@ -2,7 +2,8 @@
   "name": "otsukailist-frontend",
   "compatibility_date": "2026-01-10",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "binding": "ASSETS"
   },
   "compatibility_flags": [
     "nodejs_compat"
