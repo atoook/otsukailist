@@ -1,5 +1,5 @@
 {
-  "name": "otsukailist-frontend",
+  "name": "otsukailist",
   "compatibility_date": "2026-01-10",
   "main": "src/workers/spa-fallback.ts",
   "assets": {
