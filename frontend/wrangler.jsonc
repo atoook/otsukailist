@@ -1,6 +1,7 @@
 {
   "name": "otsukailist-frontend",
   "compatibility_date": "2026-01-10",
+  "main": "src/workers/spa-fallback.ts",
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS"
