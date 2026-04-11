@@ -57,6 +57,8 @@ export default defineComponent({
     const listId = this.$route.params.id as string | undefined;
     const fallbackName = listId ? `リスト${listId}` : '';
 
+    console.log('[ItemListPage] created', listId);
+
     this.currentListId = listId ?? null;
     this.fallbackListName = fallbackName;
 
