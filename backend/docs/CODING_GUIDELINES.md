@@ -342,8 +342,8 @@ public class ItemResponse {
 
 ### 戻り値型の使い分け
 
-| 操作タイプ     | 戻り値型      | 理由                   | 例                                    |
-| -------------- | ------------- | ---------------------- | ------------------------------------- |
+| 操作タイプ     | 戻り値型      | 理由                   | 例                                |
+| -------------- | ------------- | ---------------------- | --------------------------------- |
 | **複数件検索** | `List<T>`     | 空リストは正常結果     | `findByItemListId()`              |
 | **単一件検索** | `Optional<T>` | 見つからない場合がある | `findByIdAndItemListId()`         |
 | **存在確認**   | `boolean`     | Yes/No の明確な判定    | `existsByIdAndItemListId()`       |
@@ -680,7 +680,6 @@ class ItemServiceTest {
 
 ## 🔗 関連ドキュメント
 
-- [📁 PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - プロジェクト構成とディレクトリ構造
 - [📖 README.md](../README.md) - セットアップと実行方法
 
 ---

@@ -7,7 +7,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 ## 技術スタック
 
 - **Frontend**: Vue.js 3, Vite, Tailwind CSS
-- **Backend**: Spring Boot (Java 17), Spring Data JPA, Spring Messaging (WebSocket)
+- **Backend**: Spring Boot (Java 17), Spring Data JPA
 - **Database**: PostgreSQL 16
 - **Infra**: Docker / docker-compose
 
@@ -15,16 +15,19 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 ## アーキテクチャ概要
 
-- フロント → REST API → DB の 3 層構成。更新系 API は `MutationResponse<T>` で `revision` を返し、WebSocket で同じ payload を配信する。
+- フロント → REST API → DB の 3 層構成。更新系 API は `MutationResponse<T>` で `revision` を返し、フロントは `revision` を使って整合性を保つ。
 - Command と Query のサービスを分離し、Mapper は DTO と Entity の変換に特化。業務ルールは Service 層で吸収する。
-- WebSocket はリスト単位の room を用い、`revision` を基準にクライアント側で差分適用する。
+- 初期ロードは `GET /api/lists/{listId}/snapshot` で全体状態を取得し、その後は更新系 API のレスポンスで状態を更新する。
 
 ---
 
 ## ルーティング
 
-- `/new` : 新規リストの作成。リスト名と初期メンバー（1件以上）を入力→作成成功後に `/list/:id` へ遷移。
-- `/list/:id` : リストのスナップショットを取得し、アイテム・メンバーの追加/編集/削除を行うメイン画面。
+- `/` : ウェルカム画面。
+- `/create-list` : 新規リスト作成。
+- `/share-list/:id` : 共有URL表示。
+- `/lists/:id` : リストのスナップショットを取得し、アイテム・メンバーの追加/編集/削除を行うメイン画面。
+- `/lists/:id/edit` : リスト名・メンバー編集画面。
 
 ---
 
@@ -33,7 +36,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 | Method                                          | Path                                                         | 主な役割 |
 | ----------------------------------------------- | ------------------------------------------------------------ | -------- |
 | `POST /api/lists`                               | リストと初期メンバーをまとめて作成する。                     |
-| `GET /api/lists/{listId}`                       | リスト、メンバー、アイテムをまとめたスナップショットを返す。 |
+| `GET /api/lists/{listId}/snapshot`              | リスト、メンバー、アイテムをまとめたスナップショットを返す。 |
 | `PATCH /api/lists/{listId}`                     | リスト名を変更し、`revision` を更新する。                    |
 | `POST /api/lists/{listId}/members`              | メンバーを追加する。                                         |
 | `PATCH /api/lists/{listId}/members/{memberId}`  | メンバー名を変更する。                                       |
@@ -44,11 +47,10 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 ---
 
-## WebSocket
+## リアルタイム同期
 
-- ルーム: `list:{id}`
-- REST の更新完了後に、同じ `MutationResponse` をルーム内へ配信。
-- クライアントは `revision` を比較して重複適用を避ける。イベント種別は payload 内の type 追加で拡張予定。
+- 現在は WebSocket 未導入。
+- `revision` を前提にした API 契約を維持し、将来的な差分同期導入に備える。
 
 ---
 
