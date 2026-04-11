@@ -47,6 +47,7 @@ cd ../db && docker-compose up -d
 | ドキュメント                                                | 説明                           |
 | ----------------------------------------------------------- | ------------------------------ |
 | [📋 docs/CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md) | コーディング規約・設計パターン |
+| [🚢 ../docs/backend-deploy-operations.md](../docs/backend-deploy-operations.md) | Docker/Render 運用チェック     |
 | [🏢 企画書](../docs/otsukailist企画書.md)                   | プロジェクト概要・要件定義     |
 | [🎨 設計書](../docs/otsukailist設計書.md)                   | システム設計・API 仕様         |
 
