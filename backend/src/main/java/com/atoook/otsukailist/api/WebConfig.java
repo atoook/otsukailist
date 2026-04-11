@@ -1,18 +1,19 @@
 package com.atoook.otsukailist.api;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.atoook.otsukailist.config.AppCorsProperties;
+
 @Configuration
 public class WebConfig {
 
-    private final String[] allowedOrigins;
+    private final AppCorsProperties corsProperties;
 
-    public WebConfig(@Value("${app.cors.allowed-origins}") String[] allowedOrigins) {
-        this.allowedOrigins = allowedOrigins.clone();
+    public WebConfig(AppCorsProperties corsProperties) {
+        this.corsProperties = corsProperties;
     }
 
     @Bean
@@ -22,7 +23,7 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins(allowedOrigins)
+                        .allowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new))
                         .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
             }
