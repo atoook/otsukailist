@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    # Render 本番では環境変数のみで解決する前提（必須値はデプロイ設定で注入）
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT:5432}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE:require}${POSTGRES_PARAMS:}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        "[format_sql]": false
+
+server:
+  port: ${PORT:8080}
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
