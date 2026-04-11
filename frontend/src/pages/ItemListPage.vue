@@ -1,4 +1,5 @@
 <script lang="ts">
+import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
 import CheckBox from '../components/CheckBox.vue';
 import MainButton from '../components/MainButton.vue';
@@ -6,11 +7,14 @@ import TextInput from '../components/TextInput.vue';
 import ItemBox from '../components/ItemBox.vue';
 import DropDown from '../components/DropDown.vue';
 import type { Item, ItemId } from '../types/item';
-import { ItemStatus } from '../types/item';
 import { normalizeText, normalizeInput, normalizeForSearch } from '../utils/text-normalization';
 import type { Member, MemberId } from '@/types/member';
+import { fetchSnapshot } from '@/api/list';
+import { createItem, deleteItem as deleteItemApi, updateItem } from '@/api/item';
+import { useListStore } from '@/stores/list';
+import { useMutation } from '@/composables/useMutation';
 
-export default {
+export default defineComponent({
   name: 'ItemListPage',
   components: {
     ContentArea,
@@ -21,202 +25,241 @@ export default {
     DropDown
   },
   data(): {
-    members: Member[];
-    listName: string;
-    items: Item[];
+    currentListId: string | null;
     newItemName: string;
     searchQuery: string;
     selectedMemberId: MemberId | null;
     errorMessage: string;
+    fallbackListName: string;
+    snapshotLoading: boolean;
   } {
     return {
-      members: [],
-      listName: '',
-      items: [],
+      currentListId: null,
       newItemName: '',
       searchQuery: '',
       selectedMemberId: null,
-      errorMessage: ''
+      errorMessage: '',
+      fallbackListName: '',
+      snapshotLoading: false
     };
   },
-  created() {
-    // ルートパラメータからリストIDを取得
-    const listId = this.$route.params.id;
-    // クエリパラメータからリスト名を取得(TODO: APIから取得する)
-    const listName = this.$route.query.name as string | undefined;
-    this.listName = listName || `リスト${listId}`;
+  setup() {
+    const listStore = useListStore();
+    const { run, loading } = useMutation();
 
-    // メンバーデータの初期化
-    this.initializeMembers();
+    return {
+      listStore,
+      mutationRun: run,
+      mutationLoading: loading
+    };
+  },
+  async created() {
+    const listId = this.$route.params.id as string | undefined;
+    const fallbackName = listId ? `リスト${listId}` : '';
 
-    // TODO: APIからリストデータを取得
-    console.log('リストID:', listId);
-    console.log('リスト名:', this.listName);
+    this.currentListId = listId ?? null;
+    this.fallbackListName = fallbackName;
+
+    if (!listId) {
+      this.errorMessage = 'リストIDが指定されていません。';
+      return;
+    }
+
+    await this.loadSnapshot(listId);
   },
   computed: {
-    selectedMember(): Member | undefined {
-      return this.members.find((member) => member.id === this.selectedMemberId);
+    isLoading(): boolean {
+      return this.snapshotLoading || this.mutationLoading;
+    },
+    listName(): string {
+      return this.listStore.name || this.fallbackListName || '買い物リスト';
+    },
+    members(): Member[] {
+      return this.listStore.members;
+    },
+    items(): Item[] {
+      return this.listStore.items;
     },
     filteredItems(): Item[] {
-      // Ensure items is an array
-      const items = Array.isArray(this.items) ? this.items : [];
-
       const normalizedQuery = normalizeForSearch(this.searchQuery);
       if (!normalizedQuery) {
-        return items;
+        return this.items;
       }
-      return items.filter((item) => {
+      return this.items.filter((item) => {
         const normalizedItemName = normalizeForSearch(item.name);
         return normalizedItemName.includes(normalizedQuery);
       });
     },
     memberNames(): string {
-      return this.members.map((member) => member.name).join(' ・ ');
+      return this.members.map((member) => member.displayName).join(' ・ ');
+    },
+    memberOptions(): Array<{ id: MemberId; name: string }> {
+      return this.members.map((member) => ({
+        id: member.id,
+        name: member.displayName
+      }));
+    },
+    memberMap(): Map<MemberId, Member> {
+      return this.listStore.memberMap;
+    }
+  },
+  watch: {
+    members(newMembers: Member[]) {
+      if (!this.selectedMemberId && newMembers.length > 0) {
+        this.selectedMemberId = newMembers[0]?.id ?? null;
+      }
     }
   },
   methods: {
-    initializeMembers() {
-      this.members = [
-        { id: '1', name: 'しんじ' },
-        { id: '2', name: 'Jerry' },
-        { id: '3', name: 'けんたろう' },
-        { id: '4', name: 'Mike' },
-        { id: '5', name: 'トミージャッカーソン' },
-        { id: '6', name: 'ハリーポッターストレンジャーシングス' },
-        { id: '7', name: 'Ellen' },
-        { id: '8', name: 'Daisy' },
-        { id: '9', name: 'Lily' },
-        { id: '10', name: '太郎' }
-      ];
+    async loadSnapshot(listId: string) {
+      this.snapshotLoading = true;
+      this.errorMessage = '';
 
-      // Set the default selected member ID
-      // default selected to be acquired from LocalStorage
-      this.selectedMemberId = '6';
+      try {
+        const snapshot = await fetchSnapshot(listId);
+        this.listStore.applySnapshot(snapshot);
+        if (!this.selectedMemberId && snapshot.members.length > 0) {
+          this.selectedMemberId = snapshot.members[0]?.id ?? null;
+        }
+      } catch (err: any) {
+        console.error('Failed to load snapshot', err);
+        this.errorMessage = err?.message ?? 'リストの取得に失敗しました。';
+      } finally {
+        this.snapshotLoading = false;
+      }
     },
     getMemberBadgeVariant(item: Item): string {
-      // 完了済みアイテムで現在選択中のメンバーが割り当てメンバーと同じ場合はprimary（強調）
-      if (
-        item.status === ItemStatus.COMPLETED &&
-        item.assignedMember &&
-        this.selectedMember &&
-        item.assignedMember.id === this.selectedMember.id
-      ) {
+      if (item.completed && this.selectedMemberId && item.completedByMemberId === this.selectedMemberId) {
         return 'primary';
       }
-      // それ以外はsecondary（通常）
       return 'secondary';
     },
     handleMemberSelect(selectedId: string) {
       this.selectedMemberId = selectedId;
     },
-    addItem() {
+    async addItem() {
       const normalizedName = normalizeText(this.newItemName);
-      if (normalizedName) {
-        this.items.push({
-          id: Date.now().toString(), //this to be replaced with unique ID from backend
-          name: normalizedName,
-          status: ItemStatus.PENDING,
-          assignedMember: undefined // 初期状態では未割り当て
-        });
-        this.newItemName = '';
+      const listId = this.listStore.listId;
+
+      if (!normalizedName) {
+        return;
       }
-      //sync with backend API here
+
+      if (!listId) {
+        this.errorMessage = 'リストが初期化されていません。';
+        return;
+      }
+
+      try {
+        const result = await this.mutationRun(() => createItem(listId, { name: normalizedName }));
+        if (result.applied) {
+          this.listStore.upsertItem(result.data);
+          this.newItemName = '';
+        }
+      } catch (err: any) {
+        console.error('Failed to create item', err);
+        this.errorMessage = err?.message ?? 'アイテムの作成に失敗しました。';
+      }
     },
-    // 入力時のリアルタイム正規化
     onItemNameInput(value: string): void {
       this.newItemName = normalizeInput(value);
     },
     onSearchInput(value: string): void {
       this.searchQuery = normalizeInput(value);
     },
-    toggleItem(item: Item) {
-      // Clear any previous error messages
+    async toggleItem(item: Item) {
       this.errorMessage = '';
 
-      // Validate item name
-      const normalizedName = normalizeText(item.name);
-      if (!normalizedName) {
-        this.errorMessage = 'アイテム名が空のため、状態を変更できません。';
-        console.error(this.errorMessage, ' : ', item.id);
-        this.showErrorFeedback();
+      const listId = this.listStore.listId;
+      if (!listId) {
+        this.errorMessage = 'リストが初期化されていません。';
         return;
       }
 
-      // Find item index in the array
-      const index = this.items.findIndex((existingItem) => existingItem.id === item.id);
-      if (index === -1) {
-        this.errorMessage = 'アイテムが見つかりません。';
-        console.error(this.errorMessage, ' : ', item.id);
-        this.showErrorFeedback();
-        return;
-      }
-
-      const wasCompleted = item.status === ItemStatus.COMPLETED;
-
-      // Create new item object with updated status (immutable update)
-      const updatedItem: Item = {
-        ...item,
-        status: wasCompleted ? ItemStatus.PENDING : ItemStatus.COMPLETED,
-        assignedMember: wasCompleted
-          ? undefined // Clear assignedMember when uncompleting
-          : this.selectedMember
-            ? {
-                id: this.selectedMember.id,
-                name: this.selectedMember.name
-              }
-            : undefined
+      const wasCompleted = item.completed;
+      const updatedItem: Partial<Item> = {
+        completed: !wasCompleted,
+        completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null),
+        completedAt: wasCompleted ? null : new Date().toISOString()
       };
-      // Replace item in array using splice to preserve reactivity
-      this.items.splice(index, 1, updatedItem);
-      // TODO: APIとの同期処理
+
+      try {
+        const result = await this.mutationRun(() => updateItem(listId, item.id, updatedItem));
+        if (result.applied) {
+          this.listStore.upsertItem(result.data);
+        }
+      } catch (err: any) {
+        console.error('Failed to update item', err);
+        this.errorMessage = err?.message ?? 'アイテムの更新に失敗しました。';
+        this.showErrorFeedback();
+      }
+    },
+    getCompletedMemberName(item: Item): string | null {
+      if (!item.completed || !item.completedByMemberId) {
+        return null;
+      }
+      return this.memberMap.get(item.completedByMemberId)?.displayName ?? null;
     },
     showErrorFeedback() {
-      // Show error feedback to user (could be replaced with toast library)
       if (this.errorMessage) {
         alert(this.errorMessage);
-        // Clear error message after showing
         setTimeout(() => {
           this.errorMessage = '';
         }, 3000);
       }
     },
-    deleteItem(itemId: ItemId) {
-      this.items = this.items.filter((item) => item.id !== itemId);
+    async deleteItem(itemId: ItemId) {
+      const listId = this.listStore.listId;
+
+      if (!listId) {
+        this.errorMessage = 'リストが初期化されていません。';
+        return;
+      }
+
+      try {
+        const result = await this.mutationRun(() => deleteItemApi(listId, itemId));
+        if (result.applied) {
+          this.listStore.removeItem(itemId);
+        }
+      } catch (err: any) {
+        console.error('Failed to delete item', err);
+        this.errorMessage = err?.message ?? 'アイテムの削除に失敗しました。';
+        this.showErrorFeedback();
+      }
     },
-    modifyItem(updatedItem: Item) {
+    async modifyItem(updatedItem: Item) {
       const normalizedItemName = normalizeText(updatedItem.name);
-      // 正規化後の名前が空の場合は更新しない
       if (!normalizedItemName) {
         this.errorMessage = 'アイテム名が空のため、更新できません。';
-        console.error(this.errorMessage, ' : ', updatedItem.id);
         this.showErrorFeedback();
         return;
       }
-      const index = this.items.findIndex((item) => item.id === updatedItem.id);
-      if (index === -1) {
-        this.errorMessage = 'アイテムが見つかりません。';
-        console.error(this.errorMessage, ' : ', updatedItem.id);
-        this.showErrorFeedback();
+
+      const listId = this.listStore.listId;
+      if (!listId) {
+        this.errorMessage = 'リストが初期化されていません。';
         return;
       }
-      // 新しいオブジェクトを作成（副作用を避ける）
-      const modifiedItem = {
-        ...updatedItem,
-        name: normalizedItemName
-      };
-      // 配列を更新
-      this.items.splice(index, 1, modifiedItem);
-      // TODO: APIとの同期処理
+
+      try {
+        const result = await this.mutationRun(() => updateItem(listId, updatedItem.id, { name: normalizedItemName }));
+        if (result.applied) {
+          this.listStore.upsertItem(result.data);
+        }
+      } catch (err: any) {
+        console.error('Failed to rename item', err);
+        this.errorMessage = err?.message ?? 'アイテムの更新に失敗しました。';
+        this.showErrorFeedback();
+      }
     },
     navigateToListEdit() {
       this.$router.push({
         name: 'ListEdit',
-        params: { id: this.$route.params.id },
-        query: { name: this.listName }
+        params: { id: this.$route.params.id }
       });
     }
   }
-};
+});
 </script>
 
 <template>
@@ -256,7 +299,7 @@ export default {
             placeholder="アイテムを追加..."
             variant="inline"
           />
-          <MainButton @click="addItem" :disabled="!newItemName.trim()"> 追加 </MainButton>
+          <MainButton @click="addItem" :disabled="!newItemName.trim() || isLoading"> 追加 </MainButton>
         </div>
       </div>
 
@@ -275,7 +318,7 @@ export default {
         </div>
       </div>
       <!-- チェック時に記録する購入者選択 -->
-      <div v-if="filteredItems.length > 0" class="flex justify-end items-center mb-2">
+      <div v-if="filteredItems.length > 0" class="w-full flex justify-end items-center mb-2">
         <div class="flex items-center gap-2 text-sm">
           <label for="memberSelect">
             <span class="text-charcoal-600 font-medium">買った人</span>
@@ -284,7 +327,7 @@ export default {
             selectId="memberSelect"
             selectName="member"
             :showArrow="true"
-            :optionItems="members"
+            :optionItems="memberOptions"
             width="fixed"
             v-model="selectedMemberId"
             @update:modelValue="handleMemberSelect"
@@ -298,6 +341,7 @@ export default {
           :key="item.id"
           :item="item"
           :memberBadgeVariant="getMemberBadgeVariant(item)"
+          :completedMemberName="getCompletedMemberName(item) || ''"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"

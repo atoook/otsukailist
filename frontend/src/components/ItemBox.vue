@@ -27,11 +27,17 @@
         />
         <p v-if="shouldShowAutosaveHint" class="text-xs text-charcoal-500 mt-1">変更は自動保存されます</p>
       </div>
-      <span v-else class="line-through text-charcoal-500 flex-1">
+<span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
       <span v-if="showSaveIndicator" class="text-success-600 text-lg">✔︎</span>
-      <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
+      <BadgeTag
+        v-if="completedMemberName"
+        :text="completedMemberName"
+        icon="👤"
+        size="small"
+        :variant="memberBadgeVariant"
+      />
     </div>
 
     <template #hiddenActions>
@@ -48,7 +54,7 @@ import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
 import type { Item, ItemId } from '../types/item';
-import { isItem, isCompletedStatus } from '../types/item';
+import { isItem, isItemCompleted } from '../types/item';
 import { normalizeText } from '../utils/text-normalization';
 
 export default {
@@ -78,6 +84,10 @@ export default {
       type: String,
       default: 'primary',
       validator: (value: string) => ['default', 'primary', 'secondary'].includes(value)
+    },
+    completedMemberName: {
+      type: String,
+      default: ''
     }
   },
   emits: ['toggle', 'info', 'delete', 'modify'],
@@ -89,14 +99,7 @@ export default {
   },
   computed: {
     isCompleted() {
-      return isCompletedStatus(this.item.status);
-    },
-    displayMember() {
-      // 完了済みアイテム: assignedMember（連携されたメンバー）を表示
-      if (this.isCompleted && this.item.assignedMember) {
-        return this.item.assignedMember;
-      }
-      return null;
+      return isItemCompleted(this.item);
     },
     shouldShowAutosaveHint() {
       return this.isInputFocused && this.isModified;

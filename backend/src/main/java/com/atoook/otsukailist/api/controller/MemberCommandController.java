@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.atoook.otsukailist.dto.CreateMemberRequest;
+import com.atoook.otsukailist.dto.DeleteMemberResponse;
 import com.atoook.otsukailist.dto.MemberResponse;
 import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.service.MemberCommandService;
@@ -68,12 +69,11 @@ public class MemberCommandController {
      *
      * @param listId   parent list identifier
      * @param memberId member identifier
-     * @return 204 deletion result
+     * @return 200 deletion result with mutation payload
      */
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<MutationResponse<DeleteMemberResponse>> delete(
             @PathVariable("listId") UUID listId, @PathVariable("memberId") UUID memberId) {
-        memberCommandService.deleteMember(listId, memberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(memberCommandService.deleteMember(listId, memberId));
     }
 }

@@ -8,7 +8,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 - **Frontend**: Vue.js 3, Vite, Tailwind CSS
 - **Backend**: Spring Boot (Java 17), Spring Data JPA, Spring Messaging (WebSocket)
-- **Database**: MySQL 8.x
+- **Database**: PostgreSQL 16
 - **Infra**: Docker / docker-compose
 
 ---
@@ -57,7 +57,8 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 - `ItemList` : リスト本体。`revision` を持ち、`Item` と `Member` を束ねる。
 - `Member` : 表示名のみを管理し、権限は持たない。リスト内で `display_name` がユニーク。
 - `Item` : 名前・完了フラグ・完了者 ID・完了日時を保持する。完了時は必ずメンバー存在チェックを行う。
-- 正式な DDL は `db/init/01_create_tables.sql` を参照（UUID は `BINARY(16)`、FK や Sample Data も同ディレクトリにあり）。
+- 正式な DDL は `db/init/01_create_tables.sql` を参照（UUID は `UUID` 型、FK や Sample Data も同ディレクトリにあり）。
+- 監査系タイムスタンプ（`created_at` / `updated_at`）は **Hibernate 側で更新を管理** し、DDL では `DEFAULT CURRENT_TIMESTAMP(3)` のみを使う。`ON UPDATE CURRENT_TIMESTAMP` のような DB 依存の自動更新句は採用しない。
 
 ---
 
@@ -78,7 +79,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 ## Docker / 開発フロー
 
-1. `cd db && docker-compose up -d` で MySQL を起動（初期化 SQL 自動実行）。
+1. `cd db && docker compose up -d` で PostgreSQL を起動（初期化 SQL 自動実行）。
 2. `cd backend && ./gradlew bootRun` で API を起動。
 3. `cd frontend && npm install && npm run dev` でフロントを起動。
 4. 静的解析: `./gradlew checkstyleMain pmdMain spotbugsMain`。
