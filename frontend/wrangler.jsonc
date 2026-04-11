@@ -6,6 +6,11 @@
     "directory": "./dist",
     "binding": "ASSETS"
   },
+  "triggers": {
+    "crons": [
+      "*/10 * * * *"
+    ]
+  },
   "compatibility_flags": [
     "nodejs_compat"
   ]
