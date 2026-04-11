@@ -31,6 +31,18 @@ function isSpaNavigationRequest(request: Request, url: URL): boolean {
   return accept.includes('text/html');
 }
 
+function canFallbackToSpaShell(request: Request, url: URL): boolean {
+  if (request.method !== 'GET') {
+    return false;
+  }
+
+  if (url.pathname.startsWith('/api')) {
+    return false;
+  }
+
+  return !/\.[a-zA-Z0-9]+$/.test(url.pathname);
+}
+
 export default {
   async fetch(request: Request, env: WorkerEnv) {
     const url = new URL(request.url);
@@ -53,6 +65,10 @@ export default {
       return assetResponse;
     }
 
-    return fetchSpaShell(request, env);
+    if (canFallbackToSpaShell(request, url)) {
+      return fetchSpaShell(request, env);
+    }
+
+    return assetResponse;
   }
 };
