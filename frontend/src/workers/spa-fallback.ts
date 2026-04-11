@@ -1,3 +1,5 @@
+const STATIC_PATH_PREFIXES = ['/assets/', '/favicon', '/manifest', '/robots.txt'];
+
 type WorkerEnv = {
   ASSETS: {
     fetch: (request: Request) => Promise<Response>;
@@ -18,14 +20,22 @@ export default {
       return fetch(apiRequest);
     }
 
-    // Try asset first
-    const assetResponse = await env.ASSETS.fetch(request);
-    if (assetResponse && assetResponse.status !== 404) {
-      return assetResponse;
+    // Serve actual static files (assets/index.html など)
+    if (
+      url.pathname === '/' ||
+      url.pathname === '/index.html' ||
+      STATIC_PATH_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))
+    ) {
+      return env.ASSETS.fetch(request);
     }
 
-    // SPA fallback
-    const indexRequest = new Request(new URL('/index.html', url.origin), request);
-    return env.ASSETS.fetch(indexRequest);
+    // SPA fallback: URL を変えずに index.html を返す
+    const indexResponse = await env.ASSETS.fetch(
+      new Request(new URL('/index.html', url.origin), request)
+    );
+    return new Response(indexResponse.body, {
+      status: 200,
+      headers: indexResponse.headers
+    });
   }
 };
