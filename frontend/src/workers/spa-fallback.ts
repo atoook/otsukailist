@@ -5,6 +5,13 @@ type WorkerEnv = {
   API_BASE_URL?: string;
 };
 
+function fetchSpaShell(request: Request, env: WorkerEnv): Promise<Response> {
+  const shellUrl = new URL(request.url);
+  shellUrl.pathname = '/';
+  shellUrl.search = '';
+  return env.ASSETS.fetch(new Request(shellUrl.toString(), request));
+}
+
 function isSpaNavigationRequest(request: Request, url: URL): boolean {
   if (request.method !== 'GET') {
     return false;
@@ -38,10 +45,7 @@ export default {
     }
 
     if (isSpaNavigationRequest(request, url)) {
-      const fallbackUrl = new URL(request.url);
-      fallbackUrl.pathname = '/index.html';
-      fallbackUrl.search = '';
-      return env.ASSETS.fetch(new Request(fallbackUrl.toString(), request));
+      return fetchSpaShell(request, env);
     }
 
     const assetResponse = await env.ASSETS.fetch(request);
@@ -49,9 +53,6 @@ export default {
       return assetResponse;
     }
 
-    const fallbackUrl = new URL(request.url);
-    fallbackUrl.pathname = '/index.html';
-    fallbackUrl.search = '';
-    return env.ASSETS.fetch(new Request(fallbackUrl.toString(), request));
+    return fetchSpaShell(request, env);
   }
 };
