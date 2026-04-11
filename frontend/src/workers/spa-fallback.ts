@@ -33,9 +33,6 @@ export default {
     const indexResponse = await env.ASSETS.fetch(
       new Request(new URL('/index.html', url.origin), request)
     );
-    return new Response(indexResponse.body, {
-      status: 200,
-      headers: indexResponse.headers
-    });
+    return indexResponse;
   }
 };
