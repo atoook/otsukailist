@@ -13,6 +13,7 @@ import type { Member, MemberId } from '@/types/member';
 import { fetchSnapshot } from '@/api/list';
 import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
+import { getSelectedMemberId, setSelectedMemberId, addOrUpdateListHistory } from '@/lib/userCache';
 
 export default defineComponent({
   name: 'ItemListPage',
@@ -120,9 +121,18 @@ export default defineComponent({
       try {
         const snapshot = await fetchSnapshot(listId);
         this.listStore.applySnapshot(snapshot);
-        if (!this.selectedMemberId && snapshot.members.length > 0) {
+
+        // キャッシュから selectedMemberId を復元し、メンバー一覧で検証する
+        const cachedMemberId = getSelectedMemberId(listId);
+        const memberIds = snapshot.members.map((m) => m.id);
+        if (cachedMemberId && memberIds.includes(cachedMemberId)) {
+          this.selectedMemberId = cachedMemberId;
+        } else if (snapshot.members.length > 0) {
           this.selectedMemberId = snapshot.members[0]?.id ?? null;
         }
+
+        // リスト履歴に追加/更新
+        addOrUpdateListHistory({ listId, name: snapshot.name });
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
@@ -132,6 +142,9 @@ export default defineComponent({
     },
     handleMemberSelect(selectedId: string) {
       this.selectedMemberId = selectedId;
+      if (this.currentListId) {
+        setSelectedMemberId(this.currentListId, selectedId);
+      }
     },
     onSearchInput(value: string): void {
       this.searchQuery = normalizeInput(value);
