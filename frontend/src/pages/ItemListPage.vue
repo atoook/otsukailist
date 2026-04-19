@@ -115,9 +115,9 @@ export default defineComponent({
         if (!this.selectedMemberId && snapshot.members.length > 0) {
           this.selectedMemberId = snapshot.members[0]?.id ?? null;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
-        this.errorMessage = err?.message ?? 'リストの取得に失敗しました。';
+        this.errorMessage = err instanceof Error ? err.message : 'リストの取得に失敗しました。';
       } finally {
         this.snapshotLoading = false;
       }

@@ -119,9 +119,9 @@ export default defineComponent({
         if (result.applied) {
           this.listStore.upsertItem(result.data);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to update item', err);
-        this.errorMessage = err?.message ?? 'アイテムの更新に失敗しました。';
+        this.errorMessage = err instanceof Error ? err.message : 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
       }
     },
@@ -137,9 +137,9 @@ export default defineComponent({
         if (result.applied) {
           this.listStore.removeItem(itemId);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to delete item', err);
-        this.errorMessage = err?.message ?? 'アイテムの削除に失敗しました。';
+        this.errorMessage = err instanceof Error ? err.message : 'アイテムの削除に失敗しました。';
         this.showErrorFeedback();
       }
     },
@@ -161,9 +161,9 @@ export default defineComponent({
         if (result.applied) {
           this.listStore.upsertItem(result.data);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to rename item', err);
-        this.errorMessage = err?.message ?? 'アイテムの更新に失敗しました。';
+        this.errorMessage = err instanceof Error ? err.message : 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
       }
     },

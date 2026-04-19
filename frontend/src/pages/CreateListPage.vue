@@ -74,9 +74,9 @@ export default defineComponent({
           name: 'ShareList',
           params: { id: res.data.listId }
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to create list', err);
-        this.errorMessage = `リストの作成に失敗しました。${err?.message ? ` (${err.message})` : ''}`;
+        this.errorMessage = `リストの作成に失敗しました。${err instanceof Error && err.message ? ` (${err.message})` : ''}`;
       } finally {
         this.creating = false;
       }

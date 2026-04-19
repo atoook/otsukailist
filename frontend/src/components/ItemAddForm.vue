@@ -50,9 +50,9 @@ export default defineComponent({
           this.listStore.upsertItem(result.data);
           this.newItemName = '';
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to create item', err);
-        this.$emit('error', err?.message ?? 'アイテムの作成に失敗しました。');
+        this.$emit('error', err instanceof Error ? err.message : 'アイテムの作成に失敗しました。');
       }
     }
   }
