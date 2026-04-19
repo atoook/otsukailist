@@ -23,6 +23,7 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
       ORDER BY
         i.completed ASC,
         CASE WHEN i.completed = false THEN i.createdAt ELSE NULL END DESC,
+        CASE WHEN i.completed = true AND i.completedAt IS NULL THEN 1 ELSE 0 END ASC,
         CASE WHEN i.completed = true THEN i.completedAt ELSE NULL END DESC,
         i.id ASC
       """)

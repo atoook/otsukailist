@@ -7,16 +7,20 @@ set -e
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 BACKEND="$REPO_ROOT/backend"
 
+# Capture the staged Java file list (NUL-delimited) BEFORE Spotless modifies
+# the working tree, so we only re-stage files that were already in the index.
+STAGED_JAVA_FILES="$(mktemp)"
+trap 'rm -f "$STAGED_JAVA_FILES"' EXIT
+git diff --cached --name-only -z -- '*.java' > "$STAGED_JAVA_FILES"
+
 echo "--- pre-commit: Spotless ---"
 (cd "$BACKEND" && ./gradlew spotlessApply --quiet)
 
 # Re-stage any Java files that Spotless just reformatted.
-# Only touches files that were already staged (tracked + modified).
-FORMATTED=$(git diff --cached --name-only -- '*.java')
-if [ -n "$FORMATTED" ]; then
-  echo "$FORMATTED" | tr '\n' '\0' | xargs -0 git add
+if [ -s "$STAGED_JAVA_FILES" ]; then
+  xargs -0 git add -- < "$STAGED_JAVA_FILES"
   echo "Spotless reformatted and re-staged:"
-  echo "$FORMATTED" | sed 's/^/  /'
+  tr '\0' '\n' < "$STAGED_JAVA_FILES" | sed 's/^/  /'
 fi
 
 echo "--- pre-commit: static analysis (warnings only) ---"

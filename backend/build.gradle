@@ -162,6 +162,14 @@ spotless {
 task installGitHooks(type: Copy) {
 	description = 'Git pre-commit フックをインストールします (開発環境セットアップ時に一度だけ実行)'
 	group = 'setup'
+	def gitDir = file('../.git')
+	onlyIf {
+		if (!gitDir.isDirectory()) {
+			logger.lifecycle("Skipping installGitHooks: Git directory not found at ${gitDir}.")
+			return false
+		}
+		return true
+	}
 	from '../scripts/hooks/pre-commit'
 	into '../.git/hooks'
 	fileMode 0755
