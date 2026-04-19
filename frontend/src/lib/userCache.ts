@@ -7,7 +7,6 @@ const MAX_HISTORY_ENTRIES = 10;
 export type ListHistoryEntry = {
   listId: UUID;
   name: string;
-  url: string;
   lastAccessedAt: string;
 };
 
@@ -34,12 +33,7 @@ export function setSelectedMemberId(listId: string, memberId: string): void {
 function isValidHistoryEntry(entry: unknown): entry is ListHistoryEntry {
   if (typeof entry !== 'object' || entry === null) return false;
   const e = entry as Record<string, unknown>;
-  return (
-    typeof e.listId === 'string' &&
-    typeof e.name === 'string' &&
-    typeof e.url === 'string' &&
-    typeof e.lastAccessedAt === 'string'
-  );
+  return typeof e.listId === 'string' && typeof e.name === 'string' && typeof e.lastAccessedAt === 'string';
 }
 
 export function getListHistory(): ListHistoryEntry[] {
@@ -48,13 +42,16 @@ export function getListHistory(): ListHistoryEntry[] {
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(isValidHistoryEntry);
+    return parsed
+      .filter(isValidHistoryEntry)
+      .sort((a, b) => b.lastAccessedAt.localeCompare(a.lastAccessedAt))
+      .slice(0, MAX_HISTORY_ENTRIES);
   } catch {
     return [];
   }
 }
 
-export function addOrUpdateListHistory(entry: { listId: string; name: string; url: string }): void {
+export function addOrUpdateListHistory(entry: { listId: string; name: string }): void {
   try {
     const history = getListHistory();
     const now = new Date().toISOString();

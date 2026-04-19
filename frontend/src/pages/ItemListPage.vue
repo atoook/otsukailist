@@ -132,11 +132,7 @@ export default defineComponent({
         }
 
         // リスト履歴に追加/更新
-        addOrUpdateListHistory({
-          listId,
-          name: snapshot.name,
-          url: window.location.href
-        });
+        addOrUpdateListHistory({ listId, name: snapshot.name });
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';

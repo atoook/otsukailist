@@ -84,28 +84,24 @@ describe('userCache', () => {
     it('新しいエントリを追加できる', () => {
       addOrUpdateListHistory({
         listId: LIST_ID_A,
-        name: 'リストA',
-        url: 'https://example.com/lists/a'
+        name: 'リストA'
       });
       const history = getListHistory();
       expect(history).toHaveLength(1);
       const [first] = history;
       expect(first?.listId).toBe(LIST_ID_A);
       expect(first?.name).toBe('リストA');
-      expect(first?.url).toBe('https://example.com/lists/a');
       expect(typeof first?.lastAccessedAt).toBe('string');
     });
 
     it('同じlistIdの既存エントリをnameとlastAccessedAtを更新する', () => {
       addOrUpdateListHistory({
         listId: LIST_ID_A,
-        name: '旧名前',
-        url: 'https://example.com/lists/a'
+        name: '旧名前'
       });
       addOrUpdateListHistory({
         listId: LIST_ID_A,
-        name: '新名前',
-        url: 'https://example.com/lists/a'
+        name: '新名前'
       });
       const history = getListHistory();
       expect(history).toHaveLength(1);
@@ -114,8 +110,8 @@ describe('userCache', () => {
     });
 
     it('最新アクセスが先頭に来るようにソートされる', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
-      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB', url: 'url-b' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
+      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB' });
       const history = getListHistory();
       const [first, second] = history;
       expect(first?.listId).toBe(LIST_ID_B);
@@ -126,17 +122,16 @@ describe('userCache', () => {
       for (let i = 0; i < 15; i++) {
         addOrUpdateListHistory({
           listId: `list-${i}`,
-          name: `リスト${i}`,
-          url: `https://example.com/lists/${i}`
+          name: `リスト${i}`
         });
       }
       expect(getListHistory()).toHaveLength(10);
     });
 
     it('再アクセスでエントリが先頭に移動する', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
-      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB', url: 'url-b' });
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
+      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
       const history = getListHistory();
       const [first, second] = history;
       expect(first?.listId).toBe(LIST_ID_A);
@@ -146,7 +141,7 @@ describe('userCache', () => {
 
   describe('updateListHistoryName', () => {
     it('存在するエントリのnameを更新できる', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: '旧名前', url: 'url-a' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: '旧名前' });
       updateListHistoryName(LIST_ID_A, '新名前');
       const history = getListHistory();
       const [first] = history;
@@ -154,8 +149,8 @@ describe('userCache', () => {
     });
 
     it('nameを更新してもソート順は変わらない', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
-      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB', url: 'url-b' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
+      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB' });
       updateListHistoryName(LIST_ID_A, 'リストA改');
       const history = getListHistory();
       const [first, second] = history;
@@ -164,7 +159,7 @@ describe('userCache', () => {
     });
 
     it('存在しないlistIdは何もしない（他のエントリに影響しない）', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
       updateListHistoryName('non-existent', '更新');
       const history = getListHistory();
       expect(history).toHaveLength(1);
@@ -175,8 +170,8 @@ describe('userCache', () => {
 
   describe('clearListHistory', () => {
     it('全履歴を削除できる', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
-      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB', url: 'url-b' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
+      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB' });
       clearListHistory();
       expect(getListHistory()).toEqual([]);
     });
@@ -188,8 +183,8 @@ describe('userCache', () => {
 
   describe('removeListHistoryEntry', () => {
     it('指定したlistIdのエントリを削除できる', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
-      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB', url: 'url-b' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
+      addOrUpdateListHistory({ listId: LIST_ID_B, name: 'リストB' });
       removeListHistoryEntry(LIST_ID_A);
       const history = getListHistory();
       expect(history).toHaveLength(1);
@@ -198,13 +193,13 @@ describe('userCache', () => {
     });
 
     it('存在しないlistIdを指定しても他のエントリに影響しない', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
       removeListHistoryEntry('non-existent');
       expect(getListHistory()).toHaveLength(1);
     });
 
     it('最後の1件を削除すると履歴が空になる', () => {
-      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA', url: 'url-a' });
+      addOrUpdateListHistory({ listId: LIST_ID_A, name: 'リストA' });
       removeListHistoryEntry(LIST_ID_A);
       expect(getListHistory()).toEqual([]);
     });

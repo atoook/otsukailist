@@ -3,7 +3,7 @@ import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
 import BadgeTag from '../components/BadgeTag.vue';
-import { getListHistory, removeListHistoryEntry } from '../lib/userCache';
+import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
 
 export default {
   name: 'WelcomePage',
@@ -63,8 +63,6 @@ export default {
                 type="button"
                 @click="removeHistoryEntry(entry.listId)"
                 :aria-label="`${entry.name}を履歴からクリア`"
-                tabindex="-1"
-                role="button"
               >
                 <BadgeTag text="履歴からクリア" size="small" class="bg-ember-400 border-ember-600 text-white" />
               </button>
