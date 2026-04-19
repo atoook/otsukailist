@@ -96,7 +96,7 @@ export default defineComponent({
         return `あと ${incomplete} 件`;
       }
       if (incomplete === 0) {
-        return `完了 ${completed} 件`;
+        return '全て完了 🎉';
       }
       return `あと ${incomplete} 件 / 完了 ${completed} 件`;
     },
