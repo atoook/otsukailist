@@ -1,32 +1,29 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
-import CheckBox from '../components/CheckBox.vue';
-import MainButton from '../components/MainButton.vue';
 import TextInput from '../components/TextInput.vue';
-import ItemBox from '../components/ItemBox.vue';
 import DropDown from '../components/DropDown.vue';
-import type { Item, ItemId } from '../types/item';
-import { normalizeText, normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import ItemAddForm from '../components/ItemAddForm.vue';
+import ItemGroupList from '../components/ItemGroupList.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
+import type { Item } from '../types/item';
+import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
 import type { Member, MemberId } from '@/types/member';
 import { fetchSnapshot } from '@/api/list';
-import { createItem, deleteItem as deleteItemApi, updateItem } from '@/api/item';
 import { useListStore } from '@/stores/list';
-import { useMutation } from '@/composables/useMutation';
 
 export default defineComponent({
   name: 'ItemListPage',
   components: {
     ContentArea,
-    CheckBox,
-    MainButton,
     TextInput,
-    ItemBox,
-    DropDown
+    DropDown,
+    ItemAddForm,
+    ItemGroupList,
+    LoadingSpinner
   },
   data(): {
     currentListId: string | null;
-    newItemName: string;
     searchQuery: string;
     selectedMemberId: MemberId | null;
     errorMessage: string;
@@ -35,7 +32,6 @@ export default defineComponent({
   } {
     return {
       currentListId: null,
-      newItemName: '',
       searchQuery: '',
       selectedMemberId: null,
       errorMessage: '',
@@ -45,13 +41,7 @@ export default defineComponent({
   },
   setup() {
     const listStore = useListStore();
-    const { run, loading } = useMutation();
-
-    return {
-      listStore,
-      mutationRun: run,
-      mutationLoading: loading
-    };
+    return { listStore };
   },
   async created() {
     const listId = this.$route.params.id as string | undefined;
@@ -70,9 +60,6 @@ export default defineComponent({
     await this.loadSnapshot(listId);
   },
   computed: {
-    isLoading(): boolean {
-      return this.snapshotLoading || this.mutationLoading;
-    },
     listName(): string {
       return this.listStore.name || this.fallbackListName || '買い物リスト';
     },
@@ -101,8 +88,13 @@ export default defineComponent({
         name: member.displayName
       }));
     },
-    memberMap(): Map<MemberId, Member> {
-      return this.listStore.memberMap;
+    itemSummary(): string {
+      const incomplete = this.items.filter((item) => !item.completed).length;
+      const completed = this.items.filter((item) => item.completed).length;
+      if (completed === 0) {
+        return `あと ${incomplete} 件`;
+      }
+      return `あと ${incomplete} 件 / 完了 ${completed} 件`;
     }
   },
   watch: {
@@ -123,134 +115,18 @@ export default defineComponent({
         if (!this.selectedMemberId && snapshot.members.length > 0) {
           this.selectedMemberId = snapshot.members[0]?.id ?? null;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
-        this.errorMessage = err?.message ?? 'リストの取得に失敗しました。';
+        this.errorMessage = err instanceof Error ? err.message : 'リストの取得に失敗しました。';
       } finally {
         this.snapshotLoading = false;
       }
     },
-    getMemberBadgeVariant(item: Item): string {
-      if (item.completed && this.selectedMemberId && item.completedByMemberId === this.selectedMemberId) {
-        return 'primary';
-      }
-      return 'secondary';
-    },
     handleMemberSelect(selectedId: string) {
       this.selectedMemberId = selectedId;
     },
-    async addItem() {
-      const normalizedName = normalizeText(this.newItemName);
-      const listId = this.listStore.listId;
-
-      if (!normalizedName) {
-        return;
-      }
-
-      if (!listId) {
-        this.errorMessage = 'リストが初期化されていません。';
-        return;
-      }
-
-      try {
-        const result = await this.mutationRun(() => createItem(listId, { name: normalizedName }));
-        if (result.applied) {
-          this.listStore.upsertItem(result.data);
-          this.newItemName = '';
-        }
-      } catch (err: any) {
-        console.error('Failed to create item', err);
-        this.errorMessage = err?.message ?? 'アイテムの作成に失敗しました。';
-      }
-    },
-    onItemNameInput(value: string): void {
-      this.newItemName = normalizeInput(value);
-    },
     onSearchInput(value: string): void {
       this.searchQuery = normalizeInput(value);
-    },
-    async toggleItem(item: Item) {
-      this.errorMessage = '';
-
-      const listId = this.listStore.listId;
-      if (!listId) {
-        this.errorMessage = 'リストが初期化されていません。';
-        return;
-      }
-
-      const wasCompleted = item.completed;
-      const updatedItem: Partial<Item> = {
-        completed: !wasCompleted,
-        completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null)
-      };
-      try {
-        const result = await this.mutationRun(() => updateItem(listId, item.id, updatedItem));
-        if (result.applied) {
-          this.listStore.upsertItem(result.data);
-        }
-      } catch (err: any) {
-        console.error('Failed to update item', err);
-        this.errorMessage = err?.message ?? 'アイテムの更新に失敗しました。';
-        this.showErrorFeedback();
-      }
-    },
-    getCompletedMemberName(item: Item): string | null {
-      if (!item.completed || !item.completedByMemberId) {
-        return null;
-      }
-      return this.memberMap.get(item.completedByMemberId)?.displayName ?? null;
-    },
-    showErrorFeedback() {
-      if (this.errorMessage) {
-        alert(this.errorMessage);
-        setTimeout(() => {
-          this.errorMessage = '';
-        }, 3000);
-      }
-    },
-    async deleteItem(itemId: ItemId) {
-      const listId = this.listStore.listId;
-
-      if (!listId) {
-        this.errorMessage = 'リストが初期化されていません。';
-        return;
-      }
-
-      try {
-        const result = await this.mutationRun(() => deleteItemApi(listId, itemId));
-        if (result.applied) {
-          this.listStore.removeItem(itemId);
-        }
-      } catch (err: any) {
-        console.error('Failed to delete item', err);
-        this.errorMessage = err?.message ?? 'アイテムの削除に失敗しました。';
-        this.showErrorFeedback();
-      }
-    },
-    async modifyItem(updatedItem: Item) {
-      const normalizedItemName = normalizeText(updatedItem.name);
-      if (!normalizedItemName) {
-        this.errorMessage = 'アイテム名が空のため、更新できません。';
-        this.showErrorFeedback();
-        return;
-      }
-
-      const listId = this.listStore.listId;
-      if (!listId) {
-        this.errorMessage = 'リストが初期化されていません。';
-        return;
-      }
-
-      try {
-        const result = await this.mutationRun(() => updateItem(listId, updatedItem.id, { name: normalizedItemName }));
-        if (result.applied) {
-          this.listStore.upsertItem(result.data);
-        }
-      } catch (err: any) {
-        console.error('Failed to rename item', err);
-        this.errorMessage = err?.message ?? 'アイテムの更新に失敗しました。';
-        this.showErrorFeedback();
-      }
     },
     navigateToListEdit() {
       this.$router.push({
@@ -263,7 +139,10 @@ export default defineComponent({
 </script>
 
 <template>
-  <ContentArea>
+  <ContentArea v-if="snapshotLoading" layout="center">
+    <LoadingSpinner message="リストを読み込み中..." />
+  </ContentArea>
+  <ContentArea v-else>
     <div class="w-full">
       <!-- リストタイトル -->
       <div class="mb-8">
@@ -289,19 +168,7 @@ export default defineComponent({
       </div>
 
       <!-- 新しいアイテム追加 -->
-      <div class="mb-6">
-        <div class="flex gap-2 px-3 py-3 border border-wood-300 bg-wood-100 rounded-lg shadow-sm">
-          <TextInput
-            :model-value="newItemName"
-            @update:model-value="onItemNameInput"
-            @enter="addItem"
-            input-name="newItem"
-            placeholder="アイテムを追加..."
-            variant="inline"
-          />
-          <MainButton @click="addItem" :disabled="!newItemName.trim() || isLoading"> 追加 </MainButton>
-        </div>
-      </div>
+      <ItemAddForm @error="errorMessage = $event" />
 
       <!-- 検索ボックス -->
       <div v-if="items.length > 0" class="mb-4">
@@ -317,8 +184,9 @@ export default defineComponent({
           />
         </div>
       </div>
-      <!-- チェック時に記録する購入者選択 -->
-      <div v-if="filteredItems.length > 0" class="w-full flex justify-end items-center mb-2">
+      <!-- チェック時に記録する購入者選択 + サマリー -->
+      <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
+        <span class="text-xs text-charcoal-400">{{ itemSummary }}</span>
         <div class="flex items-center gap-2 text-sm">
           <label for="memberSelect">
             <span class="text-charcoal-600 font-medium">買った人</span>
@@ -335,31 +203,12 @@ export default defineComponent({
         </div>
       </div>
       <!-- アイテムリスト -->
-      <div class="space-y-3">
-        <ItemBox
-          v-for="item in filteredItems"
-          :key="item.id"
-          :item="item"
-          :memberBadgeVariant="getMemberBadgeVariant(item)"
-          :completedMemberName="getCompletedMemberName(item) || ''"
-          @toggle="toggleItem"
-          @delete="deleteItem"
-          @modify="modifyItem"
-        />
-
-        <!-- アイテムがない場合 -->
-        <div v-if="items.length === 0" class="text-center text-charcoal-600 py-8">
-          <div class="text-4xl mb-3">🍖</div>
-          まだアイテムがありません。<br />
-          上のフォームからアイテムを追加してください。
-        </div>
-
-        <!-- 検索結果がない場合 -->
-        <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
-          <div class="text-4xl mb-3">🔍</div>
-          「{{ searchQuery }}」に一致するアイテムが見つかりませんでした。
-        </div>
-      </div>
+      <ItemGroupList
+        :filtered-items="filteredItems"
+        :items="items"
+        :search-query="searchQuery"
+        :selected-member-id="selectedMemberId"
+      />
     </div>
   </ContentArea>
 </template>

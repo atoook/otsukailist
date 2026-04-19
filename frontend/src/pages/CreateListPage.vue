@@ -5,6 +5,7 @@ import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 import type { Member, MemberId } from '../types/member';
 import type { ItemList } from '../types/item-list';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
@@ -18,7 +19,8 @@ export default defineComponent({
     MainButton,
     TextInputWithLabel,
     TextInput,
-    BadgeTag
+    BadgeTag,
+    LoadingSpinner
   },
   data(): {
     listName: string;
@@ -72,9 +74,9 @@ export default defineComponent({
           name: 'ShareList',
           params: { id: res.data.listId }
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to create list', err);
-        this.errorMessage = `リストの作成に失敗しました。${err?.message ? ` (${err.message})` : ''}`;
+        this.errorMessage = `リストの作成に失敗しました。${err instanceof Error && err.message ? ` (${err.message})` : ''}`;
       } finally {
         this.creating = false;
       }
@@ -112,7 +114,10 @@ export default defineComponent({
 </script>
 
 <template>
-  <ContentArea>
+  <ContentArea v-if="creating" layout="center">
+    <LoadingSpinner message="リストを作成中..." />
+  </ContentArea>
+  <ContentArea v-else>
     <div class="text-center mb-6">
       <div class="text-5xl mb-3">🍖</div>
       <h2 class="text-2xl font-bold font-serif text-charcoal-800 mb-2">リスト名を設定</h2>

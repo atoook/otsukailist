@@ -6,7 +6,7 @@ import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import type { Member, MemberId } from '../types/member';
-import { normalizeText, normalizeInput } from '../utils/text-normalization';
+import { normalizeText } from '../utils/text-normalization';
 import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { createMember, deleteMember } from '@/api/member';
@@ -93,9 +93,9 @@ export default defineComponent({
         }
         this.newMemberName = '';
         this.errorMessage = '';
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to add member', err);
-        this.errorMessage = err?.message ?? 'メンバーの追加に失敗しました。';
+        this.errorMessage = err instanceof Error ? err.message : 'メンバーの追加に失敗しました。';
       }
     },
     async removeMember(memberId: MemberId): Promise<void> {
@@ -114,9 +114,9 @@ export default defineComponent({
           }
         }
         this.errorMessage = '';
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to remove member', err);
-        this.errorMessage = err?.message ?? 'メンバーの削除に失敗しました。';
+        this.errorMessage = err instanceof Error ? err.message : 'メンバーの削除に失敗しました。';
       }
     },
     async updateList(): Promise<void> {
@@ -142,9 +142,9 @@ export default defineComponent({
             this.errorMessage = 'リスト名の更新が反映されませんでした。時間をおいて再試行してください。';
             return;
           }
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error('Failed to rename list', err);
-          this.errorMessage = err?.message ?? 'リスト名の更新に失敗しました。';
+          this.errorMessage = err instanceof Error ? err.message : 'リスト名の更新に失敗しました。';
           return;
         }
       }
@@ -160,6 +160,9 @@ export default defineComponent({
       });
     },
     cancelUpdate(): void {
+      if (this.isLoading) {
+        return;
+      }
       this.$router.back();
     },
     getMemberBadgeVariant(member: Member): string {
@@ -243,7 +246,7 @@ export default defineComponent({
 
     <div class="flex flex-col gap-3">
       <MainButton @click="updateList" :disabled="!hasRequiredInput || isLoading" variant="primary"> 更新 </MainButton>
-      <MainButton @click="cancelUpdate" variant="secondary"> キャンセル </MainButton>
+      <MainButton @click="cancelUpdate" :disabled="isLoading" variant="secondary"> キャンセル </MainButton>
     </div>
   </ContentArea>
 </template>
