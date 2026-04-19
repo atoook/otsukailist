@@ -12,9 +12,9 @@ echo "--- pre-commit: Spotless ---"
 
 # Re-stage any Java files that Spotless just reformatted.
 # Only touches files that were already staged (tracked + modified).
-FORMATTED=$(git diff --name-only -- "*.java")
+FORMATTED=$(git diff --cached --name-only -- '*.java')
 if [ -n "$FORMATTED" ]; then
-  echo "$FORMATTED" | xargs git add
+  echo "$FORMATTED" | tr '\n' '\0' | xargs -0 git add
   echo "Spotless reformatted and re-staged:"
   echo "$FORMATTED" | sed 's/^/  /'
 fi
