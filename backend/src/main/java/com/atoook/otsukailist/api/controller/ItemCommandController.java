@@ -3,6 +3,8 @@ package com.atoook.otsukailist.api.controller;
 import java.net.URI;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,7 +22,6 @@ import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.service.ItemCommandService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -28,54 +29,53 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/lists/{listId}/items")
 public class ItemCommandController {
 
-    private final ItemCommandService itemCommandService;
+  private final ItemCommandService itemCommandService;
 
-    /**
-     * Creates a new item under the given list.
-     *
-     * @param listId list identifier
-     * @param req    creation payload
-     * @return 201 created item response
-     */
-    @PostMapping
-    public ResponseEntity<MutationResponse<ItemResponse>> create(
-            @PathVariable("listId") UUID listId,
-            @Valid @RequestBody CreateItemRequest req) {
-        MutationResponse<ItemResponse> payload = itemCommandService.createItem(listId, req);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-                .path("/{itemId}")
-                .buildAndExpand(payload.getData().getId())
-                .toUri();
-        return ResponseEntity.created(location).body(payload);
-    }
+  /**
+   * Creates a new item under the given list.
+   *
+   * @param listId list identifier
+   * @param req creation payload
+   * @return 201 created item response
+   */
+  @PostMapping
+  public ResponseEntity<MutationResponse<ItemResponse>> create(
+      @PathVariable("listId") UUID listId, @Valid @RequestBody CreateItemRequest req) {
+    MutationResponse<ItemResponse> payload = itemCommandService.createItem(listId, req);
+    URI location =
+        ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{itemId}")
+            .buildAndExpand(payload.getData().getId())
+            .toUri();
+    return ResponseEntity.created(location).body(payload);
+  }
 
-    /**
-     * Updates an existing item.
-     *
-     * @param listId parent list identifier
-     * @param itemId item identifier
-     * @param req    update payload
-     * @return 200 updated item response
-     */
-    @PatchMapping("/{itemId}")
-    public ResponseEntity<MutationResponse<ItemResponse>> update(
-            @PathVariable("listId") UUID listId,
-            @PathVariable("itemId") UUID itemId,
-            @Valid @RequestBody UpdateItemRequest req) {
-        return ResponseEntity.ok(itemCommandService.updateItem(listId, itemId, req));
-    }
+  /**
+   * Updates an existing item.
+   *
+   * @param listId parent list identifier
+   * @param itemId item identifier
+   * @param req update payload
+   * @return 200 updated item response
+   */
+  @PatchMapping("/{itemId}")
+  public ResponseEntity<MutationResponse<ItemResponse>> update(
+      @PathVariable("listId") UUID listId,
+      @PathVariable("itemId") UUID itemId,
+      @Valid @RequestBody UpdateItemRequest req) {
+    return ResponseEntity.ok(itemCommandService.updateItem(listId, itemId, req));
+  }
 
-    /**
-     * Deletes the specified item.
-     *
-     * @param listId parent list identifier
-     * @param itemId item identifier
-     * @return 200 deletion response with mutation payload
-     */
-    @DeleteMapping("/{itemId}")
-    public ResponseEntity<MutationResponse<DeleteItemResponse>> delete(
-            @PathVariable("listId") UUID listId,
-            @PathVariable("itemId") UUID itemId) {
-        return ResponseEntity.ok(itemCommandService.deleteItem(listId, itemId));
-    }
+  /**
+   * Deletes the specified item.
+   *
+   * @param listId parent list identifier
+   * @param itemId item identifier
+   * @return 200 deletion response with mutation payload
+   */
+  @DeleteMapping("/{itemId}")
+  public ResponseEntity<MutationResponse<DeleteItemResponse>> delete(
+      @PathVariable("listId") UUID listId, @PathVariable("itemId") UUID itemId) {
+    return ResponseEntity.ok(itemCommandService.deleteItem(listId, itemId));
+  }
 }

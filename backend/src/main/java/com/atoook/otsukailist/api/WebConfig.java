@@ -10,23 +10,24 @@ import com.atoook.otsukailist.config.AppCorsProperties;
 @Configuration
 public class WebConfig {
 
-    private final AppCorsProperties corsProperties;
+  private final AppCorsProperties corsProperties;
 
-    public WebConfig(AppCorsProperties corsProperties) {
-        this.corsProperties = corsProperties;
-    }
+  public WebConfig(AppCorsProperties corsProperties) {
+    this.corsProperties = corsProperties;
+  }
 
-    @Bean
-    public WebMvcConfigurer webMvcConfigurer() {
+  @Bean
+  public WebMvcConfigurer webMvcConfigurer() {
 
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new))
-                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                        .allowedHeaders("*");
-            }
-        };
-    }
+    return new WebMvcConfigurer() {
+      @Override
+      public void addCorsMappings(CorsRegistry registry) {
+        registry
+            .addMapping("/**")
+            .allowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new))
+            .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            .allowedHeaders("*");
+      }
+    };
+  }
 }

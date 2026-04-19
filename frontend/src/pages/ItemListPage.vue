@@ -181,10 +181,8 @@ export default defineComponent({
       const wasCompleted = item.completed;
       const updatedItem: Partial<Item> = {
         completed: !wasCompleted,
-        completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null),
-        completedAt: wasCompleted ? null : new Date().toISOString()
+        completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null)
       };
-
       try {
         const result = await this.mutationRun(() => updateItem(listId, item.id, updatedItem));
         if (result.applied) {

@@ -11,13 +11,29 @@ import jakarta.validation.Payload;
 
 @Documented
 @Constraint(validatedBy = CorsOriginsValidator.class)
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidCorsOrigins {
 
-    String message() default "app.cors.allowed-origins must be valid origins and may use '*' only as the single entry";
+  /**
+   * Default validation error message.
+   *
+   * @return the validation message template
+   */
+  String message() default
+      "app.cors.allowed-origins must be valid origins and may use '*' only as the single entry";
 
-    Class<?>[] groups() default {};
+  /**
+   * Validation groups for constraint targeting.
+   *
+   * @return the validation groups
+   */
+  Class<?>[] groups() default {};
 
-    Class<? extends Payload>[] payload() default {};
+  /**
+   * Payload classes for clients of the Bean Validation API.
+   *
+   * @return payload metadata
+   */
+  Class<? extends Payload>[] payload() default {};
 }

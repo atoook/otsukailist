@@ -17,18 +17,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @RequestMapping("/api/lists")
 public class ItemListQueryController {
-    private final ListQueryService listQueryService;
+  private final ListQueryService listQueryService;
 
-    /**
-     * Get the latest snapshot of the specified item list.
-     *
-     * @param listId the ID of the item list
-     * @return 200 snapshot of the item list
-     */
-    @GetMapping("/{listId}/snapshot")
-    public ResponseEntity<ItemListSnapshotResponse> snapshot(
-            @PathVariable("listId") UUID listId) {
-        return ResponseEntity.ok(listQueryService.snapshot(listId));
-    }
-
+  /**
+   * Get the latest snapshot of the specified item list.
+   *
+   * @param listId the ID of the item list
+   * @return 200 snapshot of the item list
+   */
+  @GetMapping("/{listId}/snapshot")
+  public ResponseEntity<ItemListSnapshotResponse> snapshot(@PathVariable("listId") UUID listId) {
+    return ResponseEntity.ok(listQueryService.snapshot(listId));
+  }
 }

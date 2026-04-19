@@ -11,25 +11,29 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class ActuatorSecurityConfig {
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher(EndpointRequest.toAnyEndpoint())
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(EndpointRequest.to("health")).permitAll()
-                        .anyRequest().hasRole("ACTUATOR"))
-                .httpBasic(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable());
+  @Bean
+  @Order(1)
+  public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+    http.securityMatcher(EndpointRequest.toAnyEndpoint())
+        .authorizeHttpRequests(
+            authorize ->
+                authorize
+                    .requestMatchers(EndpointRequest.to("health"))
+                    .permitAll()
+                    .anyRequest()
+                    .hasRole("ACTUATOR"))
+        .httpBasic(Customizer.withDefaults())
+        .csrf(csrf -> csrf.disable());
 
-        return http.build();
-    }
+    return http.build();
+  }
 
-    @Bean
-    @Order(2)
-    public SecurityFilterChain applicationSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
-                .csrf(csrf -> csrf.disable());
+  @Bean
+  @Order(2)
+  public SecurityFilterChain applicationSecurityFilterChain(HttpSecurity http) throws Exception {
+    http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+        .csrf(csrf -> csrf.disable());
 
-        return http.build();
-    }
+    return http.build();
+  }
 }

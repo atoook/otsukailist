@@ -79,8 +79,6 @@ Initial load uses a single snapshot endpoint (`GET /api/lists/{id}/snapshot`) th
 
 No migration tool (no Flyway/Liquibase). Schema lives in `/db/init/01_create_tables.sql`. To reset: `./env.sh dev down && ./env.sh dev up`. Test DB uses `create-drop` JPA strategy; dev/prod uses `validate`.
 
-## Key Conventions
-
 ## Implementation Quality Policy
 
 When proposing or applying fixes:

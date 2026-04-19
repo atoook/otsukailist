@@ -2,6 +2,7 @@ package com.atoook.otsukailist.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +22,5 @@ public class CreateItemRequest {
   private String name;
 
   // 作成時に完了状態を指定可能（デフォルト: false）
-  @Builder.Default
-  private boolean completed = false;
+  @Builder.Default private boolean completed = false;
 }
