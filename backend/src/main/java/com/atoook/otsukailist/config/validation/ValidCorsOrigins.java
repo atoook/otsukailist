@@ -15,9 +15,24 @@ import jakarta.validation.Payload;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidCorsOrigins {
 
+    /**
+     * Default validation error message.
+     *
+     * @return the validation message template
+     */
     String message() default "app.cors.allowed-origins must be valid origins and may use '*' only as the single entry";
 
+    /**
+     * Validation groups for constraint targeting.
+     *
+     * @return the validation groups
+     */
     Class<?>[] groups() default {};
 
+    /**
+     * Payload classes for clients of the Bean Validation API.
+     *
+     * @return payload metadata
+     */
     Class<? extends Payload>[] payload() default {};
 }
