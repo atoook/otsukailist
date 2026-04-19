@@ -3,6 +3,8 @@ package com.atoook.otsukailist.api.controller;
 import java.net.URI;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +21,6 @@ import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.dto.UpdateItemListRequest;
 import com.atoook.otsukailist.service.ListCommandService;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -37,11 +38,13 @@ public class ItemListCommandController {
   @PostMapping
   public ResponseEntity<MutationResponse<CreateItemListWithMembersResponse>> createItemList(
       @Valid @RequestBody CreateItemListWithMembersRequest req) {
-    MutationResponse<CreateItemListWithMembersResponse> payload = listCommandService.createListWithMembers(req);
-    URI location = ServletUriComponentsBuilder.fromCurrentRequest()
-        .path("/{listId}")
-        .buildAndExpand(payload.getData().getListId())
-        .toUri();
+    MutationResponse<CreateItemListWithMembersResponse> payload =
+        listCommandService.createListWithMembers(req);
+    URI location =
+        ServletUriComponentsBuilder.fromCurrentRequest()
+            .path("/{listId}")
+            .buildAndExpand(payload.getData().getListId())
+            .toUri();
     return ResponseEntity.created(location).body(payload);
   }
 
@@ -49,7 +52,7 @@ public class ItemListCommandController {
    * Renames the specified list.
    *
    * @param listId target list identifier
-   * @param req    rename payload
+   * @param req rename payload
    * @return 200 updated list response
    */
   @PatchMapping("/{listId}")

@@ -3,6 +3,7 @@ package com.atoook.otsukailist.dto;
 import java.util.UUID;
 
 import jakarta.validation.constraints.Size;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

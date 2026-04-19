@@ -15,7 +15,8 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
   // ※ findAll() や条件なし検索は使用禁止（設計思想に反する）
 
   // 一覧表示用の並び順（未完了: 追加順の最新先頭 / 完了: 完了日時の新しい順）
-  @Query("""
+  @Query(
+      """
       SELECT i
       FROM Item i
       WHERE i.itemList.id = :itemListId
