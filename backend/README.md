@@ -44,12 +44,12 @@ cd ../db && docker-compose up -d
 
 ## 📚 ドキュメント
 
-| ドキュメント                                                | 説明                           |
-| ----------------------------------------------------------- | ------------------------------ |
-| [📋 docs/CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md) | コーディング規約・設計パターン |
+| ドキュメント                                                                    | 説明                           |
+| ------------------------------------------------------------------------------- | ------------------------------ |
+| [📋 docs/CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md)                     | コーディング規約・設計パターン |
 | [🚢 ../docs/backend-deploy-operations.md](../docs/backend-deploy-operations.md) | Docker/Render 運用チェック     |
-| [🏢 企画書](../docs/otsukailist企画書.md)                   | プロジェクト概要・要件定義     |
-| [🎨 設計書](../docs/otsukailist設計書.md)                   | システム設計・API 仕様         |
+| [🏢 企画書](../docs/otsukailist企画書.md)                                       | プロジェクト概要・要件定義     |
+| [🎨 設計書](../docs/otsukailist設計書.md)                                       | システム設計・API 仕様         |
 
 ## 🛠️ 開発環境設定
 
@@ -126,6 +126,20 @@ spring.websocket.allowed-origins=http://localhost:3000
 ```
 
 ## 🤝 開発ガイド
+
+### 開発環境セットアップ
+
+リポジトリをクローンしたら、最初に一度だけ Git フックをインストールしてください。
+
+```bash
+cd backend
+./gradlew installGitHooks
+```
+
+インストール後は `git commit` のたびに以下が自動実行されます：
+
+1. **Spotless** (`spotlessApply`) — Google Java Format でコードを自動整形し、差分を自動ステージング
+2. **Checkstyle** / **PMD** — 静的解析（警告表示のみ、コミットは通す）
 
 ### 新機能開発
 
