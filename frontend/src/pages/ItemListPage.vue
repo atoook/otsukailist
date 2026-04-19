@@ -5,6 +5,7 @@ import TextInput from '../components/TextInput.vue';
 import DropDown from '../components/DropDown.vue';
 import ItemAddForm from '../components/ItemAddForm.vue';
 import ItemGroupList from '../components/ItemGroupList.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 import type { Item } from '../types/item';
 import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
 import type { Member, MemberId } from '@/types/member';
@@ -18,7 +19,8 @@ export default defineComponent({
     TextInput,
     DropDown,
     ItemAddForm,
-    ItemGroupList
+    ItemGroupList,
+    LoadingSpinner
   },
   data(): {
     currentListId: string | null;
@@ -137,7 +139,10 @@ export default defineComponent({
 </script>
 
 <template>
-  <ContentArea>
+  <ContentArea v-if="snapshotLoading" layout="center">
+    <LoadingSpinner message="リストを読み込み中..." />
+  </ContentArea>
+  <ContentArea v-else>
     <div class="w-full">
       <!-- リストタイトル -->
       <div class="mb-8">
