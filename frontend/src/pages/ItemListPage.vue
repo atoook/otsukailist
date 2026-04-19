@@ -100,7 +100,7 @@ export default defineComponent({
       if (incomplete === 0) {
         return '全て完了 🎉';
       }
-      return `あと ${incomplete} 件 / 完了 ${completed} 件`;
+      return `あと ${incomplete} 件 ・ 完了 ${completed} 件`;
     },
     formattedLastItemActivityAt(): string | null {
       return formatActivityAt(this.listStore.lastItemActivityAt);
@@ -208,15 +208,15 @@ export default defineComponent({
       <!-- チェック時に記録する購入者選択 + サマリー -->
       <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
         <div class="flex flex-col gap-0.5">
-          <span class="text-xs text-charcoal-400">{{ itemSummary }}</span>
-          <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-300 flex items-center gap-1">
+          <span class="text-xs text-charcoal-600">{{ itemSummary }}</span>
+          <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-500 flex items-center gap-1">
             最終更新: {{ formattedLastItemActivityAt }}
             <button
               type="button"
               @click="currentListId && loadSnapshot(currentListId)"
               :disabled="snapshotLoading"
               aria-label="リストを再読み込み"
-              class="text-charcoal-300 hover:text-charcoal-500 disabled:opacity-40 transition-colors"
+              class="text-charcoal-400 hover:text-charcoal-600 disabled:opacity-40 transition-colors"
             >
               <span :class="{ 'animate-spin': snapshotLoading }" style="display: inline-block">🔁</span>
             </button>

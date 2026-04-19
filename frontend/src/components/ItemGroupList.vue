@@ -191,9 +191,9 @@ export default defineComponent({
         class="w-full flex items-center gap-2 mt-1 py-1 text-left focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
       >
         <div class="flex-1 h-px bg-charcoal-200"></div>
-        <span class="text-xs text-charcoal-400 whitespace-nowrap">{{ group.label }} {{ group.items.length }}件</span>
+        <span class="text-xs text-charcoal-500 whitespace-nowrap">{{ group.label }} {{ group.items.length }}件</span>
         <span
-          class="text-charcoal-400 text-xs transition-transform duration-200"
+          class="text-charcoal-500 text-xs transition-transform duration-200"
           :class="{ '-rotate-90': isGroupCollapsed(group.key) }"
           aria-hidden="true"
           >▼</span
@@ -201,7 +201,7 @@ export default defineComponent({
       </button>
       <div v-else-if="group.showHeader" class="flex items-center gap-2 mt-1 py-1">
         <div class="flex-1 h-px bg-charcoal-200"></div>
-        <span class="text-xs text-charcoal-400 whitespace-nowrap">{{ group.label }} {{ group.items.length }}件</span>
+        <span class="text-xs text-charcoal-500 whitespace-nowrap">{{ group.label }} {{ group.items.length }}件</span>
       </div>
 
       <!-- グループ内アイテム -->
