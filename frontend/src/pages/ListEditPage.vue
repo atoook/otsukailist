@@ -160,6 +160,9 @@ export default defineComponent({
       });
     },
     cancelUpdate(): void {
+      if (this.isLoading) {
+        return;
+      }
       this.$router.back();
     },
     getMemberBadgeVariant(member: Member): string {
@@ -243,7 +246,7 @@ export default defineComponent({
 
     <div class="flex flex-col gap-3">
       <MainButton @click="updateList" :disabled="!hasRequiredInput || isLoading" variant="primary"> 更新 </MainButton>
-      <MainButton @click="cancelUpdate" variant="secondary"> キャンセル </MainButton>
+      <MainButton @click="cancelUpdate" :disabled="isLoading" variant="secondary"> キャンセル </MainButton>
     </div>
   </ContentArea>
 </template>
