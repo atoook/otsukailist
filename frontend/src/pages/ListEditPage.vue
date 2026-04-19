@@ -12,6 +12,7 @@ import { useMutation } from '@/composables/useMutation';
 import { createMember, deleteMember } from '@/api/member';
 import { renameList } from '@/api/list';
 import { getErrorMessage } from '@/lib/http';
+import { updateListHistoryName, getSelectedMemberId } from '@/lib/userCache';
 
 export default defineComponent({
   name: 'ListEditPage',
@@ -51,7 +52,10 @@ export default defineComponent({
     if (listId && this.listStore.listId === listId) {
       this.listName = this.listStore.name;
       this.refreshMembersFromStore();
-      this.selectedMemberId = this.listStore.members[0]?.id ?? null;
+      const cachedMemberId = getSelectedMemberId(listId);
+      const memberIds = this.listStore.members.map((m) => m.id);
+      this.selectedMemberId =
+        cachedMemberId && memberIds.includes(cachedMemberId) ? cachedMemberId : (this.listStore.members[0]?.id ?? null);
       return;
     }
 
@@ -143,6 +147,7 @@ export default defineComponent({
             this.errorMessage = 'リスト名の更新が反映されませんでした。時間をおいて再試行してください。';
             return;
           }
+          updateListHistoryName(this.currentListId!, normalizedListName);
         } catch (err: unknown) {
           console.error('Failed to rename list', err);
           this.errorMessage = getErrorMessage(err) ?? 'リスト名の更新に失敗しました。';
