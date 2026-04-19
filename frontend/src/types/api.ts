@@ -33,6 +33,7 @@ export type ItemListSnapshot = {
   revision: number;
   itemCount: number;
   serverTime?: string;
+  lastItemActivityAt: string | null;
   members: Member[];
   items: Item[];
 };

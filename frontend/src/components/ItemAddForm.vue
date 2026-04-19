@@ -6,6 +6,7 @@ import { normalizeText, normalizeInput } from '../utils/text-normalization';
 import { createItem } from '@/api/item';
 import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
+import { getErrorMessage } from '@/lib/http';
 
 export default defineComponent({
   name: 'ItemAddForm',
@@ -52,7 +53,7 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to create item', err);
-        this.$emit('error', err instanceof Error ? err.message : 'アイテムの作成に失敗しました。');
+        this.$emit('error', getErrorMessage(err) ?? 'アイテムの作成に失敗しました。');
       }
     }
   }

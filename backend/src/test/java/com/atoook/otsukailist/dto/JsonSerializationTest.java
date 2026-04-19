@@ -108,4 +108,57 @@ class JsonSerializationTest {
     assertThat(request.getCompletedByMemberId())
         .isEqualTo(UUID.fromString("4aa8c874-708b-4f96-8658-3f4daff9c6ee"));
   }
+
+  @Test
+  @DisplayName("ItemListSnapshotResponse の lastItemActivityAt が ISO 8601 文字列でシリアライズされること")
+  void testItemListSnapshotResponseSerializationWithLastItemActivityAt()
+      throws JsonProcessingException {
+    // Given
+    UUID listId = UUID.randomUUID();
+    Instant lastItemActivityAt = Instant.parse("2024-06-15T10:30:00Z");
+
+    ItemListSnapshotResponse response =
+        ItemListSnapshotResponse.builder()
+            .listId(listId)
+            .name("テストリスト")
+            .revision(1L)
+            .itemCount(3)
+            .serverTime(Instant.parse("2024-06-15T11:00:00Z"))
+            .lastItemActivityAt(lastItemActivityAt)
+            .build();
+
+    // When
+    String json = objectMapper.writeValueAsString(response);
+
+    // Then
+    JsonNode jsonNode = objectMapper.readTree(json);
+    assertThat(jsonNode.get("lastItemActivityAt").asText())
+        .isEqualTo(lastItemActivityAt.toString());
+  }
+
+  @Test
+  @DisplayName("ItemListSnapshotResponse の lastItemActivityAt が null のとき JSON null でシリアライズされること")
+  void testItemListSnapshotResponseSerializationWithNullLastItemActivityAt()
+      throws JsonProcessingException {
+    // Given
+    UUID listId = UUID.randomUUID();
+
+    ItemListSnapshotResponse response =
+        ItemListSnapshotResponse.builder()
+            .listId(listId)
+            .name("テストリスト")
+            .revision(0L)
+            .itemCount(0)
+            .serverTime(Instant.parse("2024-06-15T11:00:00Z"))
+            .lastItemActivityAt(null)
+            .build();
+
+    // When
+    String json = objectMapper.writeValueAsString(response);
+
+    // Then
+    JsonNode jsonNode = objectMapper.readTree(json);
+    assertThat(jsonNode.has("lastItemActivityAt")).isTrue();
+    assertThat(jsonNode.get("lastItemActivityAt").isNull()).isTrue();
+  }
 }

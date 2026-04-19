@@ -123,6 +123,7 @@ export type ItemListSnapshot = {
   revision: number;
   itemCount: number;
   serverTime?: string;
+  lastItemActivityAt: string | null;
   members: Member[];
   items: Item[];
 };
@@ -266,6 +267,7 @@ type ListState = {
   name: string;
   revision: number;
   itemCount: number;
+  lastItemActivityAt: string | null;
   members: Member[];
   items: Item[];
 };
@@ -276,6 +278,7 @@ export const useListStore = defineStore("list", {
     name: "",
     revision: 0,
     itemCount: 0,
+    lastItemActivityAt: null,
     members: [],
     items: [],
   }),

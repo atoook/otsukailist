@@ -8,9 +8,11 @@ import ItemGroupList from '../components/ItemGroupList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import type { Item } from '../types/item';
 import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import { formatActivityAt } from '../utils/date-format';
 import type { Member, MemberId } from '@/types/member';
 import { fetchSnapshot } from '@/api/list';
 import { useListStore } from '@/stores/list';
+import { getErrorMessage } from '@/lib/http';
 
 export default defineComponent({
   name: 'ItemListPage',
@@ -94,7 +96,13 @@ export default defineComponent({
       if (completed === 0) {
         return `あと ${incomplete} 件`;
       }
+      if (incomplete === 0) {
+        return '全て完了 🎉';
+      }
       return `あと ${incomplete} 件 / 完了 ${completed} 件`;
+    },
+    formattedLastItemActivityAt(): string | null {
+      return formatActivityAt(this.listStore.lastItemActivityAt);
     }
   },
   watch: {
@@ -117,7 +125,7 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
-        this.errorMessage = err instanceof Error ? err.message : 'リストの取得に失敗しました。';
+        this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
       } finally {
         this.snapshotLoading = false;
       }
@@ -186,7 +194,21 @@ export default defineComponent({
       </div>
       <!-- チェック時に記録する購入者選択 + サマリー -->
       <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
-        <span class="text-xs text-charcoal-400">{{ itemSummary }}</span>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-charcoal-400">{{ itemSummary }}</span>
+          <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-300 flex items-center gap-1">
+            最終更新: {{ formattedLastItemActivityAt }}
+            <button
+              type="button"
+              @click="currentListId && loadSnapshot(currentListId)"
+              :disabled="snapshotLoading"
+              aria-label="リストを再読み込み"
+              class="text-charcoal-300 hover:text-charcoal-500 disabled:opacity-40 transition-colors"
+            >
+              <span :class="{ 'animate-spin': snapshotLoading }" style="display: inline-block">🔁</span>
+            </button>
+          </span>
+        </div>
         <div class="flex items-center gap-2 text-sm">
           <label for="memberSelect">
             <span class="text-charcoal-600 font-medium">買った人</span>

@@ -41,6 +41,22 @@ function toApiError(data: unknown, fallbackMessage: string, status?: number): Ap
   };
 }
 
+/**
+ * Extracts a user-facing message from an unknown catch value.
+ * Handles both ApiError (plain object from interceptor) and Error instances.
+ */
+export function getErrorMessage(err: unknown): string | null {
+  if (
+    err !== null &&
+    typeof err === 'object' &&
+    'message' in err &&
+    typeof (err as { message: unknown }).message === 'string'
+  ) {
+    return (err as { message: string }).message;
+  }
+  return null;
+}
+
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
   headers: { 'Content-Type': 'application/json' },
