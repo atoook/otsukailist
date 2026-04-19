@@ -106,6 +106,7 @@ export default defineComponent({
       const listId = this.listStore.listId;
       if (!listId) {
         this.errorMessage = 'リストが初期化されていません。';
+        this.showErrorFeedback();
         return;
       }
       const wasCompleted = item.completed;
@@ -128,6 +129,7 @@ export default defineComponent({
       const listId = this.listStore.listId;
       if (!listId) {
         this.errorMessage = 'リストが初期化されていません。';
+        this.showErrorFeedback();
         return;
       }
       try {
@@ -151,6 +153,7 @@ export default defineComponent({
       const listId = this.listStore.listId;
       if (!listId) {
         this.errorMessage = 'リストが初期化されていません。';
+        this.showErrorFeedback();
         return;
       }
       try {

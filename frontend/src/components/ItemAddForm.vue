@@ -28,6 +28,10 @@ export default defineComponent({
       this.newItemName = normalizeInput(value);
     },
     async addItem() {
+      if (this.mutationLoading) {
+        return;
+      }
+
       const normalizedName = normalizeText(this.newItemName);
       const listId = this.listStore.listId;
 
