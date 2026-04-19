@@ -8,6 +8,7 @@ import ItemGroupList from '../components/ItemGroupList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import type { Item } from '../types/item';
 import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import { formatActivityAt } from '../utils/date-format';
 import type { Member, MemberId } from '@/types/member';
 import { fetchSnapshot } from '@/api/list';
 import { useListStore } from '@/stores/list';
@@ -101,23 +102,7 @@ export default defineComponent({
       return `あと ${incomplete} 件 / 完了 ${completed} 件`;
     },
     formattedLastItemActivityAt(): string | null {
-      const iso = this.listStore.lastItemActivityAt;
-      if (!iso) return null;
-      const date = new Date(iso);
-      const now = new Date();
-      const isToday =
-        date.getFullYear() === now.getFullYear() &&
-        date.getMonth() === now.getMonth() &&
-        date.getDate() === now.getDate();
-      if (isToday) {
-        return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit' }).format(date);
-      }
-      return new Intl.DateTimeFormat('ja-JP', {
-        month: 'numeric',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
+      return formatActivityAt(this.listStore.lastItemActivityAt);
     }
   },
   watch: {
