@@ -1,6 +1,7 @@
 package com.atoook.otsukailist.service;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,12 +51,16 @@ public class ListQueryService {
     List<Item> itemEntities = itemRepo.findByItemListIdOrderByDisplayRules(listId);
     List<ItemResponse> items = itemEntities.stream().map(ItemMapper::toResponse).toList();
 
+    Instant lastItemActivityAt =
+        itemEntities.stream().map(Item::getUpdatedAt).max(Comparator.naturalOrder()).orElse(null);
+
     return ItemListSnapshotResponse.builder()
         .listId(list.getId())
         .name(list.getName())
         .revision(list.getRevision())
         .itemCount(itemEntities.size())
         .serverTime(Instant.now())
+        .lastItemActivityAt(lastItemActivityAt)
         .members(members)
         .items(items)
         .build();

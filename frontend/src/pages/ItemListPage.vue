@@ -11,6 +11,7 @@ import { normalizeInput, normalizeForSearch } from '../utils/text-normalization'
 import type { Member, MemberId } from '@/types/member';
 import { fetchSnapshot } from '@/api/list';
 import { useListStore } from '@/stores/list';
+import { getErrorMessage } from '@/lib/http';
 
 export default defineComponent({
   name: 'ItemListPage',
@@ -95,6 +96,25 @@ export default defineComponent({
         return `あと ${incomplete} 件`;
       }
       return `あと ${incomplete} 件 / 完了 ${completed} 件`;
+    },
+    formattedLastItemActivityAt(): string | null {
+      const iso = this.listStore.lastItemActivityAt;
+      if (!iso) return null;
+      const date = new Date(iso);
+      const now = new Date();
+      const isToday =
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate();
+      if (isToday) {
+        return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit' }).format(date);
+      }
+      return new Intl.DateTimeFormat('ja-JP', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
     }
   },
   watch: {
@@ -117,7 +137,7 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
-        this.errorMessage = err instanceof Error ? err.message : 'リストの取得に失敗しました。';
+        this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
       } finally {
         this.snapshotLoading = false;
       }
@@ -186,7 +206,12 @@ export default defineComponent({
       </div>
       <!-- チェック時に記録する購入者選択 + サマリー -->
       <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
-        <span class="text-xs text-charcoal-400">{{ itemSummary }}</span>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-charcoal-400">{{ itemSummary }}</span>
+          <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-300"
+            >最終更新: {{ formattedLastItemActivityAt }}</span
+          >
+        </div>
         <div class="flex items-center gap-2 text-sm">
           <label for="memberSelect">
             <span class="text-charcoal-600 font-medium">買った人</span>

@@ -6,6 +6,7 @@ type ListState = {
   name: string;
   revision: number;
   itemCount: number;
+  lastItemActivityAt: string | null;
   members: Member[];
   items: Item[];
 };
@@ -16,14 +17,14 @@ export const useListStore = defineStore('list', {
     name: '',
     revision: 0,
     itemCount: 0,
+    lastItemActivityAt: null,
     members: [],
     items: []
   }),
 
   getters: {
     isInitialized: (state) => state.listId != null,
-    memberMap: (state): Map<UUID, Member> =>
-      new Map(state.members.map((member) => [member.id, member] as const))
+    memberMap: (state): Map<UUID, Member> => new Map(state.members.map((member) => [member.id, member] as const))
   },
 
   actions: {
@@ -36,6 +37,7 @@ export const useListStore = defineStore('list', {
       this.name = snapshot.name;
       this.revision = snapshot.revision;
       this.itemCount = snapshot.itemCount;
+      this.lastItemActivityAt = snapshot.lastItemActivityAt;
       this.members = [...snapshot.members];
       this.items = [...snapshot.items];
     },
@@ -90,6 +92,7 @@ export const useListStore = defineStore('list', {
       this.name = '';
       this.revision = 0;
       this.itemCount = 0;
+      this.lastItemActivityAt = null;
       this.members = [];
       this.items = [];
     }

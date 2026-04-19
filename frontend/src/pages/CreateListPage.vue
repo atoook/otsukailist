@@ -11,6 +11,7 @@ import type { ItemList } from '../types/item-list';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
 import { createItemList } from '@/api/list';
 import { useListStore } from '@/stores/list';
+import { getErrorMessage } from '@/lib/http';
 
 export default defineComponent({
   name: 'CreateListPage',
@@ -63,6 +64,7 @@ export default defineComponent({
           name: res.data.name,
           revision: res.revision,
           itemCount: 0,
+          lastItemActivityAt: null,
           members: res.data.members,
           items: []
         };
@@ -76,7 +78,7 @@ export default defineComponent({
         });
       } catch (err: unknown) {
         console.error('Failed to create list', err);
-        this.errorMessage = `リストの作成に失敗しました。${err instanceof Error && err.message ? ` (${err.message})` : ''}`;
+        this.errorMessage = getErrorMessage(err) ?? 'リストの作成に失敗しました。';
       } finally {
         this.creating = false;
       }

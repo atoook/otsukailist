@@ -9,6 +9,7 @@ import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { groupItems } from '@/utils/item-grouping';
 import type { GroupDefinition, ItemGroup } from '@/utils/item-grouping';
+import { getErrorMessage } from '@/lib/http';
 
 const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
   {
@@ -121,7 +122,7 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to update item', err);
-        this.errorMessage = err instanceof Error ? err.message : 'アイテムの更新に失敗しました。';
+        this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
       }
     },
@@ -139,7 +140,7 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to delete item', err);
-        this.errorMessage = err instanceof Error ? err.message : 'アイテムの削除に失敗しました。';
+        this.errorMessage = getErrorMessage(err) ?? 'アイテムの削除に失敗しました。';
         this.showErrorFeedback();
       }
     },
@@ -163,7 +164,7 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to rename item', err);
-        this.errorMessage = err instanceof Error ? err.message : 'アイテムの更新に失敗しました。';
+        this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
       }
     },

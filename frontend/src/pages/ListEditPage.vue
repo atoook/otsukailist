@@ -11,6 +11,7 @@ import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { createMember, deleteMember } from '@/api/member';
 import { renameList } from '@/api/list';
+import { getErrorMessage } from '@/lib/http';
 
 export default defineComponent({
   name: 'ListEditPage',
@@ -95,7 +96,7 @@ export default defineComponent({
         this.errorMessage = '';
       } catch (err: unknown) {
         console.error('Failed to add member', err);
-        this.errorMessage = err instanceof Error ? err.message : 'メンバーの追加に失敗しました。';
+        this.errorMessage = getErrorMessage(err) ?? 'メンバーの追加に失敗しました。';
       }
     },
     async removeMember(memberId: MemberId): Promise<void> {
@@ -116,7 +117,7 @@ export default defineComponent({
         this.errorMessage = '';
       } catch (err: unknown) {
         console.error('Failed to remove member', err);
-        this.errorMessage = err instanceof Error ? err.message : 'メンバーの削除に失敗しました。';
+        this.errorMessage = getErrorMessage(err) ?? 'メンバーの削除に失敗しました。';
       }
     },
     async updateList(): Promise<void> {
@@ -144,7 +145,7 @@ export default defineComponent({
           }
         } catch (err: unknown) {
           console.error('Failed to rename list', err);
-          this.errorMessage = err instanceof Error ? err.message : 'リスト名の更新に失敗しました。';
+          this.errorMessage = getErrorMessage(err) ?? 'リスト名の更新に失敗しました。';
           return;
         }
       }

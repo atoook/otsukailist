@@ -30,6 +30,9 @@ public class ItemListSnapshotResponse {
   /** 任意：クライアントの基準時刻 */
   private Instant serverTime;
 
+  /** アイテムの最終更新日時（全アイテムの updatedAt の最大値）。アイテムが0件の場合は null。 */
+  private Instant lastItemActivityAt;
+
   @Builder.Default private List<MemberResponse> members = List.of();
   @Builder.Default private List<ItemResponse> items = List.of();
 }
