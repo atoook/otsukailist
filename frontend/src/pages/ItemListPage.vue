@@ -95,6 +95,9 @@ export default defineComponent({
       if (completed === 0) {
         return `あと ${incomplete} 件`;
       }
+      if (incomplete === 0) {
+        return `完了 ${completed} 件`;
+      }
       return `あと ${incomplete} 件 / 完了 ${completed} 件`;
     },
     formattedLastItemActivityAt(): string | null {
