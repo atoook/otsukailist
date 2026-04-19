@@ -8,6 +8,6 @@ const year = new Date().getFullYear();
 
 <template>
   <div class="bg-gray-100 px-6 py-3">
-    <p class="text-xs text-gray-500 text-center">© {{ year }} OTUKAI リスト</p>
+    <p class="text-xs text-gray-500 text-center">© {{ year }} OTSUKAI リスト</p>
   </div>
 </template>
