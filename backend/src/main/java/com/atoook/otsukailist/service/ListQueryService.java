@@ -26,37 +26,39 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListQueryService {
 
-    private final ItemListRepository itemListRepo;
-    private final MemberRepository memberRepo;
-    private final ItemRepository itemRepo;
+        private final ItemListRepository itemListRepo;
+        private final MemberRepository memberRepo;
+        private final ItemRepository itemRepo;
 
-    /**
-     * Retrieve the latest snapshot of a list including members and items.
-     *
-     * @param listId target list ID
-     * @return aggregated snapshot response
-     */
-    @Transactional(readOnly = true)
-    public ItemListSnapshotResponse snapshot(UUID listId) {
-        ItemList list = itemListRepo
-                .findById(listId)
-                .orElseThrow(
-                        () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
+        /**
+         * Retrieve the latest snapshot of a list including members and items.
+         *
+         * @param listId target list ID
+         * @return aggregated snapshot response
+         */
+        @Transactional(readOnly = true)
+        public ItemListSnapshotResponse snapshot(UUID listId) {
+                ItemList list = itemListRepo
+                                .findById(listId)
+                                .orElseThrow(
+                                                () -> new ResourceNotFoundException(
+                                                                String.format(ErrorMessages.NOT_FOUND, "リスト")));
 
-        List<MemberResponse> members = memberRepo.findByItemListId(listId).stream().map(MemberMapper::toResponse)
-                .toList();
+                List<MemberResponse> members = memberRepo.findByItemListId(listId).stream()
+                                .map(MemberMapper::toResponse)
+                                .toList();
 
-        List<Item> itemEntities = itemRepo.findByItemListId(listId);
-        List<ItemResponse> items = itemEntities.stream().map(ItemMapper::toResponse).toList();
+                List<Item> itemEntities = itemRepo.findByItemListIdOrderByCompletedAscUpdatedAtDesc(listId);
+                List<ItemResponse> items = itemEntities.stream().map(ItemMapper::toResponse).toList();
 
-        return ItemListSnapshotResponse.builder()
-                .listId(list.getId())
-                .name(list.getName())
-                .revision(list.getRevision())
-                .itemCount(itemEntities.size())
-                .serverTime(Instant.now())
-                .members(members)
-                .items(items)
-                .build();
-    }
+                return ItemListSnapshotResponse.builder()
+                                .listId(list.getId())
+                                .name(list.getName())
+                                .revision(list.getRevision())
+                                .itemCount(itemEntities.size())
+                                .serverTime(Instant.now())
+                                .members(members)
+                                .items(items)
+                                .build();
+        }
 }
