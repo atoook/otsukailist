@@ -48,7 +48,7 @@ public class ListQueryService {
                                 .map(MemberMapper::toResponse)
                                 .toList();
 
-                List<Item> itemEntities = itemRepo.findByItemListIdOrderByCompletedAscUpdatedAtDesc(listId);
+                List<Item> itemEntities = itemRepo.findByItemListIdOrderByDisplayRules(listId);
                 List<ItemResponse> items = itemEntities.stream().map(ItemMapper::toResponse).toList();
 
                 return ItemListSnapshotResponse.builder()
