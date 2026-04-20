@@ -14,6 +14,7 @@ import { fetchSnapshot } from '@/api/list';
 import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
 import { getSelectedMemberId, setSelectedMemberId, addOrUpdateListHistory } from '@/lib/userCache';
+import { FEEDBACK_LIST_ID } from '@/lib/appConstants';
 
 export default defineComponent({
   name: 'ItemListPage',
@@ -131,8 +132,10 @@ export default defineComponent({
           this.selectedMemberId = snapshot.members[0]?.id ?? null;
         }
 
-        // リスト履歴に追加/更新
-        addOrUpdateListHistory({ listId, name: snapshot.name });
+        // リスト履歴に追加/更新（フィードバックリストは除外）
+        if (listId !== FEEDBACK_LIST_ID) {
+          addOrUpdateListHistory({ listId, name: snapshot.name });
+        }
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';

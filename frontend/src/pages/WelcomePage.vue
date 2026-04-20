@@ -4,6 +4,7 @@ import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
+import { FEEDBACK_URL } from '@/lib/appConstants';
 
 export default {
   name: 'WelcomePage',
@@ -15,7 +16,8 @@ export default {
   },
   data() {
     return {
-      listHistory: []
+      listHistory: [],
+      feedbackUrl: FEEDBACK_URL
     };
   },
   created() {
@@ -40,6 +42,17 @@ export default {
       <h2 class="text-3xl font-bold font-serif text-charcoal-800 mb-4">ようこそ！</h2>
       <p class="text-charcoal-600 mb-8 leading-relaxed">あなたの買い物を<br />🍖 スマートに管理しましょう</p>
       <MainButton @click="navigateToCreateList">はじめる</MainButton>
+    </div>
+
+    <!-- フィードバックリンク -->
+    <div class="mt-8 text-center">
+      <p class="text-xs text-charcoal-500">
+        ご意見・ご感想は
+        <a :href="feedbackUrl" target="_blank" rel="noopener noreferrer" class="underline hover:text-charcoal-700"
+          >こちら</a
+        >
+        へ 🙏
+      </p>
     </div>
 
     <!-- 最近見たリスト -->
