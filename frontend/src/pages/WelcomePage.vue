@@ -48,10 +48,15 @@ export default {
     <div class="mt-8 text-center">
       <p class="text-xs text-charcoal-500">
         ご意見・ご感想は
-        <a :href="feedbackUrl" target="_blank" rel="noopener noreferrer" class="underline hover:text-charcoal-700"
-          >こちら</a
+        <a
+          :href="feedbackUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline hover:text-charcoal-700"
+          aria-label="フィードバックリストへ（別タブで開きます）"
+          >フィードバックリストへ</a
         >
-        へ 🙏
+        どうぞ 🙏
       </p>
     </div>
 
