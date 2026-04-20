@@ -1,5 +1,6 @@
 package com.atoook.otsukailist.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,4 +35,28 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
 
   // リスト内のアイテム存在チェック
   boolean existsByIdAndItemListId(UUID itemId, UUID itemListId);
+
+  /** 複数リストのアイテム集計をまとめて取得する。 存在しないlistIdは結果に含まれない（削除済み判定に使う）。 */
+  @Query(
+      """
+      SELECT i.itemList.id                                    AS listId,
+             COUNT(i)                                         AS itemCount,
+             SUM(CASE WHEN i.completed = false THEN 1 ELSE 0 END) AS incompleteCount,
+             MAX(i.updatedAt)                                 AS lastItemActivityAt
+      FROM Item i
+      WHERE i.itemList.id IN :listIds
+      GROUP BY i.itemList.id
+      """)
+  List<ItemSummaryProjection> summarizeByListIds(@Param("listIds") List<UUID> listIds);
+
+  /** アイテム集計クエリの結果射影 */
+  interface ItemSummaryProjection {
+    UUID getListId();
+
+    long getItemCount();
+
+    long getIncompleteCount();
+
+    Instant getLastItemActivityAt();
+  }
 }
