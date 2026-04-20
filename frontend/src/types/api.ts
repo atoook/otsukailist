@@ -51,6 +51,14 @@ export type ItemListResponse = {
   updatedAt?: string;
 };
 
+export type ListMetaItem = {
+  listId: UUID;
+  name: string;
+  itemCount: number;
+  incompleteCount: number;
+  lastItemActivityAt: string | null;
+};
+
 /**
  * Delete API response invariant:
  * at least one deleted target id is always present.
