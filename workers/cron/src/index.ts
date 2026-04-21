@@ -9,14 +9,19 @@ type CronEnv = {
 };
 
 const WARMUP_TIMEOUT_MS = 10_000;
+const LOG_BODY_MAX_LENGTH = 200;
 
-function resolveWarmupUrl(env: CronEnv): string | null {
+type WarmupUrlResult =
+  | { ok: true; url: string }
+  | { ok: false; reason: "not_configured" | "invalid_url" };
+
+function resolveWarmupUrl(env: CronEnv): WarmupUrlResult {
   if (env.WARMUP_URL) {
-    return env.WARMUP_URL;
+    return { ok: true, url: env.WARMUP_URL };
   }
 
   if (!env.API_BASE_URL) {
-    return null;
+    return { ok: false, reason: "not_configured" };
   }
 
   try {
@@ -31,9 +36,9 @@ function resolveWarmupUrl(env: CronEnv): string | null {
     url.pathname = `/${[...pathSegments, "actuator", "health"].join("/")}`;
     url.search = "";
     url.hash = "";
-    return url.toString();
+    return { ok: true, url: url.toString() };
   } catch {
-    return null;
+    return { ok: false, reason: "invalid_url" };
   }
 }
 
@@ -42,13 +47,20 @@ export default {
     _controller: ScheduledController,
     env: CronEnv,
   ): Promise<void> {
-    const warmupUrl = resolveWarmupUrl(env);
-    if (!warmupUrl) {
-      console.warn(
-        "Warmup skipped: neither WARMUP_URL nor API_BASE_URL is configured.",
-      );
+    const result = resolveWarmupUrl(env);
+    if (!result.ok) {
+      if (result.reason === "invalid_url") {
+        console.error(
+          `Warmup skipped: API_BASE_URL is set but could not be parsed as a valid URL.`,
+        );
+      } else {
+        console.warn(
+          "Warmup skipped: neither WARMUP_URL nor API_BASE_URL is configured.",
+        );
+      }
       return;
     }
+    const warmupUrl = result.url;
 
     const abort = new AbortController();
     const timeoutId = setTimeout(() => abort.abort(), WARMUP_TIMEOUT_MS);
@@ -64,7 +76,11 @@ export default {
       });
 
       if (!res.ok) {
-        const body = await res.text();
+        const rawBody = await res.text();
+        const body =
+          rawBody.length > LOG_BODY_MAX_LENGTH
+            ? rawBody.slice(0, LOG_BODY_MAX_LENGTH) + "..."
+            : rawBody;
         console.error(
           `Warmup failed: ${warmupUrl} -> ${res.status}${body ? ` body=${body}` : ""}`,
         );

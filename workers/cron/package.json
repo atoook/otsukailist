@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "wrangler deploy",
+    "build": "wrangler build",
     "deploy": "wrangler deploy",
     "deploy:preview": "wrangler deploy --dry-run",
     "cf-typegen": "wrangler types"
