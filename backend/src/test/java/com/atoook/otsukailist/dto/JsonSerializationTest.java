@@ -161,4 +161,55 @@ class JsonSerializationTest {
     assertThat(jsonNode.has("lastItemActivityAt")).isTrue();
     assertThat(jsonNode.get("lastItemActivityAt").isNull()).isTrue();
   }
+
+  @Test
+  @DisplayName("ListMetaItemResponse の lastItemActivityAt が ISO 8601 文字列でシリアライズされること")
+  void testListMetaItemResponseSerializationWithLastItemActivityAt()
+      throws JsonProcessingException {
+    // Given
+    UUID listId = UUID.randomUUID();
+    Instant lastItemActivityAt = Instant.parse("2024-06-15T10:30:00Z");
+
+    ListMetaItemResponse response =
+        ListMetaItemResponse.builder()
+            .listId(listId)
+            .name("テストリスト")
+            .itemCount(5L)
+            .incompleteCount(2L)
+            .lastItemActivityAt(lastItemActivityAt)
+            .build();
+
+    // When
+    String json = objectMapper.writeValueAsString(response);
+
+    // Then
+    JsonNode jsonNode = objectMapper.readTree(json);
+    assertThat(jsonNode.get("lastItemActivityAt").asText())
+        .isEqualTo(lastItemActivityAt.toString());
+    assertThat(jsonNode.get("itemCount").asLong()).isEqualTo(5L);
+    assertThat(jsonNode.get("incompleteCount").asLong()).isEqualTo(2L);
+  }
+
+  @Test
+  @DisplayName("ListMetaItemResponse の lastItemActivityAt が null のとき JSON null でシリアライズされること")
+  void testListMetaItemResponseSerializationWithNullLastItemActivityAt()
+      throws JsonProcessingException {
+    // Given
+    ListMetaItemResponse response =
+        ListMetaItemResponse.builder()
+            .listId(UUID.randomUUID())
+            .name("空のリスト")
+            .itemCount(0L)
+            .incompleteCount(0L)
+            .lastItemActivityAt(null)
+            .build();
+
+    // When
+    String json = objectMapper.writeValueAsString(response);
+
+    // Then
+    JsonNode jsonNode = objectMapper.readTree(json);
+    assertThat(jsonNode.has("lastItemActivityAt")).isTrue();
+    assertThat(jsonNode.get("lastItemActivityAt").isNull()).isTrue();
+  }
 }

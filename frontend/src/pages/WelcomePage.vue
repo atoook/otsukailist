@@ -50,8 +50,9 @@ export default {
         if (removed.length > 0) {
           this.listHistory = this.listHistory.filter((e) => returnedIds.has(e.listId));
         }
-      } catch {
+      } catch (error) {
         // メタ取得失敗時はキャッシュのリスト名のみ表示継続（UX劣化なし）
+        console.error('Failed to load list metadata', error);
       } finally {
         this.metaLoading = false;
       }
@@ -66,8 +67,9 @@ export default {
     formatLastActivity(isoString) {
       if (!isoString) return null;
       const date = new Date(isoString);
+      if (isNaN(date.getTime())) return null;
       const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
+      const diffMs = Math.max(0, now.getTime() - date.getTime());
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       if (diffDays === 0) {
         return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
@@ -76,6 +78,18 @@ export default {
       } else {
         return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
       }
+    }
+  },
+  computed: {
+    formattedListMeta() {
+      const result = {};
+      for (const [listId, meta] of Object.entries(this.listMeta)) {
+        result[listId] = {
+          ...meta,
+          formattedActivity: this.formatLastActivity(meta.lastItemActivityAt)
+        };
+      }
+      return result;
     }
   }
 };
@@ -126,15 +140,14 @@ export default {
                 <template v-if="metaLoading">
                   <span class="text-xs text-charcoal-300 animate-pulse">···</span>
                 </template>
-                <template v-else-if="listMeta[entry.listId]">
+                <template v-else-if="formattedListMeta[entry.listId]">
                   <span class="text-xs text-charcoal-500">
-                    {{ listMeta[entry.listId].incompleteCount }}/{{ listMeta[entry.listId].itemCount }}件
+                    {{ formattedListMeta[entry.listId].incompleteCount }}/{{
+                      formattedListMeta[entry.listId].itemCount
+                    }}件
                   </span>
-                  <span
-                    v-if="formatLastActivity(listMeta[entry.listId].lastItemActivityAt)"
-                    class="text-xs text-charcoal-400"
-                  >
-                    {{ formatLastActivity(listMeta[entry.listId].lastItemActivityAt) }}
+                  <span v-if="formattedListMeta[entry.listId].formattedActivity" class="text-xs text-charcoal-400">
+                    {{ formattedListMeta[entry.listId].formattedActivity }}
                   </span>
                 </template>
               </span>
