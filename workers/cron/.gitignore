@@ -1,0 +1,13 @@
+# Logs
+*.log
+
+node_modules
+dist
+
+# Wrangler local cache
+.wrangler/
+
+# Environment variables
+.dev.vars
+.env
+.env.local
