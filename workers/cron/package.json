@@ -1,0 +1,16 @@
+{
+  "name": "otsukailist-cron",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler deploy --dry-run",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250430.0",
+    "typescript": "~5.8.3",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  // Cron Worker — バックエンドウォームアップ定期実行
+  // フロントエンド配信は Cloudflare Pages が担うため、このWorkerはCron専用。
+  "name": "otsukailist-cron",
+  "compatibility_date": "2026-01-10",
+  "main": "src/index.ts",
+  "triggers": {
+    "crons": [
+      "*/10 * * * *"
+    ]
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}
