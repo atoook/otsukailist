@@ -14,7 +14,7 @@
       <div class="text-center">
         <!-- BBQアイコン -->
         <div class="mb-2">
-          <span class="text-3xl">🔥</span>
+          <span class="text-3xl"><IconFire /></span>
         </div>
         <!-- タイトル -->
         <h1
@@ -31,7 +31,12 @@
 </template>
 
 <script>
+import IconFire from './icons/IconFire.vue';
+
 export default {
-  name: 'AppHeader'
+  name: 'AppHeader',
+  components: {
+    IconFire
+  }
 };
 </script>

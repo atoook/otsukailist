@@ -6,12 +6,13 @@
       </option>
     </select>
     <span v-if="showArrow" class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-wood-50">
-      ▼
+      <IconChevronDown />
     </span>
   </div>
 </template>
 <script>
 import { twMerge } from 'tailwind-merge';
+import IconChevronDown from './icons/IconChevronDown.vue';
 
 function optionItemsValidator(value) {
   if (!Array.isArray(value)) {
@@ -20,6 +21,9 @@ function optionItemsValidator(value) {
   return value.every((item) => item && 'id' in item && 'name' in item);
 }
 export default {
+  components: {
+    IconChevronDown
+  },
   data() {
     return {};
   },

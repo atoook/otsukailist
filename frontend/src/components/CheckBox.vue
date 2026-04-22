@@ -18,13 +18,18 @@
       class="w-6 h-6 border-2 rounded-md transition-[background-color,border-color,box-shadow] duration-200 text-center leading-6 hover:shadow-md"
     >
       <!-- チェックマーク -->
-      <span v-if="checked" class="text-white text-sm font-bold align-top"> ✓ </span>
+      <span v-if="checked" class="text-white text-sm font-bold align-top"><IconCheck /></span>
     </div>
   </label>
 </template>
 <script>
+import IconCheck from './icons/IconCheck.vue';
+
 export default {
   name: 'CheckBox',
+  components: {
+    IconCheck
+  },
   props: {
     checked: {
       type: Boolean,

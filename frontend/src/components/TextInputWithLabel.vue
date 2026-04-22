@@ -1,7 +1,7 @@
 <template>
   <div>
     <label :for="inputId" :class="labelClass">
-      {{ label }}
+      <slot name="label">{{ label }}</slot>
     </label>
     <TextInput
       :input-id="inputId"
@@ -31,7 +31,7 @@ export default {
     },
     label: {
       type: String,
-      required: true
+      default: ''
     },
     placeholder: {
       type: String,

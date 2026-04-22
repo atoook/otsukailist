@@ -3,6 +3,10 @@ import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import IconFire from '../components/icons/IconFire.vue';
+import IconMeat from '../components/icons/IconMeat.vue';
+import IconPray from '../components/icons/IconPray.vue';
+import IconClipboard from '../components/icons/IconClipboard.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
 import { fetchListsMeta } from '@/api/list';
 import { FEEDBACK_URL } from '@/lib/appConstants';
@@ -13,7 +17,11 @@ export default {
     ContentArea,
     MainButton,
     SwipeContainer,
-    BadgeTag
+    BadgeTag,
+    IconFire,
+    IconMeat,
+    IconPray,
+    IconClipboard
   },
   data() {
     return {
@@ -98,9 +106,9 @@ export default {
 <template>
   <ContentArea>
     <div class="text-center">
-      <div class="text-6xl mb-4">🔥</div>
+      <div class="text-6xl mb-4"><IconFire /></div>
       <h2 class="text-3xl font-bold font-serif text-charcoal-800 mb-4">ようこそ！</h2>
-      <p class="text-charcoal-600 mb-8 leading-relaxed">あなたの買い物を<br />🍖 スマートに管理しましょう</p>
+      <p class="text-charcoal-600 mb-8 leading-relaxed">あなたの買い物を<br /><IconMeat /> スマートに管理しましょう</p>
       <MainButton @click="navigateToCreateList">はじめる</MainButton>
     </div>
 
@@ -116,7 +124,7 @@ export default {
           aria-label="フィードバックリストへ（別タブで開きます）"
           >フィードバックリストへ</a
         >
-        どうぞ 🙏
+        どうぞ <IconPray />
       </p>
     </div>
 
@@ -132,7 +140,7 @@ export default {
               :to="`/lists/${entry.listId}`"
               class="flex items-center px-4 py-3 bg-white border border-charcoal-200 rounded-lg hover:bg-charcoal-50 transition-colors"
             >
-              <span class="text-charcoal-400 mr-3 text-base" aria-hidden="true">📋</span>
+              <span class="text-charcoal-400 mr-3 text-base"><IconClipboard /></span>
               <span class="text-sm text-charcoal-700 font-medium truncate flex-1">
                 {{ listMeta[entry.listId]?.name ?? entry.name }}
               </span>
