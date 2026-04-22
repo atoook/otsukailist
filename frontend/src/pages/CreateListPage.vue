@@ -171,8 +171,8 @@ export default defineComponent({
             :text="member.displayName"
             :removable="true"
             @remove="removeMember(member.id)"
-            ><template #icon><IconUser /></template></BadgeTag
-          >
+            ><template #icon><IconUser /></template
+          ></BadgeTag>
         </div>
       </div>
     </div>

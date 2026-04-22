@@ -32,15 +32,15 @@
       </span>
       <span v-if="showSaveIndicator" class="text-success-600 text-lg"><IconCheck /></span>
       <BadgeTag v-if="completedMemberName" :text="completedMemberName" size="small" :variant="memberBadgeVariant"
-        ><template #icon><IconUser /></template></BadgeTag
-      >
+        ><template #icon><IconUser /></template
+      ></BadgeTag>
     </div>
 
     <template #hiddenActions>
       <button @click="handleDelete(item.id)" :aria-label="`${item.name}を削除`" tabindex="-1" role="button">
         <BadgeTag text="削除" size="small" class="bg-ember-400 border-ember-600 text-white"
-          ><template #icon><IconTrash /></template></BadgeTag
-        >
+          ><template #icon><IconTrash /></template
+        ></BadgeTag>
       </button>
     </template>
   </SwipeContainer>

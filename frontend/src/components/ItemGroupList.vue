@@ -199,8 +199,8 @@ export default defineComponent({
           class="text-charcoal-500 text-xs transition-transform duration-200"
           :class="{ '-rotate-90': isGroupCollapsed(group.key) }"
           aria-hidden="true"
-          ><IconChevronDown /></span
-        >
+          ><IconChevronDown
+        /></span>
       </button>
       <div v-else-if="group.showHeader" class="flex items-center gap-2 mt-1 py-1">
         <div class="flex-1 h-px bg-charcoal-200"></div>

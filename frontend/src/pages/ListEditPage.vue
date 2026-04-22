@@ -253,8 +253,8 @@ export default defineComponent({
             :variant="getMemberBadgeVariant(member)"
             :removable="isRemovableMember(member)"
             @remove="removeMember(member.id)"
-            ><template #icon><IconUser /></template></BadgeTag
-          >
+            ><template #icon><IconUser /></template
+          ></BadgeTag>
         </div>
       </div>
     </div>

@@ -6,6 +6,9 @@ import DropDown from '../components/DropDown.vue';
 import ItemAddForm from '../components/ItemAddForm.vue';
 import ItemGroupList from '../components/ItemGroupList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import IconEdit from '../components/icons/IconEdit.vue';
+import IconRefresh from '../components/icons/IconRefresh.vue';
+import IconCelebration from '../components/icons/IconCelebration.vue';
 import type { Item } from '../types/item';
 import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
 import { formatActivityAt } from '../utils/date-format';
@@ -24,7 +27,10 @@ export default defineComponent({
     DropDown,
     ItemAddForm,
     ItemGroupList,
-    LoadingSpinner
+    LoadingSpinner,
+    IconEdit,
+    IconRefresh,
+    IconCelebration
   },
   data(): {
     currentListId: string | null;
@@ -99,9 +105,12 @@ export default defineComponent({
         return `あと ${incomplete} 件`;
       }
       if (incomplete === 0) {
-        return '全て完了 🎉';
+        return '全て完了';
       }
       return `あと ${incomplete} 件 ・ 完了 ${completed} 件`;
+    },
+    allCompleted(): boolean {
+      return this.items.length > 0 && this.items.every((item) => item.completed);
     },
     formattedLastItemActivityAt(): string | null {
       return formatActivityAt(this.listStore.lastItemActivityAt);
@@ -180,7 +189,7 @@ export default defineComponent({
             aria-label="リスト名を編集"
             class="focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
           >
-            <span class="text-charcoal-800" aria-hidden="true">✏️</span>
+            <span class="text-charcoal-800"><IconEdit /></span>
           </button>
         </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
@@ -211,7 +220,7 @@ export default defineComponent({
       <!-- チェック時に記録する購入者選択 + サマリー -->
       <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
         <div class="flex flex-col gap-0.5">
-          <span class="text-xs text-charcoal-600">{{ itemSummary }}</span>
+          <span class="text-xs text-charcoal-600">{{ itemSummary }}<IconCelebration v-if="allCompleted" /></span>
           <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-500 flex items-center gap-1">
             最終更新: {{ formattedLastItemActivityAt }}
             <button
@@ -221,7 +230,7 @@ export default defineComponent({
               aria-label="リストを再読み込み"
               class="text-charcoal-400 hover:text-charcoal-600 disabled:opacity-40 transition-colors"
             >
-              <span :class="{ 'animate-spin': snapshotLoading }" style="display: inline-block">🔁</span>
+              <span :class="{ 'animate-spin': snapshotLoading }" style="display: inline-block"><IconRefresh /></span>
             </button>
           </span>
         </div>
