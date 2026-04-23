@@ -1,6 +1,6 @@
 <template>
   <div>
-    <label :for="inputId" :class="labelClass">
+    <label v-if="label || $slots.label" :for="inputId" :class="labelClass">
       <slot name="label">{{ label }}</slot>
     </label>
     <TextInput

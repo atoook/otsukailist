@@ -218,7 +218,9 @@ export default defineComponent({
       <!-- チェック時に記録する購入者選択 + サマリー -->
       <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
         <div class="flex flex-col gap-0.5">
-          <span class="text-xs text-charcoal-600">{{ itemSummary }}<IconCelebration v-if="allCompleted" /></span>
+          <span class="text-xs text-charcoal-600"
+            >{{ itemSummary }}<IconCelebration v-if="allCompleted" class="ml-1"
+          /></span>
           <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-500 flex items-center gap-1">
             最終更新: {{ formattedLastItemActivityAt }}
             <button
