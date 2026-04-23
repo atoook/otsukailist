@@ -15,10 +15,10 @@
         'bg-wood-100 border-wood-300': !checked,
         'bg-ember-500 border-ember-600': checked
       }"
-      class="w-6 h-6 border-2 rounded-md transition-[background-color,border-color,box-shadow] duration-200 text-center leading-6 hover:shadow-md"
+      class="w-6 h-6 border-2 rounded-md transition-[background-color,border-color,box-shadow] duration-200 flex items-center justify-center hover:shadow-md"
     >
       <!-- チェックマーク -->
-      <span v-if="checked" class="text-white text-sm font-bold align-top"><IconCheck /></span>
+      <span v-if="checked" class="text-white flex items-center"><IconCheck /></span>
     </div>
   </label>
 </template>

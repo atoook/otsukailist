@@ -50,7 +50,7 @@ export default {
   },
   computed: {
     labelClass() {
-      const baseClass = 'block font-medium text-charcoal-700';
+      const baseClass = 'flex items-center gap-1 font-medium text-charcoal-700';
 
       const variantClasses = {
         default: 'text-sm mb-2',

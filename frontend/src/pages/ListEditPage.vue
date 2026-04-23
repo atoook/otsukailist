@@ -6,7 +6,7 @@ import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import IconTools from '../components/icons/IconTools.vue';
-import IconMeat from '../components/icons/IconMeat.vue';
+import IconFire from '../components/icons/IconFire.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import IconUser from '../components/icons/IconUser.vue';
 import type { Member, MemberId } from '../types/member';
@@ -27,7 +27,7 @@ export default defineComponent({
     TextInput,
     BadgeTag,
     IconTools,
-    IconMeat,
+    IconFire,
     IconUsers,
     IconUser
   },
@@ -209,8 +209,8 @@ export default defineComponent({
 <template>
   <ContentArea>
     <div class="text-center mb-6">
-      <div class="text-5xl mb-3"><IconTools /></div>
-      <h2 class="text-2xl font-bold font-serif text-charcoal-800">リストを編集</h2>
+      <div class="text-5xl mb-3 flex justify-center"><IconTools /></div>
+      <h2 class="text-2xl font-bold text-charcoal-800">リストを編集</h2>
     </div>
 
     <div class="mb-6">
@@ -220,7 +220,7 @@ export default defineComponent({
         :model-value="listName"
         @update:model-value="onListNameInput"
       >
-        <template #label><IconMeat /> リスト名</template>
+        <template #label><IconFire /> リスト名</template>
       </TextInputWithLabel>
     </div>
 
@@ -229,7 +229,7 @@ export default defineComponent({
     </div>
 
     <div class="mb-12">
-      <label class="block text-sm font-medium text-charcoal-700 mb-2"><IconUsers /> メンバー</label>
+      <label class="flex items-center gap-1 text-sm font-medium text-charcoal-700 mb-2"><IconUsers /> メンバー</label>
       <div class="flex gap-2 px-2 py-1 border border-wood-200 bg-wood-50 rounded-md">
         <TextInput
           :model-value="newMemberName"

@@ -5,7 +5,10 @@
         {{ optionItem.name }}
       </option>
     </select>
-    <span v-if="showArrow" class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-wood-50">
+    <span
+      v-if="showArrow"
+      class="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-wood-50 flex items-center"
+    >
       <IconChevronDown />
     </span>
   </div>

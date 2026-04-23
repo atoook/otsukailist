@@ -178,16 +178,16 @@ export default defineComponent({
       <!-- リストタイトル -->
       <div class="mb-8">
         <div class="flex flex-row justify-center space-x-2 items-center mb-1">
-          <h2 class="text-2xl font-black text-charcoal-800 text-center mb-2">
+          <h2 class="text-2xl font-black text-charcoal-800 text-center">
             {{ listName }}
           </h2>
           <button
             type="button"
             @click="navigateToListEdit"
             aria-label="リスト名を編集"
-            class="focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
+            class="flex items-center focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
           >
-            <span class="text-charcoal-800"><IconEdit /></span>
+            <span class="text-charcoal-800 flex items-center"><IconEdit /></span>
           </button>
         </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
@@ -228,7 +228,7 @@ export default defineComponent({
               aria-label="リストを再読み込み"
               class="text-charcoal-400 hover:text-charcoal-600 disabled:opacity-40 transition-colors"
             >
-              <span :class="{ 'animate-spin': snapshotLoading }" style="display: inline-block"><IconRefresh /></span>
+              <span :class="{ 'animate-spin': snapshotLoading }" class="flex items-center"><IconRefresh /></span>
             </button>
           </span>
         </div>
