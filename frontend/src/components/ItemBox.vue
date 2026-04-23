@@ -30,7 +30,9 @@
       <span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
-      <span v-if="showSaveIndicator" class="text-success-600 text-lg"><IconCheck /></span>
+      <span v-if="showSaveIndicator" class="text-success-600 text-lg" role="status" aria-label="保存済み"
+        ><IconCheck
+      /></span>
       <BadgeTag v-if="completedMemberName" :text="completedMemberName" size="small" :variant="memberBadgeVariant"
         ><template #icon><IconUser /></template
       ></BadgeTag>
