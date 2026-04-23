@@ -1,12 +1,14 @@
 <script>
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
+import IconCheck from '../components/icons/IconCheck.vue';
 
 export default {
   name: 'ShareListPage',
   components: {
     ContentArea,
-    MainButton
+    MainButton,
+    IconCheck
   },
   data() {
     return {
@@ -101,7 +103,8 @@ export default {
         size="small"
         class="transition-[background-color,color,border-color,box-shadow,font-weight] duration-300 ease-out"
       >
-        {{ copySuccess ? '✓ コピー済み' : 'コピー' }}
+        <template v-if="copySuccess"><IconCheck /> コピー済み</template>
+        <template v-else>コピー</template>
       </MainButton>
     </div>
     <div class="mt-6">

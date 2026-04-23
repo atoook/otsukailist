@@ -1,6 +1,9 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue';
 import ItemBox from './ItemBox.vue';
+import IconChevronDown from './icons/IconChevronDown.vue';
+import IconFire from './icons/IconFire.vue';
+import IconSearch from './icons/IconSearch.vue';
 import type { Item, ItemId } from '../types/item';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
@@ -38,7 +41,7 @@ const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
 
 export default defineComponent({
   name: 'ItemGroupList',
-  components: { ItemBox },
+  components: { ItemBox, IconChevronDown, IconFire, IconSearch },
   props: {
     filteredItems: {
       type: Array as PropType<Item[]>,
@@ -193,11 +196,11 @@ export default defineComponent({
         <div class="flex-1 h-px bg-charcoal-200"></div>
         <span class="text-xs text-charcoal-500 whitespace-nowrap">{{ group.label }} {{ group.items.length }}件</span>
         <span
-          class="text-charcoal-500 text-xs transition-transform duration-200"
+          class="flex items-center text-charcoal-500 text-xs transition-transform duration-200"
           :class="{ '-rotate-90': isGroupCollapsed(group.key) }"
           aria-hidden="true"
-          >▼</span
-        >
+          ><IconChevronDown
+        /></span>
       </button>
       <div v-else-if="group.showHeader" class="flex items-center gap-2 mt-1 py-1">
         <div class="flex-1 h-px bg-charcoal-200"></div>
@@ -221,14 +224,14 @@ export default defineComponent({
 
     <!-- アイテムがない場合 -->
     <div v-if="items.length === 0" class="text-center text-charcoal-600 py-8">
-      <div class="text-4xl mb-3">🍖</div>
+      <div class="text-4xl mb-3 flex justify-center"><IconFire /></div>
       まだアイテムがありません。<br />
       上のフォームからアイテムを追加してください。
     </div>
 
     <!-- 検索結果がない場合 -->
     <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
-      <div class="text-4xl mb-3">🔍</div>
+      <div class="text-4xl mb-3 flex justify-center"><IconSearch /></div>
       「{{ searchQuery }}」に一致するアイテムが見つかりませんでした。
     </div>
   </div>

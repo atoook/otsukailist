@@ -1,34 +1,34 @@
 <template>
   <span :class="badgeClass">
-    <span v-if="icon" class="flex-shrink-0">{{ icon }}</span>
+    <span v-if="$slots.icon" class="flex-shrink-0 flex items-center"><slot name="icon" /></span>
     <span class="overflow-hidden whitespace-nowrap text-ellipsis">{{ text }}</span>
     <button
       v-if="removable"
       type="button"
       @click="$emit('remove')"
-      class="text-ember-400 hover:text-ember-600 transition-colors flex-shrink-0"
+      class="text-ember-400 hover:text-ember-600 transition-colors flex-shrink-0 flex items-center"
       :aria-label="`${text}を削除`"
     >
-      ✕
+      <IconClose />
     </button>
   </span>
 </template>
 
 <script>
 import { twMerge } from 'tailwind-merge';
+import IconClose from './icons/IconClose.vue';
 
 export default {
   name: 'BadgeTag',
+  components: {
+    IconClose
+  },
   inheritAttrs: false, // 自動的なattribute継承を無効化
   emits: ['remove'],
   props: {
     text: {
       type: String,
       required: true
-    },
-    icon: {
-      type: String,
-      default: ''
     },
     removable: {
       type: Boolean,

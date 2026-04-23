@@ -1,7 +1,7 @@
 <template>
   <div>
-    <label :for="inputId" :class="labelClass">
-      {{ label }}
+    <label v-if="label || $slots.label" :for="inputId" :class="labelClass">
+      <slot name="label">{{ label }}</slot>
     </label>
     <TextInput
       :input-id="inputId"
@@ -31,7 +31,7 @@ export default {
     },
     label: {
       type: String,
-      required: true
+      default: ''
     },
     placeholder: {
       type: String,
@@ -50,7 +50,7 @@ export default {
   },
   computed: {
     labelClass() {
-      const baseClass = 'block font-medium text-charcoal-700';
+      const baseClass = 'flex items-center gap-1 font-medium text-charcoal-700';
 
       const variantClasses = {
         default: 'text-sm mb-2',

@@ -5,6 +5,10 @@ import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import IconTools from '../components/icons/IconTools.vue';
+import IconFire from '../components/icons/IconFire.vue';
+import IconUsers from '../components/icons/IconUsers.vue';
+import IconUser from '../components/icons/IconUser.vue';
 import type { Member, MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
 import { useListStore } from '@/stores/list';
@@ -21,7 +25,11 @@ export default defineComponent({
     MainButton,
     TextInputWithLabel,
     TextInput,
-    BadgeTag
+    BadgeTag,
+    IconTools,
+    IconFire,
+    IconUsers,
+    IconUser
   },
   data(): {
     listName: string;
@@ -201,18 +209,19 @@ export default defineComponent({
 <template>
   <ContentArea>
     <div class="text-center mb-6">
-      <div class="text-5xl mb-3">🛠️</div>
-      <h2 class="text-2xl font-bold font-serif text-charcoal-800">リストを編集</h2>
+      <div class="text-5xl mb-3 flex justify-center"><IconTools /></div>
+      <h2 class="text-2xl font-bold text-charcoal-800">リストを編集</h2>
     </div>
 
     <div class="mb-6">
       <TextInputWithLabel
         input-id="listName"
-        label="🍖 リスト名"
         placeholder="例：今日のBBQ材料"
         :model-value="listName"
         @update:model-value="onListNameInput"
-      />
+      >
+        <template #label><IconFire /> リスト名</template>
+      </TextInputWithLabel>
     </div>
 
     <div v-if="errorMessage" class="mb-4 p-3 bg-ember-100 border border-ember-300 text-ember-700 rounded-lg text-sm">
@@ -220,7 +229,7 @@ export default defineComponent({
     </div>
 
     <div class="mb-12">
-      <label class="block text-sm font-medium text-charcoal-700 mb-2">👥 メンバー</label>
+      <label class="flex items-center gap-1 text-sm font-medium text-charcoal-700 mb-2"><IconUsers /> メンバー</label>
       <div class="flex gap-2 px-2 py-1 border border-wood-200 bg-wood-50 rounded-md">
         <TextInput
           :model-value="newMemberName"
@@ -241,11 +250,11 @@ export default defineComponent({
             v-for="member in members"
             :key="member.id"
             :text="member.displayName"
-            icon="👤"
             :variant="getMemberBadgeVariant(member)"
             :removable="isRemovableMember(member)"
             @remove="removeMember(member.id)"
-          />
+            ><template #icon><IconUser /></template
+          ></BadgeTag>
         </div>
       </div>
     </div>
