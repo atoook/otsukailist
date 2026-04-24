@@ -150,7 +150,7 @@ export default {
                 </template>
                 <template v-else-if="formattedListMeta[entry.listId]">
                   <span class="text-xs text-charcoal-500">
-                    {{ formattedListMeta[entry.listId].incompleteCount }}/{{
+                    {{ formattedListMeta[entry.listId].completeCount }}/{{
                       formattedListMeta[entry.listId].itemCount
                     }}件
                   </span>

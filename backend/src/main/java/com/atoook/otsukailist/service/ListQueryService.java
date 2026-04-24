@@ -72,7 +72,7 @@ public class ListQueryService {
   /**
    * 複数リストのメタ情報をまとめて取得する。
    *
-   * <p>存在しないlistId（削除済みなど）は結果に含まれない。 アイテムが0件のリストは itemCount=0, incompleteCount=0,
+   * <p>存在しないlistId（削除済みなど）は結果に含まれない。 アイテムが0件のリストは itemCount=0, completeCount=0,
    * lastItemActivityAt=null で返す。
    *
    * @param listIds 取得対象のリストID一覧（最大10件）
@@ -95,7 +95,7 @@ public class ListQueryService {
                   .listId(list.getId())
                   .name(list.getName())
                   .itemCount(summary != null ? summary.getItemCount() : 0L)
-                  .incompleteCount(summary != null ? summary.getIncompleteCount() : 0L)
+                  .completeCount(summary != null ? summary.getCompleteCount() : 0L)
                   .lastItemActivityAt(summary != null ? summary.getLastItemActivityAt() : null)
                   .build();
             })
