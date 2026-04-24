@@ -41,7 +41,7 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
       """
       SELECT i.itemList.id                                    AS listId,
              COUNT(i)                                         AS itemCount,
-             SUM(CASE WHEN i.completed = false THEN 1 ELSE 0 END) AS incompleteCount,
+             SUM(CASE WHEN i.completed = true THEN 1 ELSE 0 END) AS completeCount,
              MAX(i.updatedAt)                                 AS lastItemActivityAt
       FROM Item i
       WHERE i.itemList.id IN :listIds
@@ -55,7 +55,7 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
 
     long getItemCount();
 
-    long getIncompleteCount();
+    long getCompleteCount();
 
     Instant getLastItemActivityAt();
   }

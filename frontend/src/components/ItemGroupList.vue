@@ -2,8 +2,7 @@
 import { defineComponent, type PropType } from 'vue';
 import ItemBox from './ItemBox.vue';
 import IconChevronDown from './icons/IconChevronDown.vue';
-import IconFire from './icons/IconFire.vue';
-import IconSearch from './icons/IconSearch.vue';
+import IconTired from './icons/IconTired.vue';
 import type { Item, ItemId } from '../types/item';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
@@ -41,7 +40,7 @@ const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
 
 export default defineComponent({
   name: 'ItemGroupList',
-  components: { ItemBox, IconChevronDown, IconFire, IconSearch },
+  components: { ItemBox, IconChevronDown, IconTired },
   props: {
     filteredItems: {
       type: Array as PropType<Item[]>,
@@ -224,14 +223,14 @@ export default defineComponent({
 
     <!-- アイテムがない場合 -->
     <div v-if="items.length === 0" class="text-center text-charcoal-600 py-8">
-      <div class="text-4xl mb-3 flex justify-center"><IconFire /></div>
+      <div class="text-4xl mb-3 flex justify-center"><IconTired /></div>
       まだアイテムがありません。<br />
       上のフォームからアイテムを追加してください。
     </div>
 
     <!-- 検索結果がない場合 -->
     <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
-      <div class="text-4xl mb-3 flex justify-center"><IconSearch /></div>
+      <div class="text-4xl mb-3 flex justify-center"><IconTired /></div>
       「{{ searchQuery }}」に一致するアイテムが見つかりませんでした。
     </div>
   </div>

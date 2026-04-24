@@ -19,7 +19,7 @@ public class ListMetaItemResponse {
 
   private long itemCount;
 
-  private long incompleteCount;
+  private long completeCount;
 
   /** アイテムの最終更新日時。アイテムが0件の場合は null。 */
   private Instant lastItemActivityAt;

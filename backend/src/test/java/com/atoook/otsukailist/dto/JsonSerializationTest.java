@@ -175,7 +175,7 @@ class JsonSerializationTest {
             .listId(listId)
             .name("テストリスト")
             .itemCount(5L)
-            .incompleteCount(2L)
+            .completeCount(2L)
             .lastItemActivityAt(lastItemActivityAt)
             .build();
 
@@ -187,7 +187,7 @@ class JsonSerializationTest {
     assertThat(jsonNode.get("lastItemActivityAt").asText())
         .isEqualTo(lastItemActivityAt.toString());
     assertThat(jsonNode.get("itemCount").asLong()).isEqualTo(5L);
-    assertThat(jsonNode.get("incompleteCount").asLong()).isEqualTo(2L);
+    assertThat(jsonNode.get("completeCount").asLong()).isEqualTo(2L);
   }
 
   @Test
@@ -200,7 +200,7 @@ class JsonSerializationTest {
             .listId(UUID.randomUUID())
             .name("空のリスト")
             .itemCount(0L)
-            .incompleteCount(0L)
+            .completeCount(0L)
             .lastItemActivityAt(null)
             .build();
 
