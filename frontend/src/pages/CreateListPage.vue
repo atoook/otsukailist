@@ -6,6 +6,7 @@ import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import IconClipboard from '../components/icons/IconClipboard.vue';
 import IconFire from '../components/icons/IconFire.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import IconUser from '../components/icons/IconUser.vue';
@@ -25,6 +26,7 @@ export default defineComponent({
     TextInput,
     BadgeTag,
     LoadingSpinner,
+    IconClipboard,
     IconFire,
     IconUsers,
     IconUser
@@ -139,7 +141,7 @@ export default defineComponent({
         :model-value="listName"
         @update:model-value="onListNameInput"
       >
-        <template #label><IconFire /> リスト名</template>
+        <template #label><IconClipboard /> リスト名</template>
       </TextInputWithLabel>
     </div>
 

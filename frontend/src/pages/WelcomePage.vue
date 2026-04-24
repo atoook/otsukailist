@@ -3,7 +3,7 @@ import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
 import BadgeTag from '../components/BadgeTag.vue';
-import IconFire from '../components/icons/IconFire.vue';
+import IconBbq from '../components/icons/IconBbq.vue';
 import IconPray from '../components/icons/IconPray.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
@@ -17,7 +17,7 @@ export default {
     MainButton,
     SwipeContainer,
     BadgeTag,
-    IconFire,
+    IconBbq,
     IconPray,
     IconClipboard
   },
@@ -104,9 +104,11 @@ export default {
 <template>
   <ContentArea>
     <div class="text-center">
-      <div class="text-6xl mb-4 flex justify-center"><IconFire /></div>
-      <h2 class="text-3xl font-bold text-charcoal-800 mb-4">ようこそ！</h2>
-      <p class="text-charcoal-600 mb-8 leading-relaxed">あなたの買い物を<br />スマートに管理しましょう</p>
+      <p class="text-charcoal-800 mb-4 leading-snug text-3xl font-bold">買い忘れも、買い過ぎも、これで終わり。</p>
+      <div class="text-8xl mb-4 flex justify-center"><IconBbq /></div>
+      <p class="text-charcoal-600 mb-8 leading-relaxed">
+        URLを送るだけ。みんなで作る「Otsukaiリスト」は、無料で使える買い物リストです。
+      </p>
       <MainButton @click="navigateToCreateList">はじめる</MainButton>
     </div>
 
