@@ -3,7 +3,6 @@ import { defineComponent, type PropType } from 'vue';
 import ItemBox from './ItemBox.vue';
 import IconChevronDown from './icons/IconChevronDown.vue';
 import IconTired from './icons/IconTired.vue';
-import IconSearch from './icons/IconSearch.vue';
 import type { Item, ItemId } from '../types/item';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
@@ -41,7 +40,7 @@ const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
 
 export default defineComponent({
   name: 'ItemGroupList',
-  components: { ItemBox, IconChevronDown, IconTired, IconSearch },
+  components: { ItemBox, IconChevronDown, IconTired },
   props: {
     filteredItems: {
       type: Array as PropType<Item[]>,
