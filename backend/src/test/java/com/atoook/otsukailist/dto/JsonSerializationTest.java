@@ -187,7 +187,7 @@ class JsonSerializationTest {
     assertThat(jsonNode.get("lastItemActivityAt").asText())
         .isEqualTo(lastItemActivityAt.toString());
     assertThat(jsonNode.get("itemCount").asLong()).isEqualTo(5L);
-    assertThat(jsonNode.get("incompleteCount").asLong()).isEqualTo(2L);
+    assertThat(jsonNode.get("completeCount").asLong()).isEqualTo(2L);
   }
 
   @Test
