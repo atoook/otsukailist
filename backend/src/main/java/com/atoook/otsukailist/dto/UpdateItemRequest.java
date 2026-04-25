@@ -39,4 +39,16 @@ public class UpdateItemRequest {
     this.assignedMemberId = assignedMemberId;
     this.assignedMemberIdPresent = true;
   }
+
+  /**
+   * Custom Lombok builder to ensure assignedMemberIdPresent is set when assignedMemberId is set via
+   * builder.
+   */
+  public static class UpdateItemRequestBuilder {
+    public UpdateItemRequestBuilder assignedMemberId(UUID assignedMemberId) {
+      this.assignedMemberId = assignedMemberId;
+      this.assignedMemberIdPresent = true;
+      return this;
+    }
+  }
 }
