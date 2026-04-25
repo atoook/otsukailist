@@ -36,6 +36,10 @@ public class Item {
   @Column(name = "is_completed", nullable = false)
   private boolean completed;
 
+  // 担当者（member.id）。未アサインのときはNULL。
+  @Column(name = "assigned_member_id")
+  private UUID assignedMemberId;
+
   // 誰が完了させたか（member.id）。未完了のときはNULL。
   @Column(name = "completed_by_member_id")
   private UUID completedByMemberId;

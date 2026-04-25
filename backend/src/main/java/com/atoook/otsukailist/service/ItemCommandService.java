@@ -34,6 +34,7 @@ public class ItemCommandService {
   private final ListRevisionService listRevisionService;
 
   private static final String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
+  private static final String MSG_ASSIGNED_MEMBER_NOT_IN_LIST = "指定された担当者はリストのメンバーではありません";
   private static final String MSG_COMPLETED_BY_NOT_SPECIFIED = "完了者が未指定です";
 
   /**
@@ -52,6 +53,7 @@ public class ItemCommandService {
     Item item = new Item();
     item.setName(req.getName().trim());
     item.setCompleted(false);
+    item.setAssignedMemberId(null);
     item.setCompletedByMemberId(null);
     item.setCompletedAt(null);
     item.setItemList(list);
@@ -79,6 +81,15 @@ public class ItemCommandService {
 
     // rename（Mapperは name のみ更新）
     ItemMapper.updateEntity(item, req);
+
+    if (req.isAssignedMemberIdPresent()) {
+      UUID assignedMemberId = req.getAssignedMemberId();
+      if (assignedMemberId != null
+          && !memberRepo.existsByIdAndItemListId(assignedMemberId, listId)) {
+        throw new BadRequestException(MSG_ASSIGNED_MEMBER_NOT_IN_LIST);
+      }
+      item.setAssignedMemberId(assignedMemberId);
+    }
 
     // completion（業務ロジック）
     if (req.getCompleted() != null) {

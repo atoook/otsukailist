@@ -14,8 +14,14 @@ db/
 ├── docker-compose.ci.yml       # CI環境用設定
 ├── .env                        # 環境変数
 └── init/
-    ├── 01_create_tables.sql        # 開発用スキーマ
-    └── 01_create_tables_test.sql   # テスト用スキーマ
+    └── 02_sample_data.sql      # サンプルデータ投入SQL（運用フロー検討中）
+
+正式なスキーマ変更は backend の Flyway マイグレーションで管理します。
+
+```
+backend/src/main/resources/db/migration/
+├── V1__create_tables.sql
+└── V2__add_item_assigned_member_id.sql
 ```
 
 ## 環境別構成
@@ -38,6 +44,20 @@ db/
 | ユーザー   | `POSTGRES_USER`     | 接続ユーザー名                      |
 | パスワード | `POSTGRES_PASSWORD` | 接続パスワード                      |
 
+## マイグレーション
+
+Spring Boot 起動時に Flyway が `backend/src/main/resources/db/migration` 配下のSQLを順番に適用します。
+
+開発・テスト用の Docker Compose は空の PostgreSQL を起動するだけです。`/docker-entrypoint-initdb.d` によるスキーマ作成は使いません。
+
+新しいスキーマ変更を追加するときは、次の命名でSQLを追加します。
+
+```text
+backend/src/main/resources/db/migration/V{連番}__{説明}.sql
+```
+
+既存DBに対しては `spring.flyway.baseline-on-migrate=true` により、Flyway管理前のスキーマをベースライン化してから差分マイグレーションを適用します。
+
 ## データベーススキーマ
 
 ### item_list
@@ -59,6 +79,9 @@ db/
 | created_at   | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP    | 作成日時               |
 | updated_at   | TIMESTAMP(3) | DEFAULT CURRENT_TIMESTAMP(3) | 更新日時               |
 | list_id      | UUID         | NOT NULL, FOREIGN KEY        | item_list への外部キー |
+| assigned_member_id | UUID | NULL, FOREIGN KEY | 担当者 |
+| completed_by_member_id | UUID | NULL, FOREIGN KEY | 完了者 |
+| completed_at | TIMESTAMP(3) | NULL | 完了日時 |
 
 **インデックス:**
 
@@ -68,7 +91,7 @@ db/
 ## PostgreSQL 設定
 
 - 公式 `postgres:16` イメージを利用
-- 初期化 SQL は `init/*.sql` をコンテナ起動時に自動実行
+- スキーマ変更は Flyway がアプリケーション起動時に適用
 - テスト環境は `tmpfs` を使い高速化
 
 ## 環境変数設定

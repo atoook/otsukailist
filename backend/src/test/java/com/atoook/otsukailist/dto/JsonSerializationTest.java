@@ -26,6 +26,7 @@ class JsonSerializationTest {
   void testItemResponseSerialization() throws JsonProcessingException {
     // Given
     UUID id = UUID.randomUUID();
+    UUID assignedMemberId = UUID.randomUUID();
     UUID completedByMemberId = UUID.randomUUID();
     Instant createdAt = Instant.parse("2024-01-01T00:00:00Z");
     Instant updatedAt = Instant.parse("2024-01-01T01:00:00Z");
@@ -36,6 +37,7 @@ class JsonSerializationTest {
             .id(id)
             .name("テストアイテム")
             .completed(true)
+            .assignedMemberId(assignedMemberId)
             .completedByMemberId(completedByMemberId)
             .completedAt(completedAt)
             .createdAt(createdAt)
@@ -49,6 +51,7 @@ class JsonSerializationTest {
     JsonNode jsonNode = objectMapper.readTree(json);
     assertThat(jsonNode.get("id").asText()).isEqualTo(id.toString());
     assertThat(jsonNode.get("completed").asBoolean()).isTrue();
+    assertThat(jsonNode.get("assignedMemberId").asText()).isEqualTo(assignedMemberId.toString());
     assertThat(jsonNode.get("completedByMemberId").asText())
         .isEqualTo(completedByMemberId.toString());
     assertThat(jsonNode.get("completedAt").asText()).isEqualTo(completedAt.toString());
@@ -59,6 +62,7 @@ class JsonSerializationTest {
     ItemResponse deserialized = objectMapper.readValue(json, ItemResponse.class);
     assertThat(deserialized.getId()).isEqualTo(id);
     assertThat(deserialized.isCompleted()).isTrue();
+    assertThat(deserialized.getAssignedMemberId()).isEqualTo(assignedMemberId);
     assertThat(deserialized.getCompletedByMemberId()).isEqualTo(completedByMemberId);
     assertThat(deserialized.getCompletedAt()).isEqualTo(completedAt);
     assertThat(deserialized.getCreatedAt()).isEqualTo(createdAt);
@@ -95,6 +99,7 @@ class JsonSerializationTest {
                 {
                     "name": "更新されたアイテム",
                     "completed": true,
+                    "assignedMemberId": "2df2c117-3c37-4ceb-b17d-6cf76d29eb17",
                     "completedByMemberId": "4aa8c874-708b-4f96-8658-3f4daff9c6ee"
                 }
                 """;
@@ -105,8 +110,24 @@ class JsonSerializationTest {
     // Then
     assertThat(request.getName()).isEqualTo("更新されたアイテム");
     assertThat(request.getCompleted()).isTrue();
+    assertThat(request.getAssignedMemberId())
+        .isEqualTo(UUID.fromString("2df2c117-3c37-4ceb-b17d-6cf76d29eb17"));
+    assertThat(request.isAssignedMemberIdPresent()).isTrue();
     assertThat(request.getCompletedByMemberId())
         .isEqualTo(UUID.fromString("4aa8c874-708b-4f96-8658-3f4daff9c6ee"));
+  }
+
+  @Test
+  @DisplayName("UpdateItemRequest の assignedMemberId は明示 null と未指定を区別できること")
+  void testUpdateItemRequestAssignedMemberIdPresence() throws JsonProcessingException {
+    UpdateItemRequest explicitNull =
+        objectMapper.readValue("{\"assignedMemberId\": null}", UpdateItemRequest.class);
+    UpdateItemRequest absent = objectMapper.readValue("{}", UpdateItemRequest.class);
+
+    assertThat(explicitNull.getAssignedMemberId()).isNull();
+    assertThat(explicitNull.isAssignedMemberIdPresent()).isTrue();
+    assertThat(absent.getAssignedMemberId()).isNull();
+    assertThat(absent.isAssignedMemberIdPresent()).isFalse();
   }
 
   @Test
