@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.Size;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +27,16 @@ public class UpdateItemRequest {
   // 完了状態（nullの場合は更新しない）
   private Boolean completed;
 
+  private UUID assignedMemberId;
+
+  @JsonIgnore private boolean assignedMemberIdPresent;
+
   // completed=true のとき必須（未完了に戻すときは不要）
   private UUID completedByMemberId;
+
+  @JsonSetter("assignedMemberId")
+  public void setAssignedMemberId(UUID assignedMemberId) {
+    this.assignedMemberId = assignedMemberId;
+    this.assignedMemberIdPresent = true;
+  }
 }

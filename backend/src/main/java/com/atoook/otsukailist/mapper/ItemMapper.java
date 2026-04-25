@@ -22,6 +22,7 @@ public class ItemMapper {
         .id(entity.getId())
         .name(entity.getName().trim())
         .completed(entity.isCompleted())
+        .assignedMemberId(entity.getAssignedMemberId())
         .completedByMemberId(entity.getCompletedByMemberId())
         .completedAt(entity.getCompletedAt())
         .createdAt(entity.getCreatedAt())

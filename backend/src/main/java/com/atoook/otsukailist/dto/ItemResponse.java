@@ -21,6 +21,8 @@ public class ItemResponse {
 
   private boolean completed;
 
+  private UUID assignedMemberId;
+
   private UUID completedByMemberId;
 
   private Instant completedAt;

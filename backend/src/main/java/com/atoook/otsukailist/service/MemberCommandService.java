@@ -103,7 +103,7 @@ public class MemberCommandService {
                     new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "メンバー")));
 
     memberRepo.delete(member);
-    // DB側 FK: item.completed_by_member_id ON DELETE SET NULL が効く
+    // DB側 FK: item.assigned_member_id / completed_by_member_id ON DELETE SET NULL が効く
 
     long revision = incrementAndGetRevision(listId);
 
