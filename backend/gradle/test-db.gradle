@@ -59,7 +59,7 @@ task setupTestEnv {
     
     doLast {
         println 'Test environment is ready!'
-        println 'Database: localhost:3307/otsukailist_test'
+        println 'Database: localhost:5433/otsukailist_test'
         println 'Run tests with: ./gradlew test'
         println 'Stop test environment with: ./gradlew stopTestDB'
     }

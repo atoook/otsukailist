@@ -1,53 +1,94 @@
 <script lang="ts">
+import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
+import IconClipboard from '../components/icons/IconClipboard.vue';
+import IconFire from '../components/icons/IconFire.vue';
+import IconUsers from '../components/icons/IconUsers.vue';
+import IconUser from '../components/icons/IconUser.vue';
 import type { Member, MemberId } from '../types/member';
-import type { ItemListId } from '../types/item-list';
+import type { ItemList } from '../types/item-list';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
+import { createItemList } from '@/api/list';
+import { useListStore } from '@/stores/list';
+import { getErrorMessage } from '@/lib/http';
 
-export default {
+export default defineComponent({
   name: 'CreateListPage',
   components: {
     ContentArea,
     MainButton,
     TextInputWithLabel,
     TextInput,
-    BadgeTag
+    BadgeTag,
+    LoadingSpinner,
+    IconClipboard,
+    IconFire,
+    IconUsers,
+    IconUser
   },
   data(): {
     listName: string;
     members: Member[];
     newMemberName: string;
+    errorMessage: string;
+    creating: boolean;
   } {
     return {
       listName: '',
       members: [],
-      newMemberName: ''
+      newMemberName: '',
+      errorMessage: '',
+      creating: false
     };
   },
+  setup() {
+    const listStore = useListStore();
+    return { listStore };
+  },
   methods: {
-    createList(): void {
+    async createList(): Promise<void> {
       const normalizedListName = normalizeText(this.listName);
-      if (normalizedListName) {
-        // リストIDを生成（実際のプロジェクトではAPIから取得）
-        const listId: ItemListId = Date.now().toString();
+      if (!normalizedListName) {
+        return;
+      }
 
-        // 正規化されたリスト名で保存
-        this.listName = normalizedListName;
+      this.errorMessage = '';
+      this.listName = normalizedListName;
+      this.creating = true;
 
-        // TODO: APIでリストを作成
-        console.log('リスト名:', this.listName);
-        console.log('リストID:', listId);
+      try {
+        const res = await createItemList({
+          name: this.listName,
+          memberNames: this.members.map((member) => member.displayName)
+        });
+
+        const snapshot: ItemList = {
+          listId: res.data.listId,
+          name: res.data.name,
+          revision: res.revision,
+          itemCount: 0,
+          lastItemActivityAt: null,
+          members: res.data.members,
+          items: []
+        };
+
+        this.listStore.applySnapshot(snapshot);
 
         // リスト共有画面に遷移
         this.$router.push({
           name: 'ShareList',
-          params: { id: listId },
-          query: { name: this.listName }
+          params: { id: res.data.listId }
         });
+      } catch (err: unknown) {
+        console.error('Failed to create list', err);
+        this.errorMessage = getErrorMessage(err) ?? 'リストの作成に失敗しました。';
+      } finally {
+        this.creating = false;
       }
     },
     addMember(): void {
@@ -55,7 +96,7 @@ export default {
       if (normalizedName) {
         this.members.push({
           id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
-          name: normalizedName
+          displayName: normalizedName
         });
         this.newMemberName = '';
       }
@@ -79,29 +120,37 @@ export default {
       return !!normalizeText(this.newMemberName);
     }
   }
-};
+});
 </script>
 
 <template>
-  <ContentArea>
+  <ContentArea v-if="creating" layout="center">
+    <LoadingSpinner message="リストを作成中..." />
+  </ContentArea>
+  <ContentArea v-else>
     <div class="text-center mb-6">
-      <div class="text-5xl mb-3">🍖</div>
-      <h2 class="text-2xl font-bold font-serif text-charcoal-800 mb-2">リスト名を設定</h2>
+      <div class="text-5xl mb-3 flex justify-center"><IconFire /></div>
+      <h2 class="text-2xl font-bold text-charcoal-800 mb-2">リスト名を設定</h2>
       <p class="text-sm text-charcoal-600">美味しい買い物リストを作りましょう</p>
     </div>
 
     <div class="mb-6">
       <TextInputWithLabel
         input-id="listName"
-        label="🍖 リスト名"
         placeholder="例：今日のBBQ材料"
         :model-value="listName"
         @update:model-value="onListNameInput"
-      />
+      >
+        <template #label><IconClipboard /> リスト名</template>
+      </TextInputWithLabel>
+    </div>
+
+    <div v-if="errorMessage" class="mb-4 p-3 bg-ember-100 border border-ember-300 text-ember-700 rounded-lg text-sm">
+      {{ errorMessage }}
     </div>
 
     <div class="mb-6">
-      <label class="block text-sm font-medium text-charcoal-700 mb-2">👥 メンバー</label>
+      <label class="flex items-center gap-1 text-sm font-medium text-charcoal-700 mb-2"><IconUsers /> メンバー</label>
       <div class="flex gap-2 px-2 py-1 border border-wood-200 bg-wood-50 rounded-md">
         <TextInput
           :model-value="newMemberName"
@@ -121,17 +170,17 @@ export default {
           <BadgeTag
             v-for="member in members"
             :key="member.id"
-            :text="member.name"
-            icon="👤"
+            :text="member.displayName"
             :removable="true"
             @remove="removeMember(member.id)"
-          />
+            ><template #icon><IconUser /></template
+          ></BadgeTag>
         </div>
       </div>
     </div>
 
     <div class="flex flex-col gap-3">
-      <MainButton @click="createList" :disabled="!hasRequiredInput"> リストを作成 </MainButton>
+      <MainButton @click="createList" :disabled="!hasRequiredInput || creating"> リストを作成 </MainButton>
     </div>
   </ContentArea>
 </template>

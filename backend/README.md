@@ -30,7 +30,7 @@ cd ../db && docker-compose up -d
 ### 技術スタック
 
 - **Framework**: Spring Boot 3.5.7
-- **Database**: MySQL 8.0
+- **Database**: PostgreSQL 16
 - **ORM**: Spring Data JPA (Hibernate)
 - **Build**: Gradle
 - **Java**: 17+
@@ -44,12 +44,12 @@ cd ../db && docker-compose up -d
 
 ## 📚 ドキュメント
 
-| ドキュメント                                                | 説明                               |
-| ----------------------------------------------------------- | ---------------------------------- |
-| [📋 docs/CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md) | コーディング規約・設計パターン     |
-| [📁 docs/PROJECT_STRUCTURE.md](./docs/PROJECT_STRUCTURE.md) | プロジェクト構成・ディレクトリ構造 |
-| [🏢 企画書](../docs/otsukailist企画書.md)                   | プロジェクト概要・要件定義         |
-| [🎨 設計書](../docs/otsukailist設計書.md)                   | システム設計・API 仕様             |
+| ドキュメント                                                                    | 説明                           |
+| ------------------------------------------------------------------------------- | ------------------------------ |
+| [📋 docs/CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md)                     | コーディング規約・設計パターン |
+| [🚢 ../docs/backend-deploy-operations.md](../docs/backend-deploy-operations.md) | Docker/Render 運用チェック     |
+| [🏢 企画書](../docs/otsukailist企画書.md)                                       | プロジェクト概要・要件定義     |
+| [🎨 設計書](../docs/otsukailist設計書.md)                                       | システム設計・API 仕様         |
 
 ## 🛠️ 開発環境設定
 
@@ -112,9 +112,9 @@ PATCH  /api/lists/{listId}/items/{itemId}/toggle  # チェック状態切り替�
 
 ```properties
 # Database
-spring.datasource.url=jdbc:mysql://localhost:3306/otsukailist
-spring.datasource.username=${DB_USER:user}
-spring.datasource.password=${DB_PASSWORD:password}
+spring.datasource.url=jdbc:postgresql://localhost:5432/otsukailist
+spring.datasource.username=${POSTGRES_USER:otsukailist_user}
+spring.datasource.password=${POSTGRES_PASSWORD:otsukailist_password}
 
 # JPA
 spring.jpa.hibernate.ddl-auto=validate
@@ -126,6 +126,20 @@ spring.websocket.allowed-origins=http://localhost:3000
 ```
 
 ## 🤝 開発ガイド
+
+### 開発環境セットアップ
+
+リポジトリをクローンしたら、最初に一度だけ Git フックをインストールしてください。
+
+```bash
+cd backend
+./gradlew installGitHooks
+```
+
+インストール後は `git commit` のたびに以下が自動実行されます：
+
+1. **Spotless** (`spotlessApply`) — Google Java Format でコードを自動整形し、差分を自動ステージング
+2. **Checkstyle** / **PMD** — 静的解析（警告表示のみ、コミットは通す）
 
 ### 新機能開発
 
@@ -153,11 +167,11 @@ style: フォーマット変更
 **Q: データベース接続エラー**
 
 ```bash
-# MySQL コンテナの状態確認
-cd ../db && docker-compose ps
+# PostgreSQL コンテナの状態確認
+cd ../db && docker compose ps
 
 # ログ確認
-cd ../db && docker-compose logs mysql
+cd ../db && docker compose logs postgres
 ```
 
 **Q: ビルドエラー**

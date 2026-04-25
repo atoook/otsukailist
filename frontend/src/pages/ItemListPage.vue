@@ -1,240 +1,193 @@
 <script lang="ts">
+import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
-import CheckBox from '../components/CheckBox.vue';
-import MainButton from '../components/MainButton.vue';
 import TextInput from '../components/TextInput.vue';
-import ItemBox from '../components/ItemBox.vue';
 import DropDown from '../components/DropDown.vue';
-import type { Item, ItemId } from '../types/item';
-import { ItemStatus } from '../types/item';
-import { normalizeText, normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import ItemAddForm from '../components/ItemAddForm.vue';
+import ItemGroupList from '../components/ItemGroupList.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
+import IconEdit from '../components/icons/IconEdit.vue';
+import IconRefresh from '../components/icons/IconRefresh.vue';
+import IconCelebration from '../components/icons/IconCelebration.vue';
+import type { Item } from '../types/item';
+import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import { formatActivityAt } from '../utils/date-format';
 import type { Member, MemberId } from '@/types/member';
+import { fetchSnapshot } from '@/api/list';
+import { useListStore } from '@/stores/list';
+import { getErrorMessage } from '@/lib/http';
+import { getSelectedMemberId, setSelectedMemberId, addOrUpdateListHistory } from '@/lib/userCache';
+import { FEEDBACK_LIST_ID } from '@/lib/appConstants';
 
-export default {
+export default defineComponent({
   name: 'ItemListPage',
   components: {
     ContentArea,
-    CheckBox,
-    MainButton,
     TextInput,
-    ItemBox,
-    DropDown
+    DropDown,
+    ItemAddForm,
+    ItemGroupList,
+    LoadingSpinner,
+    IconEdit,
+    IconRefresh,
+    IconCelebration
   },
   data(): {
-    members: Member[];
-    listName: string;
-    items: Item[];
-    newItemName: string;
+    currentListId: string | null;
     searchQuery: string;
     selectedMemberId: MemberId | null;
     errorMessage: string;
+    fallbackListName: string;
+    snapshotLoading: boolean;
   } {
     return {
-      members: [],
-      listName: '',
-      items: [],
-      newItemName: '',
+      currentListId: null,
       searchQuery: '',
       selectedMemberId: null,
-      errorMessage: ''
+      errorMessage: '',
+      fallbackListName: '',
+      snapshotLoading: false
     };
   },
-  created() {
-    // ルートパラメータからリストIDを取得
-    const listId = this.$route.params.id;
-    // クエリパラメータからリスト名を取得(TODO: APIから取得する)
-    const listName = this.$route.query.name as string | undefined;
-    this.listName = listName || `リスト${listId}`;
+  setup() {
+    const listStore = useListStore();
+    return { listStore };
+  },
+  async created() {
+    const listId = this.$route.params.id as string | undefined;
+    const fallbackName = listId ? `リスト${listId}` : '';
 
-    // メンバーデータの初期化
-    this.initializeMembers();
+    this.currentListId = listId ?? null;
+    this.fallbackListName = fallbackName;
 
-    // TODO: APIからリストデータを取得
-    console.log('リストID:', listId);
-    console.log('リスト名:', this.listName);
+    if (!listId) {
+      this.errorMessage = 'リストIDが指定されていません。';
+      return;
+    }
+
+    await this.loadSnapshot(listId);
   },
   computed: {
-    selectedMember(): Member | undefined {
-      return this.members.find((member) => member.id === this.selectedMemberId);
+    listName(): string {
+      return this.listStore.name || this.fallbackListName || '買い物リスト';
+    },
+    members(): Member[] {
+      return this.listStore.members;
+    },
+    items(): Item[] {
+      return this.listStore.items;
     },
     filteredItems(): Item[] {
-      // Ensure items is an array
-      const items = Array.isArray(this.items) ? this.items : [];
-
       const normalizedQuery = normalizeForSearch(this.searchQuery);
       if (!normalizedQuery) {
-        return items;
+        return this.items;
       }
-      return items.filter((item) => {
+      return this.items.filter((item) => {
         const normalizedItemName = normalizeForSearch(item.name);
         return normalizedItemName.includes(normalizedQuery);
       });
     },
     memberNames(): string {
-      return this.members.map((member) => member.name).join(' ・ ');
+      return this.members.map((member) => member.displayName).join(' ・ ');
+    },
+    memberOptions(): Array<{ id: MemberId; name: string }> {
+      return this.members.map((member) => ({
+        id: member.id,
+        name: member.displayName
+      }));
+    },
+    itemSummary(): string {
+      const incomplete = this.items.filter((item) => !item.completed).length;
+      const completed = this.items.filter((item) => item.completed).length;
+      if (completed === 0) {
+        return `あと ${incomplete} 件`;
+      }
+      if (incomplete === 0) {
+        return '全て完了';
+      }
+      return `あと ${incomplete} 件 ・ 完了 ${completed} 件`;
+    },
+    allCompleted(): boolean {
+      return this.items.length > 0 && this.items.every((item) => item.completed);
+    },
+    formattedLastItemActivityAt(): string | null {
+      return formatActivityAt(this.listStore.lastItemActivityAt);
+    }
+  },
+  watch: {
+    members(newMembers: Member[]) {
+      if (!this.selectedMemberId && newMembers.length > 0) {
+        this.selectedMemberId = newMembers[0]?.id ?? null;
+      }
     }
   },
   methods: {
-    initializeMembers() {
-      this.members = [
-        { id: '1', name: 'しんじ' },
-        { id: '2', name: 'Jerry' },
-        { id: '3', name: 'けんたろう' },
-        { id: '4', name: 'Mike' },
-        { id: '5', name: 'トミージャッカーソン' },
-        { id: '6', name: 'ハリーポッターストレンジャーシングス' },
-        { id: '7', name: 'Ellen' },
-        { id: '8', name: 'Daisy' },
-        { id: '9', name: 'Lily' },
-        { id: '10', name: '太郎' }
-      ];
+    async loadSnapshot(listId: string) {
+      this.snapshotLoading = true;
+      this.errorMessage = '';
 
-      // Set the default selected member ID
-      // default selected to be acquired from LocalStorage
-      this.selectedMemberId = '6';
-    },
-    getMemberBadgeVariant(item: Item): string {
-      // 完了済みアイテムで現在選択中のメンバーが割り当てメンバーと同じ場合はprimary（強調）
-      if (
-        item.status === ItemStatus.COMPLETED &&
-        item.assignedMember &&
-        this.selectedMember &&
-        item.assignedMember.id === this.selectedMember.id
-      ) {
-        return 'primary';
+      try {
+        const snapshot = await fetchSnapshot(listId);
+        this.listStore.applySnapshot(snapshot);
+
+        // キャッシュから selectedMemberId を復元し、メンバー一覧で検証する
+        const cachedMemberId = getSelectedMemberId(listId);
+        const memberIds = snapshot.members.map((m) => m.id);
+        if (cachedMemberId && memberIds.includes(cachedMemberId)) {
+          this.selectedMemberId = cachedMemberId;
+        } else if (snapshot.members.length > 0) {
+          this.selectedMemberId = snapshot.members[0]?.id ?? null;
+        }
+
+        // リスト履歴に追加/更新（フィードバックリストは除外）
+        if (listId !== FEEDBACK_LIST_ID) {
+          addOrUpdateListHistory({ listId, name: snapshot.name });
+        }
+      } catch (err: unknown) {
+        console.error('Failed to load snapshot', err);
+        this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
+      } finally {
+        this.snapshotLoading = false;
       }
-      // それ以外はsecondary（通常）
-      return 'secondary';
     },
     handleMemberSelect(selectedId: string) {
       this.selectedMemberId = selectedId;
-    },
-    addItem() {
-      const normalizedName = normalizeText(this.newItemName);
-      if (normalizedName) {
-        this.items.push({
-          id: Date.now().toString(), //this to be replaced with unique ID from backend
-          name: normalizedName,
-          status: ItemStatus.PENDING,
-          assignedMember: undefined // 初期状態では未割り当て
-        });
-        this.newItemName = '';
+      if (this.currentListId) {
+        setSelectedMemberId(this.currentListId, selectedId);
       }
-      //sync with backend API here
-    },
-    // 入力時のリアルタイム正規化
-    onItemNameInput(value: string): void {
-      this.newItemName = normalizeInput(value);
     },
     onSearchInput(value: string): void {
       this.searchQuery = normalizeInput(value);
     },
-    toggleItem(item: Item) {
-      // Clear any previous error messages
-      this.errorMessage = '';
-
-      // Validate item name
-      const normalizedName = normalizeText(item.name);
-      if (!normalizedName) {
-        this.errorMessage = 'アイテム名が空のため、状態を変更できません。';
-        console.error(this.errorMessage, ' : ', item.id);
-        this.showErrorFeedback();
-        return;
-      }
-
-      // Find item index in the array
-      const index = this.items.findIndex((existingItem) => existingItem.id === item.id);
-      if (index === -1) {
-        this.errorMessage = 'アイテムが見つかりません。';
-        console.error(this.errorMessage, ' : ', item.id);
-        this.showErrorFeedback();
-        return;
-      }
-
-      const wasCompleted = item.status === ItemStatus.COMPLETED;
-
-      // Create new item object with updated status (immutable update)
-      const updatedItem: Item = {
-        ...item,
-        status: wasCompleted ? ItemStatus.PENDING : ItemStatus.COMPLETED,
-        assignedMember: wasCompleted
-          ? undefined // Clear assignedMember when uncompleting
-          : this.selectedMember
-            ? {
-                id: this.selectedMember.id,
-                name: this.selectedMember.name
-              }
-            : undefined
-      };
-      // Replace item in array using splice to preserve reactivity
-      this.items.splice(index, 1, updatedItem);
-      // TODO: APIとの同期処理
-    },
-    showErrorFeedback() {
-      // Show error feedback to user (could be replaced with toast library)
-      if (this.errorMessage) {
-        alert(this.errorMessage);
-        // Clear error message after showing
-        setTimeout(() => {
-          this.errorMessage = '';
-        }, 3000);
-      }
-    },
-    deleteItem(itemId: ItemId) {
-      this.items = this.items.filter((item) => item.id !== itemId);
-    },
-    modifyItem(updatedItem: Item) {
-      const normalizedItemName = normalizeText(updatedItem.name);
-      // 正規化後の名前が空の場合は更新しない
-      if (!normalizedItemName) {
-        this.errorMessage = 'アイテム名が空のため、更新できません。';
-        console.error(this.errorMessage, ' : ', updatedItem.id);
-        this.showErrorFeedback();
-        return;
-      }
-      const index = this.items.findIndex((item) => item.id === updatedItem.id);
-      if (index === -1) {
-        this.errorMessage = 'アイテムが見つかりません。';
-        console.error(this.errorMessage, ' : ', updatedItem.id);
-        this.showErrorFeedback();
-        return;
-      }
-      // 新しいオブジェクトを作成（副作用を避ける）
-      const modifiedItem = {
-        ...updatedItem,
-        name: normalizedItemName
-      };
-      // 配列を更新
-      this.items.splice(index, 1, modifiedItem);
-      // TODO: APIとの同期処理
-    },
     navigateToListEdit() {
       this.$router.push({
         name: 'ListEdit',
-        params: { id: this.$route.params.id },
-        query: { name: this.listName }
+        params: { id: this.$route.params.id }
       });
     }
   }
-};
+});
 </script>
 
 <template>
-  <ContentArea>
+  <ContentArea v-if="snapshotLoading" layout="center">
+    <LoadingSpinner message="リストを読み込み中..." />
+  </ContentArea>
+  <ContentArea v-else>
     <div class="w-full">
       <!-- リストタイトル -->
       <div class="mb-8">
         <div class="flex flex-row justify-center space-x-2 items-center mb-1">
-          <h2 class="text-2xl font-black text-charcoal-800 text-center mb-2">
+          <h2 class="text-2xl font-black text-charcoal-800 text-center">
             {{ listName }}
           </h2>
           <button
             type="button"
             @click="navigateToListEdit"
             aria-label="リスト名を編集"
-            class="focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
+            class="flex items-center focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
           >
-            <span class="text-charcoal-800" aria-hidden="true">✏️</span>
+            <span class="text-charcoal-800 flex items-center"><IconEdit /></span>
           </button>
         </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
@@ -246,19 +199,7 @@ export default {
       </div>
 
       <!-- 新しいアイテム追加 -->
-      <div class="mb-6">
-        <div class="flex gap-2 px-3 py-3 border border-wood-300 bg-wood-100 rounded-lg shadow-sm">
-          <TextInput
-            :model-value="newItemName"
-            @update:model-value="onItemNameInput"
-            @enter="addItem"
-            input-name="newItem"
-            placeholder="アイテムを追加..."
-            variant="inline"
-          />
-          <MainButton @click="addItem" :disabled="!newItemName.trim()"> 追加 </MainButton>
-        </div>
-      </div>
+      <ItemAddForm @error="errorMessage = $event" />
 
       <!-- 検索ボックス -->
       <div v-if="items.length > 0" class="mb-4">
@@ -274,8 +215,25 @@ export default {
           />
         </div>
       </div>
-      <!-- チェック時に記録する購入者選択 -->
-      <div v-if="filteredItems.length > 0" class="flex justify-end items-center mb-2">
+      <!-- チェック時に記録する購入者選択 + サマリー -->
+      <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-charcoal-600"
+            >{{ itemSummary }}<IconCelebration v-if="allCompleted" class="ml-1"
+          /></span>
+          <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-500 flex items-center gap-1">
+            最終更新: {{ formattedLastItemActivityAt }}
+            <button
+              type="button"
+              @click="currentListId && loadSnapshot(currentListId)"
+              :disabled="snapshotLoading"
+              aria-label="リストを再読み込み"
+              class="text-charcoal-400 hover:text-charcoal-600 disabled:opacity-40 transition-colors"
+            >
+              <span :class="{ 'animate-spin': snapshotLoading }" class="flex items-center"><IconRefresh /></span>
+            </button>
+          </span>
+        </div>
         <div class="flex items-center gap-2 text-sm">
           <label for="memberSelect">
             <span class="text-charcoal-600 font-medium">買った人</span>
@@ -284,7 +242,7 @@ export default {
             selectId="memberSelect"
             selectName="member"
             :showArrow="true"
-            :optionItems="members"
+            :optionItems="memberOptions"
             width="fixed"
             v-model="selectedMemberId"
             @update:modelValue="handleMemberSelect"
@@ -292,30 +250,12 @@ export default {
         </div>
       </div>
       <!-- アイテムリスト -->
-      <div class="space-y-3">
-        <ItemBox
-          v-for="item in filteredItems"
-          :key="item.id"
-          :item="item"
-          :memberBadgeVariant="getMemberBadgeVariant(item)"
-          @toggle="toggleItem"
-          @delete="deleteItem"
-          @modify="modifyItem"
-        />
-
-        <!-- アイテムがない場合 -->
-        <div v-if="items.length === 0" class="text-center text-charcoal-600 py-8">
-          <div class="text-4xl mb-3">🍖</div>
-          まだアイテムがありません。<br />
-          上のフォームからアイテムを追加してください。
-        </div>
-
-        <!-- 検索結果がない場合 -->
-        <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
-          <div class="text-4xl mb-3">🔍</div>
-          「{{ searchQuery }}」に一致するアイテムが見つかりませんでした。
-        </div>
-      </div>
+      <ItemGroupList
+        :filtered-items="filteredItems"
+        :items="items"
+        :search-query="searchQuery"
+        :selected-member-id="selectedMemberId"
+      />
     </div>
   </ContentArea>
 </template>

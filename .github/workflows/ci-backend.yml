@@ -1,0 +1,106 @@
+name: CI (Backend)
+
+on:
+  pull_request:
+    branches: [main, feature/release]
+    paths:
+      - 'backend/**'
+      - 'db/**'
+      - '.github/workflows/ci-backend.yml'
+
+jobs:
+  # -----------------------------------------------------------------------
+  # Job 1: Unit / integration tests
+  # Starts a PostgreSQL service container on port 5433 to match
+  # application-test.properties (create-drop strategy, no init SQL needed).
+  # -----------------------------------------------------------------------
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: otsukailist_test
+          POSTGRES_USER: otsukailist_user
+          POSTGRES_PASSWORD: otsukailist_password
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          POSTGRES_USER: otsukailist_user
+          POSTGRES_PASSWORD: otsukailist_password
+        run: ./gradlew test --no-daemon
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: backend/build/reports/tests/test/
+
+  # -----------------------------------------------------------------------
+  # Job 2: Code style + static analysis
+  # spotlessCheck fails the build if code is not formatted.
+  # staticAnalysis (checkstyle / PMD / SpotBugs) has ignoreFailures=true so
+  # it uploads reports without blocking the PR.
+  # -----------------------------------------------------------------------
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Check formatting (Spotless)
+        working-directory: backend
+        run: ./gradlew spotlessCheck --no-daemon
+
+      - name: Run static analysis
+        if: always()
+        working-directory: backend
+        run: ./gradlew staticAnalysis --no-daemon
+
+      - name: Upload static analysis reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-reports
+          path: |
+            backend/build/reports/checkstyle/
+            backend/build/reports/pmd/
+            backend/build/reports/spotbugs/
+
+  # -----------------------------------------------------------------------
+  # Job 3: Docker build
+  # Verifies the Dockerfile builds successfully (no push).
+  # -----------------------------------------------------------------------
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        working-directory: backend
+        run: docker build -t otsukailist-backend:${{ github.sha }} .

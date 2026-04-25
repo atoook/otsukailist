@@ -16,10 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
-import org.hibernate.type.SqlTypes;
 
 @Getter
 @Setter
@@ -29,8 +27,7 @@ import org.hibernate.type.SqlTypes;
 public class ItemList {
   @Id
   @UuidGenerator
-  @JdbcTypeCode(SqlTypes.BINARY) // UUIDをBINARY(16)として扱う
-  @Column(name = "id", columnDefinition = "BINARY(16)", nullable = false, updatable = false)
+  @Column(name = "id", nullable = false, updatable = false)
   private UUID id;
 
   @Column(name = "name", nullable = false, length = 100)

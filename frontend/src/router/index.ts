@@ -35,8 +35,13 @@ const routes: RouteRecordRaw[] = [
   }
 ];
 
+export function createHistory() {
+  const base = document.querySelector('base')?.getAttribute('href') ?? '/';
+  return createWebHistory(base);
+}
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: createHistory(),
   routes
 });
 

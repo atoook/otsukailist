@@ -1,0 +1,29 @@
+name: CI (Workers/Cron)
+
+on:
+  pull_request:
+    branches: [main, feature/release]
+    paths:
+      - 'workers/cron/**'
+      - '.github/workflows/ci-workers-cron.yml'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: workers/cron/package-lock.json
+
+      - name: Install dependencies
+        working-directory: workers/cron
+        run: npm ci
+
+      - name: Type-check and build
+        working-directory: workers/cron
+        run: npm run build

@@ -7,24 +7,27 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 ## 技術スタック
 
 - **Frontend**: Vue.js 3, Vite, Tailwind CSS
-- **Backend**: Spring Boot (Java 17), Spring Data JPA, Spring Messaging (WebSocket)
-- **Database**: MySQL 8.x
+- **Backend**: Spring Boot (Java 17), Spring Data JPA
+- **Database**: PostgreSQL 16
 - **Infra**: Docker / docker-compose
 
 ---
 
 ## アーキテクチャ概要
 
-- フロント → REST API → DB の 3 層構成。更新系 API は `MutationResponse<T>` で `revision` を返し、WebSocket で同じ payload を配信する。
+- フロント → REST API → DB の 3 層構成。更新系 API は `MutationResponse<T>` で `revision` を返し、フロントは `revision` を使って整合性を保つ。
 - Command と Query のサービスを分離し、Mapper は DTO と Entity の変換に特化。業務ルールは Service 層で吸収する。
-- WebSocket はリスト単位の room を用い、`revision` を基準にクライアント側で差分適用する。
+- 初期ロードは `GET /api/lists/{listId}/snapshot` で全体状態を取得し、その後は更新系 API のレスポンスで状態を更新する。
 
 ---
 
 ## ルーティング
 
-- `/new` : 新規リストの作成。リスト名と初期メンバー（1件以上）を入力→作成成功後に `/list/:id` へ遷移。
-- `/list/:id` : リストのスナップショットを取得し、アイテム・メンバーの追加/編集/削除を行うメイン画面。
+- `/` : ウェルカム画面。
+- `/create-list` : 新規リスト作成。
+- `/share-list/:id` : 共有URL表示。
+- `/lists/:id` : メイン画面。スナップショット表示とアイテム CRUD を担当し、メンバー操作は文脈内の軽量タスクに限定する。
+- `/lists/:id/edit` : 編集専用画面。リストメタデータ更新とメンバー管理（追加/削除/表示名変更）を担当する。
 
 ---
 
@@ -33,7 +36,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 | Method                                          | Path                                                         | 主な役割 |
 | ----------------------------------------------- | ------------------------------------------------------------ | -------- |
 | `POST /api/lists`                               | リストと初期メンバーをまとめて作成する。                     |
-| `GET /api/lists/{listId}`                       | リスト、メンバー、アイテムをまとめたスナップショットを返す。 |
+| `GET /api/lists/{listId}/snapshot`              | リスト、メンバー、アイテムをまとめたスナップショットを返す。 |
 | `PATCH /api/lists/{listId}`                     | リスト名を変更し、`revision` を更新する。                    |
 | `POST /api/lists/{listId}/members`              | メンバーを追加する。                                         |
 | `PATCH /api/lists/{listId}/members/{memberId}`  | メンバー名を変更する。                                       |
@@ -44,11 +47,10 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 ---
 
-## WebSocket
+## リアルタイム同期
 
-- ルーム: `list:{id}`
-- REST の更新完了後に、同じ `MutationResponse` をルーム内へ配信。
-- クライアントは `revision` を比較して重複適用を避ける。イベント種別は payload 内の type 追加で拡張予定。
+- 現在は WebSocket 未導入。
+- `revision` を前提にした API 契約を維持し、将来的な差分同期導入に備える。
 
 ---
 
@@ -57,7 +59,8 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 - `ItemList` : リスト本体。`revision` を持ち、`Item` と `Member` を束ねる。
 - `Member` : 表示名のみを管理し、権限は持たない。リスト内で `display_name` がユニーク。
 - `Item` : 名前・完了フラグ・完了者 ID・完了日時を保持する。完了時は必ずメンバー存在チェックを行う。
-- 正式な DDL は `db/init/01_create_tables.sql` を参照（UUID は `BINARY(16)`、FK や Sample Data も同ディレクトリにあり）。
+- 正式な DDL は `db/init/01_create_tables.sql` を参照（UUID は `UUID` 型、FK や Sample Data も同ディレクトリにあり）。
+- 監査系タイムスタンプ（`created_at` / `updated_at`）は **Hibernate 側で更新を管理** し、DDL では `DEFAULT CURRENT_TIMESTAMP(3)` のみを使う。`ON UPDATE CURRENT_TIMESTAMP` のような DB 依存の自動更新句は採用しない。
 
 ---
 
@@ -78,7 +81,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 ## Docker / 開発フロー
 
-1. `cd db && docker-compose up -d` で MySQL を起動（初期化 SQL 自動実行）。
+1. `cd db && docker compose up -d` で PostgreSQL を起動（初期化 SQL 自動実行）。
 2. `cd backend && ./gradlew bootRun` で API を起動。
 3. `cd frontend && npm install && npm run dev` でフロントを起動。
 4. 静的解析: `./gradlew checkstyleMain pmdMain spotbugsMain`。

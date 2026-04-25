@@ -1,111 +1,195 @@
 <script lang="ts">
+import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import IconTools from '../components/icons/IconTools.vue';
+import IconFire from '../components/icons/IconFire.vue';
+import IconUsers from '../components/icons/IconUsers.vue';
+import IconUser from '../components/icons/IconUser.vue';
 import type { Member, MemberId } from '../types/member';
-import { normalizeText, normalizeInput } from '../utils/text-normalization';
+import { normalizeText } from '../utils/text-normalization';
+import { useListStore } from '@/stores/list';
+import { useMutation } from '@/composables/useMutation';
+import { createMember, deleteMember } from '@/api/member';
+import { renameList } from '@/api/list';
+import { getErrorMessage } from '@/lib/http';
+import { updateListHistoryName, getSelectedMemberId } from '@/lib/userCache';
 
-export default {
+export default defineComponent({
   name: 'ListEditPage',
   components: {
     ContentArea,
     MainButton,
     TextInputWithLabel,
     TextInput,
-    BadgeTag
+    BadgeTag,
+    IconTools,
+    IconFire,
+    IconUsers,
+    IconUser
   },
   data(): {
     listName: string;
     members: Member[];
     selectedMemberId: MemberId | null;
     newMemberName: string;
+    currentListId: string | null;
+    errorMessage: string;
   } {
     return {
       listName: '',
       members: [],
       selectedMemberId: null,
-      newMemberName: ''
+      newMemberName: '',
+      currentListId: null,
+      errorMessage: ''
     };
   },
+  setup() {
+    const listStore = useListStore();
+    const { run, loading } = useMutation();
+    return { listStore, mutationRun: run, mutationLoading: loading };
+  },
   created() {
-    // ルートパラメータからリストIDを取得
-    const listId = this.$route.params.id;
-    // クエリパラメータからリスト名を取得(TODO: APIから取得する)
-    const listName = this.$route.query.name as string | undefined;
-    this.listName = listName || `リスト${listId}`;
+    const listId = this.$route.params.id as string | undefined;
+    this.currentListId = listId ?? null;
 
-    // メンバーデータの初期化
-    this.initializeMembers();
+    if (listId && this.listStore.listId === listId) {
+      this.listName = this.listStore.name;
+      this.refreshMembersFromStore();
+      const cachedMemberId = getSelectedMemberId(listId);
+      const memberIds = this.listStore.members.map((m) => m.id);
+      this.selectedMemberId =
+        cachedMemberId && memberIds.includes(cachedMemberId) ? cachedMemberId : (this.listStore.members[0]?.id ?? null);
+      return;
+    }
+
+    const fallbackName = listId ? `リスト${listId}` : this.listName;
+    this.listName = fallbackName;
+  },
+  watch: {
+    'listStore.members': {
+      handler() {
+        if (this.currentListId && this.listStore.listId === this.currentListId) {
+          this.refreshMembersFromStore();
+        }
+      },
+      deep: true
+    }
   },
   methods: {
-    initializeMembers() {
-      this.members = [
-        { id: '1', name: 'しんじ' },
-        { id: '2', name: 'Jerry' },
-        { id: '3', name: 'けんたろう' },
-        { id: '4', name: 'Mike' },
-        { id: '5', name: 'トミージャッカーソン' },
-        { id: '6', name: 'ハリーポッターストレンジャーシングス' },
-        { id: '7', name: 'Ellen' },
-        { id: '8', name: 'Daisy' },
-        { id: '9', name: 'Lily' },
-        { id: '10', name: '太郎' }
-      ];
-      // Set the default selected member ID
-      // default selected to be acquired from LocalStorage
-      this.selectedMemberId = '6';
-    },
     onListNameInput(value: string): void {
       this.listName = value;
     },
     onMemberNameInput(value: string): void {
       this.newMemberName = value;
     },
-    addMember(): void {
-      const trimmedName = this.newMemberName.trim();
-      if (trimmedName) {
-        this.members.push({
-          id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
-          name: trimmedName
-        });
+    async addMember(): Promise<void> {
+      const normalizedName = normalizeText(this.newMemberName);
+      if (!normalizedName) {
+        return;
+      }
+
+      if (!this.currentListId) {
+        this.errorMessage = 'リストIDが無効です';
+        return;
+      }
+
+      try {
+        const result = await this.mutationRun(() => createMember(this.currentListId!, { displayName: normalizedName }));
+        if (result.applied) {
+          this.listStore.upsertMember(result.data);
+          this.refreshMembersFromStore();
+        }
         this.newMemberName = '';
+        this.errorMessage = '';
+      } catch (err: unknown) {
+        console.error('Failed to add member', err);
+        this.errorMessage = getErrorMessage(err) ?? 'メンバーの追加に失敗しました。';
       }
     },
-    removeMember(memberId: MemberId): void {
-      // TODO : メンバーがアイテムに割り当てられている場合の処理
-      // TODO : APIでメンバー削除
-      this.members = this.members.filter((member) => member.id !== memberId);
+    async removeMember(memberId: MemberId): Promise<void> {
+      if (!this.currentListId) {
+        this.errorMessage = 'リストIDが無効です';
+        return;
+      }
+
+      try {
+        const result = await this.mutationRun(() => deleteMember(this.currentListId!, memberId));
+        if (result.applied && result.data.deletedMemberId) {
+          this.listStore.removeMember(result.data.deletedMemberId);
+          this.refreshMembersFromStore();
+          if (this.selectedMemberId === memberId) {
+            this.selectedMemberId = this.members[0]?.id ?? null;
+          }
+        }
+        this.errorMessage = '';
+      } catch (err: unknown) {
+        console.error('Failed to remove member', err);
+        this.errorMessage = getErrorMessage(err) ?? 'メンバーの削除に失敗しました。';
+      }
     },
-    updateList(): void {
+    async updateList(): Promise<void> {
+      if (!this.currentListId) {
+        this.errorMessage = 'リストIDが無効です';
+        return;
+      }
+
       const normalizedListName = normalizeText(this.listName);
-      if (normalizedListName && this.members.length > 0) {
-        // 正規化されたリスト名で保存
-        this.listName = normalizedListName;
+      if (!normalizedListName || this.members.length === 0) {
+        this.errorMessage = 'リスト名とメンバーを確認してください。';
+        return;
       }
-      // TODO: APIでリストを更新して保存
-      // リスト詳細画面に遷移
+
+      this.listName = normalizedListName;
+
+      const shouldRename = this.listStore.listId === this.currentListId && this.listStore.name !== normalizedListName;
+
+      if (shouldRename) {
+        try {
+          const result = await this.mutationRun(() => renameList(this.currentListId!, { name: normalizedListName }));
+          if (!result.applied) {
+            this.errorMessage = 'リスト名の更新が反映されませんでした。時間をおいて再試行してください。';
+            return;
+          }
+          updateListHistoryName(this.currentListId!, normalizedListName);
+        } catch (err: unknown) {
+          console.error('Failed to rename list', err);
+          this.errorMessage = getErrorMessage(err) ?? 'リスト名の更新に失敗しました。';
+          return;
+        }
+      }
+
+      this.listStore.updateListDetails({
+        name: this.listName,
+        members: [...this.members]
+      });
+      this.errorMessage = '';
       this.$router.push({
         name: 'ItemList',
-        params: { id: this.$route.params.id },
-        query: { name: this.listName }
+        params: { id: this.$route.params.id }
       });
     },
     cancelUpdate(): void {
+      if (this.isLoading) {
+        return;
+      }
       this.$router.back();
     },
     getMemberBadgeVariant(member: Member): string {
-      // 現在選択中のメンバーはprimary（強調）
       if (this.selectedMemberId === member.id) {
         return 'primary';
       }
-      // それ以外はsecondary（通常）
       return 'secondary';
     },
     isRemovableMember(member: Member): boolean {
-      // 選択中のメンバーは削除不可にしているが、将来的にはアイテム割り当てチェックも追加予定
       return this.selectedMemberId !== member.id;
+    },
+    refreshMembersFromStore() {
+      this.members = this.listStore.members.map((member) => ({ ...member }));
     }
   },
   computed: {
@@ -114,30 +198,38 @@ export default {
     },
     hasValidMemberName(): boolean {
       return !!normalizeText(this.newMemberName);
+    },
+    isLoading(): boolean {
+      return this.mutationLoading;
     }
   }
-};
+});
 </script>
 
 <template>
   <ContentArea>
     <div class="text-center mb-6">
-      <div class="text-5xl mb-3">🛠️</div>
-      <h2 class="text-2xl font-bold font-serif text-charcoal-800">リストを編集</h2>
+      <div class="text-5xl mb-3 flex justify-center"><IconTools /></div>
+      <h2 class="text-2xl font-bold text-charcoal-800">リストを編集</h2>
     </div>
 
     <div class="mb-6">
       <TextInputWithLabel
         input-id="listName"
-        label="🍖 リスト名"
         placeholder="例：今日のBBQ材料"
         :model-value="listName"
         @update:model-value="onListNameInput"
-      />
+      >
+        <template #label><IconFire /> リスト名</template>
+      </TextInputWithLabel>
+    </div>
+
+    <div v-if="errorMessage" class="mb-4 p-3 bg-ember-100 border border-ember-300 text-ember-700 rounded-lg text-sm">
+      {{ errorMessage }}
     </div>
 
     <div class="mb-12">
-      <label class="block text-sm font-medium text-charcoal-700 mb-2">👥 メンバー</label>
+      <label class="flex items-center gap-1 text-sm font-medium text-charcoal-700 mb-2"><IconUsers /> メンバー</label>
       <div class="flex gap-2 px-2 py-1 border border-wood-200 bg-wood-50 rounded-md">
         <TextInput
           :model-value="newMemberName"
@@ -148,7 +240,7 @@ export default {
           variant="inline"
         />
 
-        <MainButton @click="addMember" :disabled="!hasValidMemberName" size="small"> 追加 </MainButton>
+        <MainButton @click="addMember" :disabled="!hasValidMemberName || isLoading" size="small"> 追加 </MainButton>
       </div>
 
       <!-- メンバーバッジ表示 -->
@@ -157,19 +249,19 @@ export default {
           <BadgeTag
             v-for="member in members"
             :key="member.id"
-            :text="member.name"
-            icon="👤"
+            :text="member.displayName"
             :variant="getMemberBadgeVariant(member)"
             :removable="isRemovableMember(member)"
             @remove="removeMember(member.id)"
-          />
+            ><template #icon><IconUser /></template
+          ></BadgeTag>
         </div>
       </div>
     </div>
 
     <div class="flex flex-col gap-3">
-      <MainButton @click="updateList" :disabled="!hasRequiredInput" variant="primary"> 更新 </MainButton>
-      <MainButton @click="cancelUpdate" variant="secondary"> キャンセル </MainButton>
+      <MainButton @click="updateList" :disabled="!hasRequiredInput || isLoading" variant="primary"> 更新 </MainButton>
+      <MainButton @click="cancelUpdate" :disabled="isLoading" variant="secondary"> キャンセル </MainButton>
     </div>
   </ContentArea>
 </template>

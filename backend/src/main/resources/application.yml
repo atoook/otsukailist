@@ -1,31 +1,52 @@
 spring:
+  application:
+    name: otsukailist
+
   # データベース設定
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:otsukailist}?useSSL=false&serverTimezone=Asia/Tokyo&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
-    username: ${MYSQL_USER:otsukailist_user}
-    password: ${MYSQL_PASSWORD:otsukailist_password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:otsukailist}?sslmode=${POSTGRES_SSL_MODE:require}${POSTGRES_PARAMS:}
+    username: ${POSTGRES_USER:otsukailist_user}
+    password: ${POSTGRES_PASSWORD:otsukailist_password}
+    driver-class-name: org.postgresql.Driver
 
   # JPA設定
   jpa:
     hibernate:
-      ddl-auto: validate # 本番ではvalidateを使用
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
-        "[format_sql]": true
-        dialect: org.hibernate.dialect.MySQL8Dialect
-        # UUID効率化設定 - BINARY(16)での保存
+        "[format_sql]": false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # UUID設定
         type:
-          "[preferred_uuid_jdbc_type]": BINARY
+          "[preferred_uuid_jdbc_type]": UUID
 
 # ログ設定
 logging:
   level:
-    "[org.hibernate.SQL]": DEBUG
-    "[org.hibernate.type.descriptor.sql.BasicBinder]": TRACE
-    "[com.atoook.otsukailist]": DEBUG
+    "[com.atoook.otsukailist]": INFO
 
 # アプリケーション設定
 server:
-  port: 8080
+  port: ${PORT:8080}
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true

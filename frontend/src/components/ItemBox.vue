@@ -30,13 +30,19 @@
       <span v-else class="line-through text-charcoal-500 flex-1">
         {{ item.name }}
       </span>
-      <span v-if="showSaveIndicator" class="text-success-600 text-lg">✔︎</span>
-      <BadgeTag v-if="displayMember" :text="displayMember.name" icon="👤" size="small" :variant="memberBadgeVariant" />
+      <span v-if="showSaveIndicator" class="text-success-600 flex items-center" role="status" aria-label="保存済み"
+        ><IconCheck
+      /></span>
+      <BadgeTag v-if="completedMemberName" :text="completedMemberName" size="small" :variant="memberBadgeVariant"
+        ><template #icon><IconUser /></template
+      ></BadgeTag>
     </div>
 
     <template #hiddenActions>
       <button @click="handleDelete(item.id)" :aria-label="`${item.name}を削除`" tabindex="-1" role="button">
-        <BadgeTag text="削除" icon="🗑️" size="small" class="bg-ember-400 border-ember-600 text-white" />
+        <BadgeTag text="削除" size="small" class="bg-ember-400 border-ember-600 text-white"
+          ><template #icon><IconTrash /></template
+        ></BadgeTag>
       </button>
     </template>
   </SwipeContainer>
@@ -47,8 +53,11 @@ import CheckBox from './CheckBox.vue';
 import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
+import IconCheck from './icons/IconCheck.vue';
+import IconUser from './icons/IconUser.vue';
+import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
-import { isItem, isCompletedStatus } from '../types/item';
+import { isItem, isItemCompleted } from '../types/item';
 import { normalizeText } from '../utils/text-normalization';
 
 export default {
@@ -57,7 +66,10 @@ export default {
     CheckBox,
     TextInput,
     SwipeContainer,
-    BadgeTag
+    BadgeTag,
+    IconCheck,
+    IconUser,
+    IconTrash
   },
   data() {
     return {
@@ -78,6 +90,10 @@ export default {
       type: String,
       default: 'primary',
       validator: (value: string) => ['default', 'primary', 'secondary'].includes(value)
+    },
+    completedMemberName: {
+      type: String,
+      default: ''
     }
   },
   emits: ['toggle', 'info', 'delete', 'modify'],
@@ -89,14 +105,7 @@ export default {
   },
   computed: {
     isCompleted() {
-      return isCompletedStatus(this.item.status);
-    },
-    displayMember() {
-      // 完了済みアイテム: assignedMember（連携されたメンバー）を表示
-      if (this.isCompleted && this.item.assignedMember) {
-        return this.item.assignedMember;
-      }
-      return null;
+      return isItemCompleted(this.item);
     },
     shouldShowAutosaveHint() {
       return this.isInputFocused && this.isModified;

@@ -33,12 +33,16 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+	compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -150,5 +154,26 @@ spotless {
 		removeUnusedImports()
 		trimTrailingWhitespace()
 		endWithNewline()
+	}
+}
+
+// Git pre-commit フックをインストールするタスク
+// 開発環境セットアップ時に一度だけ実行: ./gradlew installGitHooks
+task installGitHooks(type: Copy) {
+	description = 'Git pre-commit フックをインストールします (開発環境セットアップ時に一度だけ実行)'
+	group = 'setup'
+	def gitDir = file('../.git')
+	onlyIf {
+		if (!gitDir.isDirectory()) {
+			logger.lifecycle("Skipping installGitHooks: Git directory not found at ${gitDir}.")
+			return false
+		}
+		return true
+	}
+	from '../scripts/hooks/pre-commit'
+	into '../.git/hooks'
+	fileMode 0755
+	doLast {
+		println "Git pre-commit hook installed. Spotless + Checkstyle + PMD will run on each commit."
 	}
 }
