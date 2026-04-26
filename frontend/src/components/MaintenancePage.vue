@@ -1,13 +1,14 @@
 <template>
-  <div class="min-h-[100dvh] bg-charcoal-200 flex items-center justify-center">
-    <div class="min-h-[100dvh] max-w-sm mx-auto flex flex-col w-full bg-wood-50 items-center justify-center">
-      <div class="flex flex-col items-center p-8 rounded-lg shadow-lg w-full bg-white/90 border border-charcoal-100">
+  <AppLayout>
+    <ContentArea layout="center">
+      <div class="p-8 rounded-lg shadow-lg w-full bg-white/90 border border-charcoal-100">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="h-16 w-16 text-ember-400 mb-4"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -22,13 +23,16 @@
         </p>
         <span class="text-xs text-charcoal-300">Otsukaiリスト</span>
       </div>
-    </div>
-  </div>
+    </ContentArea>
+  </AppLayout>
 </template>
 
 <script>
+import AppLayout from './AppLayout.vue';
+import ContentArea from './ContentArea.vue';
 export default {
-  name: 'MaintenancePage'
+  name: 'MaintenancePage',
+  components: { AppLayout, ContentArea }
 };
 </script>
 
