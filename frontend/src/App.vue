@@ -2,7 +2,7 @@
 import AppLayout from './components/AppLayout.vue';
 import AppHeader from './components/AppHeader.vue';
 import AppFooter from './components/AppFooter.vue';
-import MaintenancePage from './components/MaintenancePage.vue';
+import MaintenancePage from './pages/MaintenancePage.vue';
 import { isMaintenanceMode } from '@/lib/maintenance';
 
 export default {
