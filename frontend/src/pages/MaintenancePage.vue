@@ -1,3 +1,13 @@
+<script>
+import AppLayout from '../components/AppLayout.vue';
+import ContentArea from '../components/ContentArea.vue';
+
+export default {
+  name: 'MaintenancePage',
+  components: { AppLayout, ContentArea }
+};
+</script>
+
 <template>
   <AppLayout>
     <ContentArea layout="center">
@@ -28,14 +38,3 @@
     </ContentArea>
   </AppLayout>
 </template>
-
-<script>
-import AppLayout from './AppLayout.vue';
-import ContentArea from './ContentArea.vue';
-export default {
-  name: 'MaintenancePage',
-  components: { AppLayout, ContentArea }
-};
-</script>
-
-<style scoped></style>
