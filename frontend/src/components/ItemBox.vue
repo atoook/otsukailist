@@ -41,7 +41,7 @@
         variant="wood"
         size="small"
         :aria-label="`${item.name}を編集`"
-        @click="navigateToItemEdit"
+        @click="handleEdit(item)"
       >
         <IconEllipsisVertical />
       </IconButton>
@@ -109,7 +109,7 @@ export default {
       default: ''
     }
   },
-  emits: ['toggle', 'info', 'delete', 'modify'],
+  emits: ['toggle', 'info', 'delete', 'modify', 'edit'],
   created() {
     this.newName = this.item.name;
   },
@@ -135,15 +135,6 @@ export default {
     }
   },
   methods: {
-    navigateToItemEdit() {
-      this.$router.push({
-        name: 'ItemEdit',
-        params: {
-          id: this.$route.params.id as string,
-          itemId: this.item.id
-        }
-      });
-    },
     handleToggle(item: Item) {
       this.$emit('toggle', item);
     },
@@ -152,6 +143,9 @@ export default {
     },
     handleDelete(itemId: ItemId) {
       this.$emit('delete', itemId);
+    },
+    handleEdit(item: Item) {
+      this.$emit('edit', item);
     },
     handleKeyDown(event: KeyboardEvent) {
       // スペースキーまたはEnterキーでチェックボックストグル

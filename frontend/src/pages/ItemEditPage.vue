@@ -153,7 +153,7 @@ export default defineComponent({
         if (result.applied) {
           this.listStore.upsertItem(result.data);
           this.errorMessage = '';
-          this.$router.push({ name: 'ItemList', params: { id: this.$route.params.id } });
+          await this.$router.push({ name: 'ItemList', params: { id: this.currentListId } });
         } else {
           this.errorMessage = 'アイテムの更新が反映されませんでした。時間をおいて再試行してください。';
         }
@@ -162,11 +162,22 @@ export default defineComponent({
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
       }
     },
-    cancelUpdate(): void {
+    async cancelUpdate(): Promise<void> {
       if (this.isLoading) {
         return;
       }
-      this.$router.back();
+
+      if (!this.currentListId) {
+        this.errorMessage = 'リストIDが無効です';
+        return;
+      }
+
+      try {
+        await this.$router.push({ name: 'ItemList', params: { id: this.currentListId } });
+      } catch (err: unknown) {
+        console.error('Failed to navigate back to item list', err);
+        this.errorMessage = getErrorMessage(err) ?? 'リスト画面への移動に失敗しました。';
+      }
     }
   },
   computed: {

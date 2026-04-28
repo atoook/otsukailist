@@ -170,6 +170,28 @@ export default defineComponent({
         this.showErrorFeedback();
       }
     },
+    async editItem(item: Item): Promise<void> {
+      const listId = this.listStore.listId;
+      if (!listId) {
+        this.errorMessage = 'リストが初期化されていません。';
+        this.showErrorFeedback();
+        return;
+      }
+
+      try {
+        await this.$router.push({
+          name: 'ItemEdit',
+          params: {
+            id: listId,
+            itemId: item.id
+          }
+        });
+      } catch (err: unknown) {
+        console.error('Failed to navigate to item edit page', err);
+        this.errorMessage = getErrorMessage(err) ?? 'アイテム編集画面への移動に失敗しました。';
+        this.showErrorFeedback();
+      }
+    },
     toggleGroupCollapse(key: string): void {
       this.collapsedGroups[key] = !this.collapsedGroups[key];
     },
@@ -217,6 +239,7 @@ export default defineComponent({
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
+          @edit="editItem"
         />
       </template>
     </template>
