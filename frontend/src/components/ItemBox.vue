@@ -15,7 +15,7 @@
       />
 
       <!-- アイテム名 -->
-      <div v-if="!isCompleted" class="flex-1 flex flex-col" @focusin="handleInlineInputFocus">
+      <div v-if="!isCompleted" class="min-w-0 flex-1 flex flex-col" @focusin="handleInlineInputFocus">
         <TextInput
           :input-id="item.id"
           input-name="itemName"
@@ -27,13 +27,13 @@
         />
         <p v-if="shouldShowAutosaveHint" class="text-xs text-charcoal-500 mt-1">変更は自動保存されます</p>
       </div>
-      <span v-else class="line-through text-charcoal-500 flex-1">
+      <span v-else class="min-w-0 flex-1 truncate line-through text-charcoal-500">
         {{ item.name }}
       </span>
       <span v-if="showSaveIndicator" class="text-success-600 flex items-center" role="status" aria-label="保存済み"
         ><IconCheck
       /></span>
-      <BadgeTag v-if="completedMemberName" :text="completedMemberName" size="small" :variant="memberBadgeVariant"
+      <BadgeTag v-if="memberName" :text="memberName" size="small" :variant="memberBadgeVariant"
         ><template #icon><IconUser /></template
       ></BadgeTag>
       <IconButton
@@ -104,7 +104,7 @@ export default {
       default: 'primary',
       validator: (value: string) => ['default', 'primary', 'secondary'].includes(value)
     },
-    completedMemberName: {
+    memberName: {
       type: String,
       default: ''
     }

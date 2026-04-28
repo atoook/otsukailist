@@ -89,13 +89,17 @@ export default defineComponent({
       if (item.completed && this.selectedMemberId && item.completedByMemberId === this.selectedMemberId) {
         return 'primary';
       }
+      if (!item.completed && this.selectedMemberId && item.assignedMemberId === this.selectedMemberId) {
+        return 'primary';
+      }
       return 'secondary';
     },
-    getCompletedMemberName(item: Item): string | null {
-      if (!item.completed || !item.completedByMemberId) {
+    getItemMemberName(item: Item): string | null {
+      const memberId = item.completed ? item.completedByMemberId : item.assignedMemberId;
+      if (!memberId) {
         return null;
       }
-      return this.memberMap.get(item.completedByMemberId)?.displayName ?? null;
+      return this.memberMap.get(memberId)?.displayName ?? null;
     },
     showErrorFeedback() {
       if (this.errorMessage) {
@@ -239,7 +243,7 @@ export default defineComponent({
           :key="item.id"
           :item="item"
           :memberBadgeVariant="getMemberBadgeVariant(item)"
-          :completedMemberName="getCompletedMemberName(item) || ''"
+          :memberName="getItemMemberName(item) || ''"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
