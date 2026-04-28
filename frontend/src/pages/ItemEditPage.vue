@@ -3,7 +3,6 @@ import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
-import DropDown from '../components/DropDown.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import IconTools from '../components/icons/IconTools.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
@@ -24,7 +23,6 @@ export default defineComponent({
     ContentArea,
     MainButton,
     TextInputWithLabel,
-    DropDown,
     LoadingSpinner,
     IconTools,
     IconUsers
@@ -112,9 +110,6 @@ export default defineComponent({
     onItemNameInput(value: string): void {
       this.itemName = value;
     },
-    onSelectMember(memberId: MemberId | typeof UNASSIGNED_MEMBER_VALUE): void {
-      this.selectedMemberId = memberId;
-    },
     getCurrentSelectedMemberId(): MemberId | null {
       return this.selectedMemberId || null;
     },
@@ -144,6 +139,10 @@ export default defineComponent({
       const normalizedName = normalizeText(this.itemName);
       if (!normalizedName) {
         this.errorMessage = 'アイテム名を入力してください。';
+        return;
+      }
+      if (this.isCompleted && !this.getCurrentSelectedMemberId()) {
+        this.errorMessage = '買った人を選択してください。';
         return;
       }
       try {
@@ -182,22 +181,13 @@ export default defineComponent({
   },
   computed: {
     hasRequiredInput(): boolean {
-      return !!normalizeText(this.itemName);
+      return !!normalizeText(this.itemName) && (!this.isCompleted || !!this.getCurrentSelectedMemberId());
     },
     isLoading(): boolean {
       return this.mutationLoading || this.snapshotLoading;
     },
     memberLabel(): string {
       return this.isCompleted ? '買った人' : '買う人';
-    },
-    memberOptions(): Array<{ id: string; name: string }> {
-      return [
-        { id: UNASSIGNED_MEMBER_VALUE, name: '未指定' },
-        ...this.members.map((member) => ({
-          id: member.id,
-          name: member.displayName
-        }))
-      ];
     }
   }
 });
@@ -232,24 +222,13 @@ export default defineComponent({
       <label for="assignedMember" class="flex items-center gap-1 text-sm font-medium text-charcoal-700 mb-2"
         ><IconUsers /> {{ memberLabel }}</label
       >
-      <DropDown
-        v-if="isCompleted"
-        selectId="assignedMember"
-        selectName="assignedMember"
-        :optionItems="memberOptions"
-        :showArrow="true"
-        width="full"
-        v-model="selectedMemberId"
-        @update:modelValue="onSelectMember"
-      />
-      <div v-else class="grid grid-cols-2 gap-2 rounded-lg border border-wood-200 bg-wood-50 px-3 py-3">
-        <label class="min-w-0 flex items-center gap-2 text-sm text-charcoal-700">
+      <div class="grid grid-cols-2 gap-2 rounded-lg border border-wood-200 bg-wood-50 px-3 py-3">
+        <label v-if="!isCompleted" class="min-w-0 flex items-center gap-2 text-sm text-charcoal-700">
           <input
             type="radio"
             name="assignedMember"
             value=""
-            :checked="selectedMemberId === ''"
-            @change="onSelectMember('')"
+            v-model="selectedMemberId"
             class="h-4 w-4 accent-wood-500"
           />
           <span class="min-w-0 truncate">未指定</span>
@@ -263,8 +242,7 @@ export default defineComponent({
             type="radio"
             name="assignedMember"
             :value="member.id"
-            :checked="selectedMemberId === member.id"
-            @change="onSelectMember(member.id)"
+            v-model="selectedMemberId"
             class="h-4 w-4 accent-wood-500"
           />
           <span class="min-w-0 truncate">{{ member.displayName }}</span>
