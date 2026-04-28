@@ -2,7 +2,7 @@
   <SwipeContainer :hiddenBgColor="'#fef7f0'">
     <div
       :id="`item-${item.id}`"
-      class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60"
+      class="flex items-center gap-2 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60"
       role="listitem"
       :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}`"
     >
@@ -33,16 +33,14 @@
       <span v-if="showSaveIndicator" class="text-success-600 flex items-center" role="status" aria-label="保存済み"
         ><IconCheck
       /></span>
-      <BadgeTag v-if="memberName" :text="memberName" size="small" :variant="memberBadgeVariant"
-        ><template #icon><IconUser /></template
-      ></BadgeTag>
-      <IconButton
-        class="ml-2"
-        variant="wood"
+      <BadgeTag
+        v-if="memberBadgeText"
+        :text="memberBadgeText"
         size="small"
-        :aria-label="`${item.name}を編集`"
-        @click="handleEdit(item)"
-      >
+        :variant="memberBadgeVariant"
+        :aria-label="memberName"
+      />
+      <IconButton variant="wood" size="small" :aria-label="`${item.name}を編集`" @click="handleEdit(item)">
         <IconEllipsisVertical />
       </IconButton>
     </div>
@@ -65,7 +63,6 @@ import BadgeTag from './BadgeTag.vue';
 import IconButton from './IconButton.vue';
 import IconCheck from './icons/IconCheck.vue';
 import IconEllipsisVertical from './icons/IconEllipsisVertical.vue';
-import IconUser from './icons/IconUser.vue';
 import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isItemCompleted } from '../types/item';
@@ -80,7 +77,6 @@ export default {
     BadgeTag,
     IconButton,
     IconCheck,
-    IconUser,
     IconTrash,
     IconEllipsisVertical
   },
@@ -122,6 +118,9 @@ export default {
     },
     shouldShowAutosaveHint() {
       return this.isInputFocused && this.isModified;
+    },
+    memberBadgeText() {
+      return this.memberName.trim().charAt(0);
     }
   },
   watch: {
