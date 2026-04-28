@@ -38,6 +38,7 @@ export default defineComponent({
     currentListId: string | null;
     searchQuery: string;
     selectedMemberId: MemberId | null;
+    memberFilterId: MemberId | null;
     errorMessage: string;
     fallbackListName: string;
     snapshotLoading: boolean;
@@ -46,6 +47,7 @@ export default defineComponent({
       currentListId: null,
       searchQuery: '',
       selectedMemberId: null,
+      memberFilterId: null,
       errorMessage: '',
       fallbackListName: '',
       snapshotLoading: false
@@ -81,10 +83,18 @@ export default defineComponent({
     },
     filteredItems(): Item[] {
       const normalizedQuery = normalizeForSearch(this.searchQuery);
-      if (!normalizedQuery) {
-        return this.items;
-      }
       return this.items.filter((item) => {
+        if (this.memberFilterId) {
+          const itemMemberId = item.completed ? item.completedByMemberId : item.assignedMemberId;
+          if (itemMemberId !== this.memberFilterId) {
+            return false;
+          }
+        }
+
+        if (!normalizedQuery) {
+          return true;
+        }
+
         const normalizedItemName = normalizeForSearch(item.name);
         return normalizedItemName.includes(normalizedQuery);
       });
@@ -120,6 +130,9 @@ export default defineComponent({
     members(newMembers: Member[]) {
       if (!this.selectedMemberId && newMembers.length > 0) {
         this.selectedMemberId = newMembers[0]?.id ?? null;
+      }
+      if (this.memberFilterId && !newMembers.some((member) => member.id === this.memberFilterId)) {
+        this.memberFilterId = null;
       }
     }
   },
@@ -160,6 +173,12 @@ export default defineComponent({
     },
     onSearchInput(value: string): void {
       this.searchQuery = normalizeInput(value);
+    },
+    handleMemberFilter(memberId: MemberId): void {
+      this.memberFilterId = memberId;
+    },
+    clearMemberFilter(): void {
+      this.memberFilterId = null;
     },
     navigateToListEdit() {
       this.$router.push({
@@ -258,6 +277,9 @@ export default defineComponent({
         :items="items"
         :search-query="searchQuery"
         :selected-member-id="selectedMemberId"
+        :member-filter-id="memberFilterId"
+        @member-filter="handleMemberFilter"
+        @clear-member-filter="clearMemberFilter"
       />
     </div>
   </ContentArea>

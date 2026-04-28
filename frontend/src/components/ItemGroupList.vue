@@ -58,8 +58,13 @@ export default defineComponent({
     selectedMemberId: {
       type: String as PropType<MemberId | null>,
       default: null
+    },
+    memberFilterId: {
+      type: String as PropType<MemberId | null>,
+      default: null
     }
   },
+  emits: ['member-filter', 'clear-member-filter'],
   setup() {
     const listStore = useListStore();
     const { run, loading } = useMutation();
@@ -95,11 +100,14 @@ export default defineComponent({
       return 'secondary';
     },
     getItemMemberName(item: Item): string | null {
-      const memberId = item.completed ? item.completedByMemberId : item.assignedMemberId;
+      const memberId = this.getItemMemberId(item);
       if (!memberId) {
         return null;
       }
       return this.memberMap.get(memberId)?.displayName ?? null;
+    },
+    getItemMemberId(item: Item): MemberId | null {
+      return item.completed ? item.completedByMemberId : item.assignedMemberId;
     },
     showErrorFeedback() {
       if (this.errorMessage) {
@@ -244,10 +252,14 @@ export default defineComponent({
           :item="item"
           :memberBadgeVariant="getMemberBadgeVariant(item)"
           :memberName="getItemMemberName(item) || ''"
+          :member-id="getItemMemberId(item) || undefined"
+          :member-filter-active="getItemMemberId(item) === memberFilterId"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
           @edit="editItem"
+          @member-filter="$emit('member-filter', $event)"
+          @clear-member-filter="$emit('clear-member-filter')"
         />
       </template>
     </template>

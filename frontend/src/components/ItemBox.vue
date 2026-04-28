@@ -33,13 +33,26 @@
       <span v-if="showSaveIndicator" class="text-success-600 flex items-center" role="status" aria-label="保存済み"
         ><IconCheck
       /></span>
-      <BadgeTag
-        v-if="memberBadgeText"
-        :text="memberBadgeText"
-        size="small"
-        :variant="memberBadgeVariant"
-        :aria-label="memberName"
-      />
+      <span v-if="memberBadgeText" class="relative inline-flex shrink-0">
+        <button
+          type="button"
+          class="rounded-full focus:outline-none focus:ring-2 focus:ring-wood-300"
+          :aria-label="`${memberName}で絞り込む`"
+          @click="handleMemberFilter"
+        >
+          <BadgeTag :text="memberBadgeText" size="small" :variant="memberBadgeVariant" />
+        </button>
+        <IconButton
+          v-if="memberFilterActive"
+          class="absolute -right-1.5 -top-1.5 border border-ember-200 bg-wood-50"
+          variant="danger"
+          size="tiny"
+          :aria-label="`${memberName}の絞り込みを解除`"
+          @click.stop="handleMemberFilterClear"
+        >
+          <IconClose />
+        </IconButton>
+      </span>
       <IconButton variant="wood" size="small" :aria-label="`${item.name}を編集`" @click="handleEdit(item)">
         <IconEllipsisVertical />
       </IconButton>
@@ -62,6 +75,7 @@ import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
 import IconButton from './IconButton.vue';
 import IconCheck from './icons/IconCheck.vue';
+import IconClose from './icons/IconClose.vue';
 import IconEllipsisVertical from './icons/IconEllipsisVertical.vue';
 import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
@@ -77,6 +91,7 @@ export default {
     BadgeTag,
     IconButton,
     IconCheck,
+    IconClose,
     IconTrash,
     IconEllipsisVertical
   },
@@ -103,9 +118,17 @@ export default {
     memberName: {
       type: String,
       default: ''
+    },
+    memberId: {
+      type: String,
+      default: null
+    },
+    memberFilterActive: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['toggle', 'info', 'delete', 'modify', 'edit'],
+  emits: ['toggle', 'info', 'delete', 'modify', 'edit', 'member-filter', 'clear-member-filter'],
   created() {
     this.newName = this.item.name;
   },
@@ -145,6 +168,19 @@ export default {
     },
     handleEdit(item: Item) {
       this.$emit('edit', item);
+    },
+    handleMemberFilter() {
+      if (this.memberFilterActive) {
+        this.handleMemberFilterClear();
+        return;
+      }
+      if (!this.memberId) {
+        return;
+      }
+      this.$emit('member-filter', this.memberId);
+    },
+    handleMemberFilterClear() {
+      this.$emit('clear-member-filter');
     },
     handleKeyDown(event: KeyboardEvent) {
       // スペースキーまたはEnterキーでチェックボックストグル

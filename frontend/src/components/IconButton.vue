@@ -21,7 +21,7 @@ export default {
     size: {
       type: String,
       default: 'small',
-      validator: (value) => ['xsmall', 'small', 'medium'].includes(value)
+      validator: (value) => ['tiny', 'xsmall', 'small', 'medium'].includes(value)
     },
     disabled: {
       type: Boolean,
@@ -51,6 +51,7 @@ export default {
       ].join(' ');
 
       const sizeClasses = {
+        tiny: 'h-4 w-4 text-[10px]',
         xsmall: 'h-6 w-6 text-xs',
         small: 'h-8 w-8 text-sm',
         medium: 'h-10 w-10 text-base'
