@@ -5,6 +5,7 @@ import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import LoadingSpinner from '../components/LoadingSpinner.vue';
 import IconTools from '../components/icons/IconTools.vue';
 import IconFire from '../components/icons/IconFire.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
@@ -14,7 +15,7 @@ import { normalizeText } from '../utils/text-normalization';
 import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { createMember, deleteMember } from '@/api/member';
-import { renameList } from '@/api/list';
+import { fetchSnapshot, renameList } from '@/api/list';
 import { getErrorMessage } from '@/lib/http';
 import { updateListHistoryName, getSelectedMemberId } from '@/lib/userCache';
 
@@ -26,6 +27,7 @@ export default defineComponent({
     TextInputWithLabel,
     TextInput,
     BadgeTag,
+    LoadingSpinner,
     IconTools,
     IconFire,
     IconUsers,
@@ -38,6 +40,7 @@ export default defineComponent({
     newMemberName: string;
     currentListId: string | null;
     errorMessage: string;
+    snapshotLoading: boolean;
   } {
     return {
       listName: '',
@@ -45,7 +48,8 @@ export default defineComponent({
       selectedMemberId: null,
       newMemberName: '',
       currentListId: null,
-      errorMessage: ''
+      errorMessage: '',
+      snapshotLoading: false
     };
   },
   setup() {
@@ -53,22 +57,24 @@ export default defineComponent({
     const { run, loading } = useMutation();
     return { listStore, mutationRun: run, mutationLoading: loading };
   },
-  created() {
+  async created() {
     const listId = this.$route.params.id as string | undefined;
     this.currentListId = listId ?? null;
 
-    if (listId && this.listStore.listId === listId) {
-      this.listName = this.listStore.name;
-      this.refreshMembersFromStore();
-      const cachedMemberId = getSelectedMemberId(listId);
-      const memberIds = this.listStore.members.map((m) => m.id);
-      this.selectedMemberId =
-        cachedMemberId && memberIds.includes(cachedMemberId) ? cachedMemberId : (this.listStore.members[0]?.id ?? null);
+    if (!listId) {
+      this.errorMessage = 'リストIDが指定されていません。';
       return;
     }
 
-    const fallbackName = listId ? `リスト${listId}` : this.listName;
-    this.listName = fallbackName;
+    if (this.listStore.listId !== listId) {
+      await this.loadSnapshot(listId);
+    }
+
+    if (this.errorMessage) {
+      return;
+    }
+
+    this.applyListFromStore();
   },
   watch: {
     'listStore.members': {
@@ -81,6 +87,30 @@ export default defineComponent({
     }
   },
   methods: {
+    applyListFromStore(): void {
+      if (!this.currentListId || this.listStore.listId !== this.currentListId) {
+        this.errorMessage = 'リスト情報を取得できませんでした。';
+        return;
+      }
+
+      this.listName = this.listStore.name;
+      this.refreshMembersFromStore();
+      this.refreshSelectedMember();
+    },
+    async loadSnapshot(listId: string): Promise<void> {
+      this.snapshotLoading = true;
+      this.errorMessage = '';
+
+      try {
+        const snapshot = await fetchSnapshot(listId);
+        this.listStore.applySnapshot(snapshot);
+      } catch (err: unknown) {
+        console.error('Failed to load snapshot', err);
+        this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
+      } finally {
+        this.snapshotLoading = false;
+      }
+    },
     onListNameInput(value: string): void {
       this.listName = value;
     },
@@ -190,6 +220,17 @@ export default defineComponent({
     },
     refreshMembersFromStore() {
       this.members = this.listStore.members.map((member) => ({ ...member }));
+    },
+    refreshSelectedMember(): void {
+      if (!this.currentListId) {
+        this.selectedMemberId = null;
+        return;
+      }
+
+      const cachedMemberId = getSelectedMemberId(this.currentListId);
+      const memberIds = this.members.map((m) => m.id);
+      this.selectedMemberId =
+        cachedMemberId && memberIds.includes(cachedMemberId) ? cachedMemberId : (this.members[0]?.id ?? null);
     }
   },
   computed: {
@@ -200,14 +241,17 @@ export default defineComponent({
       return !!normalizeText(this.newMemberName);
     },
     isLoading(): boolean {
-      return this.mutationLoading;
+      return this.mutationLoading || this.snapshotLoading;
     }
   }
 });
 </script>
 
 <template>
-  <ContentArea>
+  <ContentArea v-if="snapshotLoading" layout="center">
+    <LoadingSpinner message="リストを読み込み中..." />
+  </ContentArea>
+  <ContentArea v-else>
     <div class="text-center mb-6">
       <div class="text-5xl mb-3 flex justify-center"><IconTools /></div>
       <h2 class="text-2xl font-bold text-charcoal-800">リストを編集</h2>

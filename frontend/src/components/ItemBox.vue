@@ -36,6 +36,15 @@
       <BadgeTag v-if="completedMemberName" :text="completedMemberName" size="small" :variant="memberBadgeVariant"
         ><template #icon><IconUser /></template
       ></BadgeTag>
+      <IconButton
+        class="ml-2"
+        variant="wood"
+        size="small"
+        :aria-label="`${item.name}を編集`"
+        @click="navigateToItemEdit"
+      >
+        <IconEllipsisVertical />
+      </IconButton>
     </div>
 
     <template #hiddenActions>
@@ -53,7 +62,9 @@ import CheckBox from './CheckBox.vue';
 import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
+import IconButton from './IconButton.vue';
 import IconCheck from './icons/IconCheck.vue';
+import IconEllipsisVertical from './icons/IconEllipsisVertical.vue';
 import IconUser from './icons/IconUser.vue';
 import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
@@ -67,9 +78,11 @@ export default {
     TextInput,
     SwipeContainer,
     BadgeTag,
+    IconButton,
     IconCheck,
     IconUser,
-    IconTrash
+    IconTrash,
+    IconEllipsisVertical
   },
   data() {
     return {
@@ -122,6 +135,15 @@ export default {
     }
   },
   methods: {
+    navigateToItemEdit() {
+      this.$router.push({
+        name: 'ItemEdit',
+        params: {
+          id: this.$route.params.id as string,
+          itemId: this.item.id
+        }
+      });
+    },
     handleToggle(item: Item) {
       this.$emit('toggle', item);
     },
