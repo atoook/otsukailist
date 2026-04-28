@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
+import { NavigationFailureType, isNavigationFailure } from 'vue-router';
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import TextInputWithLabel from '../components/TextInputWithLabel.vue';
@@ -152,7 +153,7 @@ export default defineComponent({
         if (result.applied) {
           this.listStore.upsertItem(result.data);
           this.errorMessage = '';
-          await this.$router.push({ name: 'ItemList', params: { id: this.currentListId } });
+          await this.navigateToItemList('アイテム一覧画面への移動に失敗しました。');
         } else {
           this.errorMessage = 'アイテムの更新が反映されませんでした。時間をおいて再試行してください。';
         }
@@ -171,12 +172,36 @@ export default defineComponent({
         return;
       }
 
-      try {
-        await this.$router.push({ name: 'ItemList', params: { id: this.currentListId } });
-      } catch (err: unknown) {
-        console.error('Failed to navigate back to item list', err);
-        this.errorMessage = getErrorMessage(err) ?? 'リスト画面への移動に失敗しました。';
+      await this.navigateToItemList('リスト画面への移動に失敗しました。');
+    },
+    async navigateToItemList(fallbackMessage: string): Promise<void> {
+      if (!this.currentListId) {
+        this.errorMessage = 'リストIDが無効です';
+        return;
       }
+
+      try {
+        const failure = await this.$router.push({ name: 'ItemList', params: { id: this.currentListId } });
+        if (isNavigationFailure(failure, NavigationFailureType.duplicated)) {
+          return;
+        }
+        if (failure) {
+          throw failure;
+        }
+      } catch (err: unknown) {
+        if (this.isIgnoredNavigationError(err)) {
+          return;
+        }
+        console.error('Failed to navigate to item list', err);
+        this.errorMessage = getErrorMessage(err) ?? fallbackMessage;
+      }
+    },
+    isIgnoredNavigationError(err: unknown): boolean {
+      if (isNavigationFailure(err, NavigationFailureType.duplicated)) {
+        return true;
+      }
+
+      return err instanceof Error && err.name === 'NavigationDuplicated';
     }
   },
   computed: {

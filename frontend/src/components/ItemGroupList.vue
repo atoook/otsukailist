@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue';
+import { isNavigationFailure } from 'vue-router';
 import ItemBox from './ItemBox.vue';
 import IconChevronDown from './icons/IconChevronDown.vue';
 import IconTired from './icons/IconTired.vue';
@@ -187,6 +188,9 @@ export default defineComponent({
           }
         });
       } catch (err: unknown) {
+        if (isNavigationFailure(err)) {
+          return;
+        }
         console.error('Failed to navigate to item edit page', err);
         this.errorMessage = getErrorMessage(err) ?? 'アイテム編集画面への移動に失敗しました。';
         this.showErrorFeedback();
