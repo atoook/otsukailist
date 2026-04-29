@@ -6,6 +6,7 @@ import DropDown from '../components/DropDown.vue';
 import ItemAddForm from '../components/ItemAddForm.vue';
 import ItemGroupList from '../components/ItemGroupList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import IconButton from '../components/IconButton.vue';
 import IconEdit from '../components/icons/IconEdit.vue';
 import IconRefresh from '../components/icons/IconRefresh.vue';
 import IconCelebration from '../components/icons/IconCelebration.vue';
@@ -28,6 +29,7 @@ export default defineComponent({
     ItemAddForm,
     ItemGroupList,
     LoadingSpinner,
+    IconButton,
     IconEdit,
     IconRefresh,
     IconCelebration
@@ -36,6 +38,7 @@ export default defineComponent({
     currentListId: string | null;
     searchQuery: string;
     selectedMemberId: MemberId | null;
+    memberFilterId: MemberId | null;
     errorMessage: string;
     fallbackListName: string;
     snapshotLoading: boolean;
@@ -44,6 +47,7 @@ export default defineComponent({
       currentListId: null,
       searchQuery: '',
       selectedMemberId: null,
+      memberFilterId: null,
       errorMessage: '',
       fallbackListName: '',
       snapshotLoading: false
@@ -79,10 +83,18 @@ export default defineComponent({
     },
     filteredItems(): Item[] {
       const normalizedQuery = normalizeForSearch(this.searchQuery);
-      if (!normalizedQuery) {
-        return this.items;
-      }
       return this.items.filter((item) => {
+        if (this.memberFilterId) {
+          const itemMemberId = item.completed ? item.completedByMemberId : item.assignedMemberId;
+          if (itemMemberId !== this.memberFilterId) {
+            return false;
+          }
+        }
+
+        if (!normalizedQuery) {
+          return true;
+        }
+
         const normalizedItemName = normalizeForSearch(item.name);
         return normalizedItemName.includes(normalizedQuery);
       });
@@ -118,6 +130,9 @@ export default defineComponent({
     members(newMembers: Member[]) {
       if (!this.selectedMemberId && newMembers.length > 0) {
         this.selectedMemberId = newMembers[0]?.id ?? null;
+      }
+      if (this.memberFilterId && !newMembers.some((member) => member.id === this.memberFilterId)) {
+        this.memberFilterId = null;
       }
     }
   },
@@ -159,6 +174,12 @@ export default defineComponent({
     onSearchInput(value: string): void {
       this.searchQuery = normalizeInput(value);
     },
+    handleMemberFilter(memberId: MemberId): void {
+      this.memberFilterId = memberId;
+    },
+    clearMemberFilter(): void {
+      this.memberFilterId = null;
+    },
     navigateToListEdit() {
       this.$router.push({
         name: 'ListEdit',
@@ -181,14 +202,14 @@ export default defineComponent({
           <h2 class="text-2xl font-black text-charcoal-800 text-center">
             {{ listName }}
           </h2>
-          <button
-            type="button"
+          <IconButton
             @click="navigateToListEdit"
             aria-label="リスト名を編集"
-            class="flex items-center focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
+            variant="ghost"
+            size="small"
           >
-            <span class="text-charcoal-800 flex items-center"><IconEdit /></span>
-          </button>
+            <IconEdit />
+          </IconButton>
         </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
       </div>
@@ -223,15 +244,16 @@ export default defineComponent({
           /></span>
           <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-500 flex items-center gap-1">
             最終更新: {{ formattedLastItemActivityAt }}
-            <button
-              type="button"
+            <IconButton
               @click="currentListId && loadSnapshot(currentListId)"
               :disabled="snapshotLoading"
               aria-label="リストを再読み込み"
-              class="text-charcoal-400 hover:text-charcoal-600 disabled:opacity-40 transition-colors"
+              variant="muted"
+              size="xsmall"
+              :icon-class="{ 'animate-spin': snapshotLoading }"
             >
-              <span :class="{ 'animate-spin': snapshotLoading }" class="flex items-center"><IconRefresh /></span>
-            </button>
+              <IconRefresh />
+            </IconButton>
           </span>
         </div>
         <div class="flex items-center gap-2 text-sm">
@@ -255,6 +277,9 @@ export default defineComponent({
         :items="items"
         :search-query="searchQuery"
         :selected-member-id="selectedMemberId"
+        :member-filter-id="memberFilterId"
+        @member-filter="handleMemberFilter"
+        @clear-member-filter="clearMemberFilter"
       />
     </div>
   </ContentArea>

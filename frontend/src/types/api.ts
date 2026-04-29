@@ -21,6 +21,7 @@ export type Item = {
   id: UUID;
   name: string;
   completed: boolean;
+  assignedMemberId: UUID | null;
   completedByMemberId: UUID | null;
   completedAt: string | null;
   createdAt: string;

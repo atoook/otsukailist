@@ -2,7 +2,7 @@
   <SwipeContainer :hiddenBgColor="'#fef7f0'">
     <div
       :id="`item-${item.id}`"
-      class="flex items-center gap-3 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60"
+      class="flex items-center gap-2 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60"
       role="listitem"
       :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}`"
     >
@@ -15,7 +15,7 @@
       />
 
       <!-- アイテム名 -->
-      <div v-if="!isCompleted" class="flex-1 flex flex-col" @focusin="handleInlineInputFocus">
+      <div v-if="!isCompleted" class="min-w-0 flex-1 flex flex-col" @focusin="handleInlineInputFocus">
         <TextInput
           :input-id="item.id"
           input-name="itemName"
@@ -27,15 +27,37 @@
         />
         <p v-if="shouldShowAutosaveHint" class="text-xs text-charcoal-500 mt-1">変更は自動保存されます</p>
       </div>
-      <span v-else class="line-through text-charcoal-500 flex-1">
+      <span v-else class="min-w-0 flex-1 truncate line-through text-charcoal-500">
         {{ item.name }}
       </span>
       <span v-if="showSaveIndicator" class="text-success-600 flex items-center" role="status" aria-label="保存済み"
         ><IconCheck
       /></span>
-      <BadgeTag v-if="completedMemberName" :text="completedMemberName" size="small" :variant="memberBadgeVariant"
-        ><template #icon><IconUser /></template
-      ></BadgeTag>
+      <span v-if="memberBadgeText" class="relative inline-flex shrink-0">
+        <button
+          type="button"
+          class="rounded-full focus:outline-none focus:ring-2 focus:ring-wood-300 disabled:cursor-default disabled:opacity-60"
+          :disabled="!memberId"
+          :aria-disabled="!memberId"
+          :aria-label="`${memberName}で絞り込む`"
+          @click="handleMemberFilter"
+        >
+          <BadgeTag :text="memberBadgeText" size="small" :variant="memberBadgeVariant" />
+        </button>
+        <IconButton
+          v-if="memberFilterActive && memberId"
+          class="absolute -right-1.5 -top-1.5 border border-ember-200 bg-wood-50"
+          variant="danger"
+          size="tiny"
+          :aria-label="`${memberName}の絞り込みを解除`"
+          @click.stop="handleMemberFilterClear"
+        >
+          <IconClose />
+        </IconButton>
+      </span>
+      <IconButton variant="wood" size="small" :aria-label="`${item.name}を編集`" @click="handleEdit(item)">
+        <IconEllipsisVertical />
+      </IconButton>
     </div>
 
     <template #hiddenActions>
@@ -53,8 +75,10 @@ import CheckBox from './CheckBox.vue';
 import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
+import IconButton from './IconButton.vue';
 import IconCheck from './icons/IconCheck.vue';
-import IconUser from './icons/IconUser.vue';
+import IconClose from './icons/IconClose.vue';
+import IconEllipsisVertical from './icons/IconEllipsisVertical.vue';
 import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isItemCompleted } from '../types/item';
@@ -67,9 +91,11 @@ export default {
     TextInput,
     SwipeContainer,
     BadgeTag,
+    IconButton,
     IconCheck,
-    IconUser,
-    IconTrash
+    IconClose,
+    IconTrash,
+    IconEllipsisVertical
   },
   data() {
     return {
@@ -91,12 +117,20 @@ export default {
       default: 'primary',
       validator: (value: string) => ['default', 'primary', 'secondary'].includes(value)
     },
-    completedMemberName: {
+    memberName: {
       type: String,
       default: ''
+    },
+    memberId: {
+      type: String,
+      default: null
+    },
+    memberFilterActive: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['toggle', 'info', 'delete', 'modify'],
+  emits: ['toggle', 'info', 'delete', 'modify', 'edit', 'member-filter', 'clear-member-filter'],
   created() {
     this.newName = this.item.name;
   },
@@ -109,6 +143,9 @@ export default {
     },
     shouldShowAutosaveHint() {
       return this.isInputFocused && this.isModified;
+    },
+    memberBadgeText() {
+      return this.memberName.trim().charAt(0);
     }
   },
   watch: {
@@ -130,6 +167,22 @@ export default {
     },
     handleDelete(itemId: ItemId) {
       this.$emit('delete', itemId);
+    },
+    handleEdit(item: Item) {
+      this.$emit('edit', item);
+    },
+    handleMemberFilter() {
+      if (this.memberFilterActive) {
+        this.handleMemberFilterClear();
+        return;
+      }
+      if (!this.memberId) {
+        return;
+      }
+      this.$emit('member-filter', this.memberId);
+    },
+    handleMemberFilterClear() {
+      this.$emit('clear-member-filter');
     },
     handleKeyDown(event: KeyboardEvent) {
       // スペースキーまたはEnterキーでチェックボックストグル

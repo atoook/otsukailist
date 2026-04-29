@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue';
+import { isNavigationFailure } from 'vue-router';
 import ItemBox from './ItemBox.vue';
 import IconChevronDown from './icons/IconChevronDown.vue';
 import IconTired from './icons/IconTired.vue';
@@ -57,8 +58,13 @@ export default defineComponent({
     selectedMemberId: {
       type: String as PropType<MemberId | null>,
       default: null
+    },
+    memberFilterId: {
+      type: String as PropType<MemberId | null>,
+      default: null
     }
   },
+  emits: ['member-filter', 'clear-member-filter'],
   setup() {
     const listStore = useListStore();
     const { run, loading } = useMutation();
@@ -88,13 +94,20 @@ export default defineComponent({
       if (item.completed && this.selectedMemberId && item.completedByMemberId === this.selectedMemberId) {
         return 'primary';
       }
+      if (!item.completed && this.selectedMemberId && item.assignedMemberId === this.selectedMemberId) {
+        return 'primary';
+      }
       return 'secondary';
     },
-    getCompletedMemberName(item: Item): string | null {
-      if (!item.completed || !item.completedByMemberId) {
+    getItemMemberName(item: Item): string | null {
+      const memberId = this.getItemMemberId(item);
+      if (!memberId) {
         return null;
       }
-      return this.memberMap.get(item.completedByMemberId)?.displayName ?? null;
+      return this.memberMap.get(memberId)?.displayName ?? null;
+    },
+    getItemMemberId(item: Item): MemberId | null {
+      return item.completed ? item.completedByMemberId : item.assignedMemberId;
     },
     showErrorFeedback() {
       if (this.errorMessage) {
@@ -170,6 +183,31 @@ export default defineComponent({
         this.showErrorFeedback();
       }
     },
+    async editItem(item: Item): Promise<void> {
+      const listId = this.listStore.listId;
+      if (!listId) {
+        this.errorMessage = 'リストが初期化されていません。';
+        this.showErrorFeedback();
+        return;
+      }
+
+      try {
+        await this.$router.push({
+          name: 'ItemEdit',
+          params: {
+            id: listId,
+            itemId: item.id
+          }
+        });
+      } catch (err: unknown) {
+        if (isNavigationFailure(err)) {
+          return;
+        }
+        console.error('Failed to navigate to item edit page', err);
+        this.errorMessage = getErrorMessage(err) ?? 'アイテム編集画面への移動に失敗しました。';
+        this.showErrorFeedback();
+      }
+    },
     toggleGroupCollapse(key: string): void {
       this.collapsedGroups[key] = !this.collapsedGroups[key];
     },
@@ -213,10 +251,15 @@ export default defineComponent({
           :key="item.id"
           :item="item"
           :memberBadgeVariant="getMemberBadgeVariant(item)"
-          :completedMemberName="getCompletedMemberName(item) || ''"
+          :memberName="getItemMemberName(item) || ''"
+          :member-id="getItemMemberId(item) || undefined"
+          :member-filter-active="getItemMemberId(item) === memberFilterId"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
+          @edit="editItem"
+          @member-filter="$emit('member-filter', $event)"
+          @clear-member-filter="$emit('clear-member-filter')"
         />
       </template>
     </template>

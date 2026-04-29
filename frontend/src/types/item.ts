@@ -14,6 +14,7 @@ export function isItem(value: unknown): value is Item {
     isItemId(candidate.id) &&
     typeof candidate.name === 'string' &&
     typeof candidate.completed === 'boolean' &&
+    (candidate.assignedMemberId === null || isItemId(candidate.assignedMemberId)) &&
     (candidate.completedByMemberId === null || isItemId(candidate.completedByMemberId)) &&
     (candidate.completedAt === null || typeof candidate.completedAt === 'string') &&
     typeof candidate.createdAt === 'string' &&
