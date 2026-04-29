@@ -167,11 +167,6 @@ export default defineComponent({
         return;
       }
 
-      if (!this.currentListId) {
-        this.errorMessage = 'リストIDが無効です';
-        return;
-      }
-
       await this.navigateToItemList('リスト画面への移動に失敗しました。');
     },
     async navigateToItemList(fallbackMessage: string): Promise<void> {

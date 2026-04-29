@@ -36,14 +36,16 @@
       <span v-if="memberBadgeText" class="relative inline-flex shrink-0">
         <button
           type="button"
-          class="rounded-full focus:outline-none focus:ring-2 focus:ring-wood-300"
+          class="rounded-full focus:outline-none focus:ring-2 focus:ring-wood-300 disabled:cursor-default disabled:opacity-60"
+          :disabled="!memberId"
+          :aria-disabled="!memberId"
           :aria-label="`${memberName}で絞り込む`"
           @click="handleMemberFilter"
         >
           <BadgeTag :text="memberBadgeText" size="small" :variant="memberBadgeVariant" />
         </button>
         <IconButton
-          v-if="memberFilterActive"
+          v-if="memberFilterActive && memberId"
           class="absolute -right-1.5 -top-1.5 border border-ember-200 bg-wood-50"
           variant="danger"
           size="tiny"
