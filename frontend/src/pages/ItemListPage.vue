@@ -237,12 +237,18 @@ export default defineComponent({
         </div>
       </div>
       <!-- チェック時に記録する購入者選択 + サマリー -->
-      <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
-        <div class="flex flex-col gap-0.5">
-          <span class="text-xs text-charcoal-600"
+      <div
+        v-if="filteredItems.length > 0"
+        class="@container flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-2"
+      >
+        <div class="flex min-w-max flex-col gap-0.5 @max-[19rem]:mx-auto">
+          <span class="inline-flex whitespace-nowrap text-xs text-charcoal-600"
             >{{ itemSummary }}<IconCelebration v-if="allCompleted" class="ml-1"
           /></span>
-          <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-500 flex items-center gap-1">
+          <span
+            v-if="formattedLastItemActivityAt"
+            class="inline-flex items-center gap-1 whitespace-nowrap text-xs text-charcoal-500"
+          >
             最終更新: {{ formattedLastItemActivityAt }}
             <IconButton
               @click="currentListId && loadSnapshot(currentListId)"
@@ -256,9 +262,9 @@ export default defineComponent({
             </IconButton>
           </span>
         </div>
-        <div class="flex items-center gap-2 text-sm">
+        <div class="ml-auto flex shrink-0 items-center gap-2 text-sm">
           <label for="memberSelect">
-            <span class="text-charcoal-600 font-medium">買った人</span>
+            <span class="whitespace-nowrap text-charcoal-600 font-medium">買った人</span>
           </label>
           <DropDown
             selectId="memberSelect"
