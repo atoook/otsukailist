@@ -28,6 +28,8 @@ export default {
   computed: {
     buttonClass() {
       const baseClass = [
+        // Layout
+        'inline-flex shrink-0 items-center justify-center whitespace-nowrap',
         // Base shape (rounded corners)
         'rounded-lg',
         // Typography
