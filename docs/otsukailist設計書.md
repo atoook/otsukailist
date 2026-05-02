@@ -58,7 +58,10 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 - `ItemList` : リスト本体。`revision` を持ち、`Item` と `Member` を束ねる。
 - `Member` : 表示名のみを管理し、権限は持たない。リスト内で `display_name` がユニーク。
-- `Item` : 名前・完了フラグ・完了者 ID・完了日時を保持する。完了時は必ずメンバー存在チェックを行う。
+- `Item` : 名前・完了フラグ・完了者 ID・完了日時を保持する。`plain` / `quantified` を `item_type` で区別し、カテゴリは plain / quantified 共通で `category` に保持する。完了時は必ずメンバー存在チェックを行う。
+- `ItemQuantified` : 数量付き item の詳細情報を `item` と 1:1 で保持する。`name` / `quantity` / `base_unit` / `origin` / `regeneration_policy` / `generator_key` を持つ。
+- `ListGenerationConfig` : テンプレート生成条件をリスト単位で保持する将来拡張用テーブル。生成条件は `item_list` へ直接持たせず分離する。
+- 数量付き item の設計方針は `docs/list-generation-automation.md` を参照。
 - 正式な DDL は `backend/src/main/resources/db/migration` 配下の Flyway SQL を参照（UUID は `UUID` 型）。
 - 監査系タイムスタンプ（`created_at` / `updated_at`）は **Hibernate 側で更新を管理** し、DDL では `DEFAULT CURRENT_TIMESTAMP(3)` のみを使う。`ON UPDATE CURRENT_TIMESTAMP` のような DB 依存の自動更新句は採用しない。
 

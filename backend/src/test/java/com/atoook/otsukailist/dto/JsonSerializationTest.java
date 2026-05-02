@@ -5,6 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.atoook.otsukailist.model.BaseUnit;
+import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemType;
+import com.atoook.otsukailist.model.Origin;
+import com.atoook.otsukailist.model.RegenerationPolicy;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +42,9 @@ class JsonSerializationTest {
         ItemResponse.builder()
             .id(id)
             .name("テストアイテム")
+            .itemType(ItemType.PLAIN)
+            .category(ItemCategory.SWEETS)
+            .quantified(null)
             .completed(true)
             .assignedMemberId(assignedMemberId)
             .completedByMemberId(completedByMemberId)
@@ -50,6 +59,9 @@ class JsonSerializationTest {
     // Then - JSON に "completed" フィールドが含まれることを確認
     JsonNode jsonNode = objectMapper.readTree(json);
     assertThat(jsonNode.get("id").asText()).isEqualTo(id.toString());
+    assertThat(jsonNode.get("itemType").asText()).isEqualTo("plain");
+    assertThat(jsonNode.get("category").asText()).isEqualTo("sweets");
+    assertThat(jsonNode.get("quantified").isNull()).isTrue();
     assertThat(jsonNode.get("completed").asBoolean()).isTrue();
     assertThat(jsonNode.get("assignedMemberId").asText()).isEqualTo(assignedMemberId.toString());
     assertThat(jsonNode.get("completedByMemberId").asText())
@@ -68,6 +80,49 @@ class JsonSerializationTest {
     assertThat(deserialized.getCreatedAt()).isEqualTo(createdAt);
     assertThat(deserialized.getUpdatedAt()).isEqualTo(updatedAt);
     assertThat(deserialized.getName()).isEqualTo("テストアイテム");
+    assertThat(deserialized.getItemType()).isEqualTo(ItemType.PLAIN);
+    assertThat(deserialized.getCategory()).isEqualTo(ItemCategory.SWEETS);
+    assertThat(deserialized.getQuantified()).isNull();
+  }
+
+  @Test
+  @DisplayName("数量付き ItemResponse は小文字 enum と quantified をシリアライズすること")
+  void testQuantifiedItemResponseSerialization() throws JsonProcessingException {
+    UUID id = UUID.randomUUID();
+    Instant createdAt = Instant.parse("2024-01-01T00:00:00Z");
+    Instant updatedAt = Instant.parse("2024-01-01T01:00:00Z");
+
+    ItemResponse response =
+        ItemResponse.builder()
+            .id(id)
+            .name("牛肉")
+            .itemType(ItemType.QUANTIFIED)
+            .category(ItemCategory.MEAT)
+            .quantified(
+                QuantifiedItemResponse.builder()
+                    .name("牛肉")
+                    .quantity(1000L)
+                    .baseUnit(BaseUnit.G)
+                    .origin(Origin.GENERATED)
+                    .regenerationPolicy(RegenerationPolicy.LOCKED)
+                    .generatorKey("beef")
+                    .build())
+            .completed(false)
+            .createdAt(createdAt)
+            .updatedAt(updatedAt)
+            .build();
+
+    String json = objectMapper.writeValueAsString(response);
+    JsonNode jsonNode = objectMapper.readTree(json);
+
+    assertThat(jsonNode.get("itemType").asText()).isEqualTo("quantified");
+    assertThat(jsonNode.get("category").asText()).isEqualTo("meat");
+    assertThat(jsonNode.get("quantified").get("name").asText()).isEqualTo("牛肉");
+    assertThat(jsonNode.get("quantified").get("quantity").asLong()).isEqualTo(1000L);
+    assertThat(jsonNode.get("quantified").get("baseUnit").asText()).isEqualTo("g");
+    assertThat(jsonNode.get("quantified").get("origin").asText()).isEqualTo("generated");
+    assertThat(jsonNode.get("quantified").get("regenerationPolicy").asText()).isEqualTo("locked");
+    assertThat(jsonNode.get("quantified").get("generatorKey").asText()).isEqualTo("beef");
   }
 
   @Test
@@ -88,6 +143,39 @@ class JsonSerializationTest {
     // Then
     assertThat(request.getName()).isEqualTo("新しいアイテム");
     assertThat(request.isCompleted()).isFalse();
+    assertThat(request.getItemType()).isEqualTo(ItemType.PLAIN);
+  }
+
+  @Test
+  @DisplayName("数量付き CreateItemRequest は小文字 enum をデシリアライズできること")
+  void testQuantifiedCreateItemRequestDeserialization() throws JsonProcessingException {
+    String json =
+        """
+                {
+                    "name": "牛肉 1000g",
+                    "itemType": "quantified",
+                    "category": "meat",
+                    "quantified": {
+                      "name": "牛肉",
+                      "quantity": 1000,
+                      "baseUnit": "g",
+                      "origin": "generated",
+                      "regenerationPolicy": "auto",
+                      "generatorKey": "beef"
+                    }
+                }
+                """;
+
+    CreateItemRequest request = objectMapper.readValue(json, CreateItemRequest.class);
+
+    assertThat(request.getItemType()).isEqualTo(ItemType.QUANTIFIED);
+    assertThat(request.getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(request.getQuantified().getName()).isEqualTo("牛肉");
+    assertThat(request.getQuantified().getQuantity()).isEqualTo(1000L);
+    assertThat(request.getQuantified().getBaseUnit()).isEqualTo(BaseUnit.G);
+    assertThat(request.getQuantified().getOrigin()).isEqualTo(Origin.GENERATED);
+    assertThat(request.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
+    assertThat(request.getQuantified().getGeneratorKey()).isEqualTo("beef");
   }
 
   @Test

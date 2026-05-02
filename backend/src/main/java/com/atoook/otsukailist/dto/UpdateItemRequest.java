@@ -2,7 +2,11 @@ package com.atoook.otsukailist.dto;
 
 import java.util.UUID;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
+
+import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -27,12 +31,26 @@ public class UpdateItemRequest {
   // 完了状態（nullの場合は更新しない）
   private Boolean completed;
 
+  private ItemType itemType;
+
+  private ItemCategory category;
+
+  @JsonIgnore private boolean categoryPresent;
+
   private UUID assignedMemberId;
 
   @JsonIgnore private boolean assignedMemberIdPresent;
 
   // completed=true のとき必須（未完了に戻すときは不要）
   private UUID completedByMemberId;
+
+  @Valid private QuantifiedItemRequest quantified;
+
+  @JsonSetter("category")
+  public void setCategory(ItemCategory category) {
+    this.category = category;
+    this.categoryPresent = true;
+  }
 
   @JsonSetter("assignedMemberId")
   public void setAssignedMemberId(UUID assignedMemberId) {
@@ -48,6 +66,12 @@ public class UpdateItemRequest {
     public UpdateItemRequestBuilder assignedMemberId(UUID assignedMemberId) {
       this.assignedMemberId = assignedMemberId;
       this.assignedMemberIdPresent = true;
+      return this;
+    }
+
+    public UpdateItemRequestBuilder category(ItemCategory category) {
+      this.category = category;
+      this.categoryPresent = true;
       return this;
     }
   }

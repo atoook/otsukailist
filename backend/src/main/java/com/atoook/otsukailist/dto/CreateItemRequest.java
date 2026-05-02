@@ -1,7 +1,11 @@
 package com.atoook.otsukailist.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
+import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,4 +27,10 @@ public class CreateItemRequest {
 
   // 作成時に完了状態を指定可能（デフォルト: false）
   @Builder.Default private boolean completed = false;
+
+  @Builder.Default private ItemType itemType = ItemType.PLAIN;
+
+  private ItemCategory category;
+
+  @Valid private QuantifiedItemRequest quantified;
 }

@@ -2,9 +2,13 @@ package com.atoook.otsukailist.mapper;
 
 import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.ItemResponse;
+import com.atoook.otsukailist.dto.QuantifiedItemRequest;
+import com.atoook.otsukailist.dto.QuantifiedItemResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.model.Item;
 import com.atoook.otsukailist.model.ItemList;
+import com.atoook.otsukailist.model.ItemQuantified;
+import com.atoook.otsukailist.model.ItemType;
 
 import lombok.experimental.UtilityClass;
 
@@ -21,6 +25,9 @@ public class ItemMapper {
     return ItemResponse.builder()
         .id(entity.getId())
         .name(entity.getName().trim())
+        .itemType(entity.getItemType() == null ? ItemType.PLAIN : entity.getItemType())
+        .category(entity.getCategory())
+        .quantified(toQuantifiedResponse(entity.getQuantified()))
         .completed(entity.isCompleted())
         .assignedMemberId(entity.getAssignedMemberId())
         .completedByMemberId(entity.getCompletedByMemberId())
@@ -38,10 +45,52 @@ public class ItemMapper {
 
     Item entity = new Item();
     entity.setName(request.getName().trim());
+    entity.setItemType(request.getItemType() == null ? ItemType.PLAIN : request.getItemType());
+    entity.setCategory(request.getCategory());
     entity.setCompleted(request.isCompleted());
     entity.setItemList(itemList);
 
     return entity;
+  }
+
+  public static ItemQuantified toQuantifiedEntity(QuantifiedItemRequest request) {
+    if (request == null) {
+      return null;
+    }
+
+    ItemQuantified quantified = new ItemQuantified();
+    updateQuantifiedEntity(quantified, request);
+
+    return quantified;
+  }
+
+  public static void updateQuantifiedEntity(
+      ItemQuantified quantified, QuantifiedItemRequest request) {
+    if (quantified == null || request == null) {
+      return;
+    }
+
+    quantified.setName(request.getName().trim());
+    quantified.setQuantity(request.getQuantity());
+    quantified.setBaseUnit(request.getBaseUnit());
+    quantified.setOrigin(request.getOrigin());
+    quantified.setRegenerationPolicy(request.getRegenerationPolicy());
+    quantified.setGeneratorKey(normalizeNullableText(request.getGeneratorKey()));
+  }
+
+  public static QuantifiedItemResponse toQuantifiedResponse(ItemQuantified quantified) {
+    if (quantified == null) {
+      return null;
+    }
+
+    return QuantifiedItemResponse.builder()
+        .name(quantified.getName())
+        .quantity(quantified.getQuantity())
+        .baseUnit(quantified.getBaseUnit())
+        .origin(quantified.getOrigin())
+        .regenerationPolicy(quantified.getRegenerationPolicy())
+        .generatorKey(quantified.getGeneratorKey())
+        .build();
   }
 
   /**
@@ -58,5 +107,15 @@ public class ItemMapper {
     if (request.getName() != null) {
       entity.setName(request.getName().trim());
     }
+    if (request.isCategoryPresent()) {
+      entity.setCategory(request.getCategory());
+    }
+  }
+
+  private static String normalizeNullableText(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    return value.trim();
   }
 }
