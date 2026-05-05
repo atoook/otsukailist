@@ -151,8 +151,13 @@ public class ItemCommandService {
     boolean revertingToPlain =
         item.getItemType() == ItemType.QUANTIFIED && req.getItemType() == ItemType.PLAIN;
     boolean quantifiedDetailsEdited = req.getQuantified() != null;
+    boolean quantifiedDetailsSentForPlain =
+        req.getItemType() == ItemType.PLAIN && quantifiedDetailsEdited;
 
     ItemMapper.updateEntity(item, req);
+    if (quantifiedDetailsSentForPlain) {
+      throw new BadRequestException(MSG_QUANTIFIED_NOT_ALLOWED);
+    }
     if (revertingToPlain) {
       revertToPlain(item);
       return;
@@ -170,7 +175,7 @@ public class ItemCommandService {
       return;
     }
     validateGeneratorKey(req.getQuantified());
-    if (item.getItemType() == ItemType.PLAIN && req.getItemType() == ItemType.QUANTIFIED) {
+    if (item.getItemType() == ItemType.PLAIN) {
       item.setItemType(ItemType.QUANTIFIED);
       item.setQuantified(ItemMapper.toQuantifiedEntity(req.getQuantified()));
       item.setCategory(resolveCategory(item.getCategory(), req.getQuantified()));

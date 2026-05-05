@@ -95,6 +95,47 @@ class ItemCommandServiceTest {
     assertThat(result.getData().getName()).isEqualTo("直接編集された名前");
   }
 
+  @Test
+  @DisplayName("itemType未指定でも数量付き詳細があれば通常アイテムから数量付きアイテムへ変換すること")
+  void updatePlainItemWithQuantifiedDetailsConvertsToQuantifiedWithoutItemType() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = plainItem("牛肉");
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .quantified(
+                QuantifiedItemRequest.builder()
+                    .name("牛肉")
+                    .quantity(1000L)
+                    .baseUnit(BaseUnit.G)
+                    .origin(Origin.MANUAL)
+                    .regenerationPolicy(RegenerationPolicy.NONE)
+                    .build())
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.save(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    var result = service.updateItem(listId, itemId, request);
+
+    assertThat(item.getItemType()).isEqualTo(ItemType.QUANTIFIED);
+    assertThat(item.getName()).isEqualTo("牛肉");
+    assertThat(item.getQuantified()).isNotNull();
+    assertThat(item.getQuantified().getQuantity()).isEqualTo(1000L);
+    assertThat(item.getQuantified().getOrigin()).isEqualTo(Origin.MANUAL);
+    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.NONE);
+    assertThat(result.getData().getItemType()).isEqualTo(ItemType.QUANTIFIED);
+  }
+
+  private static Item plainItem(String itemName) {
+    Item item = new Item();
+    item.setName(itemName);
+    item.setItemType(ItemType.PLAIN);
+
+    return item;
+  }
+
   private static Item quantifiedItem(String itemName, String quantifiedName, long quantity) {
     Item item = new Item();
     item.setName(itemName);

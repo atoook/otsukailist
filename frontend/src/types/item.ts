@@ -1,4 +1,5 @@
 import type { Item as ApiItem, UUID } from './api';
+import { ITEM_CATEGORY_VALUES, type ItemCategory } from './item-category';
 
 export type Item = ApiItem;
 export type ItemId = UUID;
@@ -14,7 +15,7 @@ export function isItem(value: unknown): value is Item {
     isItemId(candidate.id) &&
     typeof candidate.name === 'string' &&
     (candidate.itemType === 'plain' || candidate.itemType === 'quantified') &&
-    (candidate.category === null || typeof candidate.category === 'string') &&
+    isItemCategory(candidate.category) &&
     isQuantifiedItemForType(candidate) &&
     typeof candidate.completed === 'boolean' &&
     (candidate.assignedMemberId === null || isItemId(candidate.assignedMemberId)) &&
@@ -23,6 +24,10 @@ export function isItem(value: unknown): value is Item {
     typeof candidate.createdAt === 'string' &&
     typeof candidate.updatedAt === 'string'
   );
+}
+
+function isItemCategory(value: unknown): value is ItemCategory | null {
+  return value === null || (typeof value === 'string' && ITEM_CATEGORY_VALUES.includes(value as ItemCategory));
 }
 
 function isQuantifiedItemForType(item: Item): boolean {

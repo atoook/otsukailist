@@ -13,12 +13,22 @@ export type UpdateItemPayload = {
   quantified?: QuantifiedItem | null;
 };
 
-export type CreateItemPayload = {
+type CreateItemPayloadBase = {
   name: string;
-  itemType?: ItemType;
   category?: ItemCategory | null;
-  quantified?: QuantifiedItem;
 };
+
+type CreatePlainItemPayload = CreateItemPayloadBase & {
+  itemType?: 'plain';
+  quantified?: never;
+};
+
+type CreateQuantifiedItemPayload = CreateItemPayloadBase & {
+  itemType: 'quantified';
+  quantified: QuantifiedItem;
+};
+
+export type CreateItemPayload = CreatePlainItemPayload | CreateQuantifiedItemPayload;
 
 export async function createItem(listId: UUID, payload: CreateItemPayload) {
   const res = await http.post<MutationResponse<Item>>(`/lists/${listId}/items`, payload);
