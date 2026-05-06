@@ -380,7 +380,6 @@ export default defineComponent({
   </ContentArea>
   <ContentArea v-else>
     <div class="text-center mb-6">
-      <div class="text-5xl mb-3 flex justify-center"><IconTools /></div>
       <h2 class="text-2xl font-bold text-charcoal-800">アイテムを編集</h2>
     </div>
 
