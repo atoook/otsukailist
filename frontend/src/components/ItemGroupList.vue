@@ -5,6 +5,7 @@ import ItemBox from './ItemBox.vue';
 import IconChevronDown from './icons/IconChevronDown.vue';
 import IconTired from './icons/IconTired.vue';
 import type { Item, ItemId } from '../types/item';
+import type { ItemCategory } from '../types/item-category';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
 import { deleteItem as deleteItemApi, updateItem } from '@/api/item';
@@ -51,7 +52,7 @@ export default defineComponent({
       type: Array as PropType<Item[]>,
       required: true
     },
-    searchQuery: {
+    emptyResultMessage: {
       type: String,
       required: true
     },
@@ -62,9 +63,13 @@ export default defineComponent({
     memberFilterId: {
       type: String as PropType<MemberId | null>,
       default: null
+    },
+    categoryFilter: {
+      type: String as PropType<ItemCategory | null>,
+      default: null
     }
   },
-  emits: ['member-filter', 'clear-member-filter'],
+  emits: ['member-filter', 'clear-member-filter', 'category-filter', 'clear-category-filter'],
   setup() {
     const listStore = useListStore();
     const { run, loading } = useMutation();
@@ -254,12 +259,15 @@ export default defineComponent({
           :memberName="getItemMemberName(item) || ''"
           :member-id="getItemMemberId(item) || undefined"
           :member-filter-active="getItemMemberId(item) === memberFilterId"
+          :category-filter-active="item.category === categoryFilter"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
           @edit="editItem"
           @member-filter="$emit('member-filter', $event)"
           @clear-member-filter="$emit('clear-member-filter')"
+          @category-filter="$emit('category-filter', $event)"
+          @clear-category-filter="$emit('clear-category-filter')"
         />
       </template>
     </template>
@@ -274,7 +282,7 @@ export default defineComponent({
     <!-- 検索結果がない場合 -->
     <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
       <div class="text-4xl mb-3 flex justify-center"><IconTired /></div>
-      「{{ searchQuery }}」に一致するアイテムが見つかりませんでした。
+      {{ emptyResultMessage }}
     </div>
   </div>
 </template>

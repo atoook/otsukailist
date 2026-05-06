@@ -6,7 +6,6 @@ import MainButton from '../components/MainButton.vue';
 import TextInput from '../components/TextInput.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import DropDown from '../components/DropDown.vue';
-import IconTools from '../components/icons/IconTools.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import type { Item } from '../types/item';
 import { ITEM_CATEGORIES, type ItemCategory } from '../types/item-category';
@@ -35,7 +34,6 @@ export default defineComponent({
     TextInput,
     LoadingSpinner,
     DropDown,
-    IconTools,
     IconUsers
   },
   data(): {

@@ -11,7 +11,8 @@ import IconEdit from '../components/icons/IconEdit.vue';
 import IconRefresh from '../components/icons/IconRefresh.vue';
 import IconCelebration from '../components/icons/IconCelebration.vue';
 import type { Item } from '../types/item';
-import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import type { ItemCategory } from '../types/item-category';
+import { normalizeInput } from '../utils/text-normalization';
 import { formatActivityAt } from '../utils/date-format';
 import type { Member, MemberId } from '@/types/member';
 import { fetchSnapshot } from '@/api/list';
@@ -19,6 +20,7 @@ import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
 import { getSelectedMemberId, setSelectedMemberId, addOrUpdateListHistory } from '@/lib/userCache';
 import { FEEDBACK_LIST_ID } from '@/lib/appConstants';
+import { filterItems } from '@/utils/item-filtering';
 
 export default defineComponent({
   name: 'ItemListPage',
@@ -39,6 +41,7 @@ export default defineComponent({
     searchQuery: string;
     selectedMemberId: MemberId | null;
     memberFilterId: MemberId | null;
+    categoryFilter: ItemCategory | null;
     errorMessage: string;
     fallbackListName: string;
     snapshotLoading: boolean;
@@ -48,6 +51,7 @@ export default defineComponent({
       searchQuery: '',
       selectedMemberId: null,
       memberFilterId: null,
+      categoryFilter: null,
       errorMessage: '',
       fallbackListName: '',
       snapshotLoading: false
@@ -82,21 +86,10 @@ export default defineComponent({
       return this.listStore.items;
     },
     filteredItems(): Item[] {
-      const normalizedQuery = normalizeForSearch(this.searchQuery);
-      return this.items.filter((item) => {
-        if (this.memberFilterId) {
-          const itemMemberId = item.completed ? item.completedByMemberId : item.assignedMemberId;
-          if (itemMemberId !== this.memberFilterId) {
-            return false;
-          }
-        }
-
-        if (!normalizedQuery) {
-          return true;
-        }
-
-        const normalizedItemName = normalizeForSearch(item.name);
-        return normalizedItemName.includes(normalizedQuery);
+      return filterItems(this.items, {
+        searchQuery: this.searchQuery,
+        memberId: this.memberFilterId,
+        category: this.categoryFilter
       });
     },
     memberNames(): string {
@@ -121,6 +114,12 @@ export default defineComponent({
     },
     allCompleted(): boolean {
       return this.items.length > 0 && this.items.every((item) => item.completed);
+    },
+    emptyFilterMessage(): string {
+      if (this.searchQuery) {
+        return `「${this.searchQuery}」に一致するアイテムが見つかりませんでした。`;
+      }
+      return '条件に一致するアイテムが見つかりませんでした。';
     },
     formattedLastItemActivityAt(): string | null {
       return formatActivityAt(this.listStore.lastItemActivityAt);
@@ -180,6 +179,12 @@ export default defineComponent({
     clearMemberFilter(): void {
       this.memberFilterId = null;
     },
+    handleCategoryFilter(category: ItemCategory): void {
+      this.categoryFilter = category;
+    },
+    clearCategoryFilter(): void {
+      this.categoryFilter = null;
+    },
     navigateToListEdit() {
       this.$router.push({
         name: 'ListEdit',
@@ -202,12 +207,7 @@ export default defineComponent({
           <h2 class="text-2xl font-black text-charcoal-800 text-center">
             {{ listName }}
           </h2>
-          <IconButton
-            @click="navigateToListEdit"
-            aria-label="リスト名を編集"
-            variant="ghost"
-            size="small"
-          >
+          <IconButton @click="navigateToListEdit" aria-label="リスト名を編集" variant="ghost" size="small">
             <IconEdit />
           </IconButton>
         </div>
@@ -281,11 +281,14 @@ export default defineComponent({
       <ItemGroupList
         :filtered-items="filteredItems"
         :items="items"
-        :search-query="searchQuery"
+        :empty-result-message="emptyFilterMessage"
         :selected-member-id="selectedMemberId"
         :member-filter-id="memberFilterId"
+        :category-filter="categoryFilter"
         @member-filter="handleMemberFilter"
         @clear-member-filter="clearMemberFilter"
+        @category-filter="handleCategoryFilter"
+        @clear-category-filter="clearCategoryFilter"
       />
     </div>
   </ContentArea>

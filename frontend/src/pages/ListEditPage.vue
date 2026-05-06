@@ -6,7 +6,6 @@ import TextInputWithLabel from '../components/TextInputWithLabel.vue';
 import TextInput from '../components/TextInput.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
-import IconTools from '../components/icons/IconTools.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import IconUser from '../components/icons/IconUser.vue';
@@ -28,7 +27,6 @@ export default defineComponent({
     TextInput,
     BadgeTag,
     LoadingSpinner,
-    IconTools,
     IconClipboard,
     IconUsers,
     IconUser
