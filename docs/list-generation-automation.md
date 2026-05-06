@@ -93,8 +93,7 @@ MVP では以下を DB マスタ化しない。
 管理対象:
 
 - Backend: `backend/src/main/java/com/atoook/otsukailist/generation`
-- Frontend category values: `frontend/src/types/item-category.ts`
-- Frontend category labels/sort order: `frontend/src/lib/itemCategoryConstants.ts`
+- Frontend category values/labels/sort order: `frontend/src/types/item-category.ts`
 - Frontend unit/generation values: `frontend/src/types/list-generation.ts`
 
 ---
