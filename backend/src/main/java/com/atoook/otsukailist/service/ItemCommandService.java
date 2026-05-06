@@ -100,7 +100,7 @@ public class ItemCommandService {
                 () ->
                     new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "アイテム")));
 
-    updateNameAndQuantified(item, req);
+    updateNameCategoryAndQuantified(item, req);
     updateAssignedMember(listId, item, req);
     updateCompletion(listId, item, req);
 
@@ -147,27 +147,38 @@ public class ItemCommandService {
     }
   }
 
-  private static void updateNameAndQuantified(Item item, UpdateItemRequest req) {
-    boolean categoryEdited =
-        req.isCategoryPresent() && !Objects.equals(item.getCategory(), req.getCategory());
+  private static void updateNameCategoryAndQuantified(Item item, UpdateItemRequest req) {
+    ItemCategory requestedCategory = resolveRequestedCategory(item, req);
+    boolean categoryEdited = isUserCategoryEdit(item, req, requestedCategory);
     boolean revertingToPlain =
         item.getItemType() == ItemType.QUANTIFIED && req.getItemType() == ItemType.PLAIN;
     boolean quantifiedDetailsEdited = req.getQuantified() != null;
-    boolean quantifiedDetailsSentForPlain =
-        req.getItemType() == ItemType.PLAIN && quantifiedDetailsEdited;
 
-    ItemMapper.updateEntity(item, req);
-    if (quantifiedDetailsSentForPlain) {
-      throw new BadRequestException(MSG_QUANTIFIED_NOT_ALLOWED);
-    }
+    updateItemName(item, req);
+    rejectQuantifiedDetailsForPlainRequest(req, quantifiedDetailsEdited);
     if (revertingToPlain) {
+      item.setCategory(requestedCategory);
       revertToPlain(item);
       return;
     }
-    boolean shouldLockGeneratedAuto = categoryEdited;
-    shouldLockGeneratedAuto |= updateQuantifiedDetails(item, req);
+    boolean quantifiedDetailsChanged = updateQuantifiedDetails(item, req);
+    boolean shouldLockGeneratedAuto = categoryEdited || quantifiedDetailsChanged;
+    item.setCategory(resolveCategoryAfterUpdate(requestedCategory, req, shouldLockGeneratedAuto));
     if (shouldLockGeneratedAuto) {
       lockGeneratedAutoQuantifiedItem(item);
+    }
+  }
+
+  private static void updateItemName(Item item, UpdateItemRequest req) {
+    if (req.getName() != null) {
+      item.setName(req.getName().trim());
+    }
+  }
+
+  private static void rejectQuantifiedDetailsForPlainRequest(
+      UpdateItemRequest req, boolean quantifiedDetailsEdited) {
+    if (req.getItemType() == ItemType.PLAIN && quantifiedDetailsEdited) {
+      throw new BadRequestException(MSG_QUANTIFIED_NOT_ALLOWED);
     }
   }
 
@@ -179,7 +190,6 @@ public class ItemCommandService {
     if (item.getItemType() == ItemType.PLAIN) {
       item.setItemType(ItemType.QUANTIFIED);
       item.setQuantified(ItemMapper.toQuantifiedEntity(req.getQuantified()));
-      item.setCategory(resolveCategory(item.getCategory(), req.getQuantified()));
       return false;
     }
     if (item.getItemType() != ItemType.QUANTIFIED || item.getQuantified() == null) {
@@ -187,7 +197,6 @@ public class ItemCommandService {
     }
     boolean quantifiedChanged = hasQuantifiedChanged(item.getQuantified(), req);
     ItemMapper.updateQuantifiedEntity(item.getQuantified(), req.getQuantified());
-    item.setCategory(resolveCategory(item.getCategory(), req.getQuantified()));
     return quantifiedChanged;
   }
 
@@ -254,19 +263,67 @@ public class ItemCommandService {
 
   private static ItemCategory resolveCategory(
       ItemCategory requestedCategory, QuantifiedItemRequest quantified) {
+    ItemCategory generatedCategory = resolveGeneratedCategory(quantified);
+    return generatedCategory == null ? requestedCategory : generatedCategory;
+  }
+
+  private static boolean isUserCategoryEdit(
+      Item item, UpdateItemRequest req, ItemCategory requestedCategory) {
+    if (!req.isCategoryPresent() || Objects.equals(item.getCategory(), requestedCategory)) {
+      return false;
+    }
+    ItemCategory generatedCategory = resolveGeneratedCategory(item, req);
+    return generatedCategory == null || !Objects.equals(requestedCategory, generatedCategory);
+  }
+
+  private static ItemCategory resolveGeneratedCategory(Item item, UpdateItemRequest req) {
+    if (req.getQuantified() != null) {
+      return resolveGeneratedCategory(req.getQuantified());
+    }
+    return resolveGeneratedCategory(item.getQuantified());
+  }
+
+  private static ItemCategory resolveGeneratedCategory(ItemQuantified quantified) {
     if (quantified == null
         || quantified.getOrigin() != Origin.GENERATED
         || quantified.getRegenerationPolicy() != RegenerationPolicy.AUTO) {
+      return null;
+    }
+    return resolveGeneratedCategory(quantified.getGeneratorKey());
+  }
+
+  private static ItemCategory resolveGeneratedCategory(QuantifiedItemRequest quantified) {
+    if (quantified == null
+        || quantified.getOrigin() != Origin.GENERATED
+        || quantified.getRegenerationPolicy() != RegenerationPolicy.AUTO) {
+      return null;
+    }
+    return resolveGeneratedCategory(quantified.getGeneratorKey());
+  }
+
+  private static ItemCategory resolveGeneratedCategory(String generatorKey) {
+    String normalizedGeneratorKey = normalizeNullableText(generatorKey);
+    if (normalizedGeneratorKey == null) {
+      return null;
+    }
+    BBQGenerationRules.BBQGenerationRule rule =
+        BBQGenerationRules.VALUES.get(normalizedGeneratorKey);
+    return rule == null ? null : rule.category();
+  }
+
+  private static ItemCategory resolveRequestedCategory(Item item, UpdateItemRequest req) {
+    if (req.isCategoryPresent()) {
+      return req.getCategory();
+    }
+    return item.getCategory();
+  }
+
+  private static ItemCategory resolveCategoryAfterUpdate(
+      ItemCategory requestedCategory, UpdateItemRequest req, boolean shouldLockGeneratedAuto) {
+    if (shouldLockGeneratedAuto) {
       return requestedCategory;
     }
-
-    String generatorKey = normalizeNullableText(quantified.getGeneratorKey());
-    if (generatorKey == null) {
-      return requestedCategory;
-    }
-
-    BBQGenerationRules.BBQGenerationRule rule = BBQGenerationRules.VALUES.get(generatorKey);
-    return rule == null ? requestedCategory : rule.category();
+    return resolveCategory(requestedCategory, req.getQuantified());
   }
 
   private static void validateGeneratorKey(QuantifiedItemRequest quantified) {

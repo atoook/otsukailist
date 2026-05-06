@@ -10,6 +10,7 @@ import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.model.BaseUnit;
 import com.atoook.otsukailist.model.Item;
+import com.atoook.otsukailist.model.ItemCategory;
 import com.atoook.otsukailist.model.ItemQuantified;
 import com.atoook.otsukailist.model.ItemType;
 import com.atoook.otsukailist.model.Origin;
@@ -124,6 +125,77 @@ class ItemCommandServiceTest {
     assertThat(result.getData().getItemType()).isEqualTo(ItemType.QUANTIFIED);
   }
 
+  @Test
+  @DisplayName("generated auto の数量付き詳細が変わらない場合は生成ルールのカテゴリを反映してロックしないこと")
+  void updateGeneratedAutoWithoutDetailChangeResolvesGeneratedCategoryWithoutLocking() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = quantifiedItem("牛肉", 1000L);
+    item.setCategory(null);
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .itemType(ItemType.QUANTIFIED)
+            .quantified(generatedAutoQuantifiedRequest(1000L, "beef"))
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.save(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    service.updateItem(listId, itemId, request);
+
+    assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
+  }
+
+  @Test
+  @DisplayName("generated auto のカテゴリを明示変更した場合は指定カテゴリを保持してロックすること")
+  void updateGeneratedAutoCategoryKeepsRequestedCategoryAndLocks() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = quantifiedItem("牛肉", 1000L);
+    item.setCategory(ItemCategory.MEAT);
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .category(ItemCategory.SWEETS)
+            .itemType(ItemType.QUANTIFIED)
+            .quantified(generatedAutoQuantifiedRequest(1000L, "beef"))
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.save(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    service.updateItem(listId, itemId, request);
+
+    assertThat(item.getCategory()).isEqualTo(ItemCategory.SWEETS);
+    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.LOCKED);
+  }
+
+  @Test
+  @DisplayName("generated auto のルール由来カテゴリが送られた場合はユーザー編集扱いにしないこと")
+  void updateGeneratedAutoRuleCategoryDoesNotLock() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = quantifiedItem("牛肉", 1000L);
+    item.setCategory(null);
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .category(ItemCategory.MEAT)
+            .itemType(ItemType.QUANTIFIED)
+            .quantified(generatedAutoQuantifiedRequest(1000L, "beef"))
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.save(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    service.updateItem(listId, itemId, request);
+
+    assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
+  }
+
   private static Item plainItem(String itemName) {
     Item item = new Item();
     item.setName(itemName);
@@ -146,5 +218,16 @@ class ItemCommandServiceTest {
     item.setQuantified(quantified);
 
     return item;
+  }
+
+  private static QuantifiedItemRequest generatedAutoQuantifiedRequest(
+      long quantity, String generatorKey) {
+    return QuantifiedItemRequest.builder()
+        .quantity(quantity)
+        .baseUnit(BaseUnit.G)
+        .origin(Origin.GENERATED)
+        .regenerationPolicy(RegenerationPolicy.AUTO)
+        .generatorKey(generatorKey)
+        .build();
   }
 }
