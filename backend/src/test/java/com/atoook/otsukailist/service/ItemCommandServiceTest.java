@@ -1,16 +1,21 @@
 package com.atoook.otsukailist.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import java.util.UUID;
 
+import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
+import com.atoook.otsukailist.exception.BadRequestException;
 import com.atoook.otsukailist.model.BaseUnit;
 import com.atoook.otsukailist.model.Item;
 import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemList;
 import com.atoook.otsukailist.model.ItemQuantified;
 import com.atoook.otsukailist.model.ItemType;
 import com.atoook.otsukailist.model.Origin;
@@ -39,6 +44,132 @@ class ItemCommandServiceTest {
   @BeforeEach
   void setUp() {
     service = new ItemCommandService(itemRepo, itemListRepo, memberRepo, listRevisionService);
+  }
+
+  @Test
+  @DisplayName("作成時はitemType未指定なら通常アイテムとして保存すること")
+  void createItemDefaultsToPlainItem() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList("買い物");
+    CreateItemRequest request = CreateItemRequest.builder().name(" 牛乳 ").build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    var result = service.createItem(listId, request);
+
+    assertThat(result.getData().getName()).isEqualTo("牛乳");
+    assertThat(result.getData().getItemType()).isEqualTo(ItemType.PLAIN);
+    assertThat(result.getData().getQuantified()).isNull();
+  }
+
+  @Test
+  @DisplayName("数量付きアイテム作成時は詳細情報が必須であること")
+  void createQuantifiedItemRequiresQuantifiedDetails() {
+    UUID listId = UUID.randomUUID();
+    CreateItemRequest request =
+        CreateItemRequest.builder().name("牛肉").itemType(ItemType.QUANTIFIED).build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+
+    assertThatThrownBy(() -> service.createItem(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("数量付きアイテム情報が未指定です");
+  }
+
+  @Test
+  @DisplayName("通常アイテム作成時に数量付き詳細を送った場合は拒否すること")
+  void createPlainItemRejectsQuantifiedDetails() {
+    UUID listId = UUID.randomUUID();
+    CreateItemRequest request =
+        CreateItemRequest.builder()
+            .name("牛肉")
+            .itemType(ItemType.PLAIN)
+            .quantified(manualNoneQuantifiedRequest(1000L))
+            .build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+
+    assertThatThrownBy(() -> service.createItem(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("通常アイテムに数量付きアイテム情報は指定できません");
+  }
+
+  @Test
+  @DisplayName("自動生成アイテム作成時は既知の生成ルールからカテゴリを解決すること")
+  void createGeneratedItemResolvesCategoryFromKnownGeneratorKey() {
+    UUID listId = UUID.randomUUID();
+    CreateItemRequest request =
+        CreateItemRequest.builder()
+            .name("牛肉")
+            .itemType(ItemType.QUANTIFIED)
+            .quantified(generatedAutoQuantifiedRequest(1000L, "beef"))
+            .build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    var result = service.createItem(listId, request);
+
+    assertThat(result.getData().getItemType()).isEqualTo(ItemType.QUANTIFIED);
+    assertThat(result.getData().getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(result.getData().getQuantified().getGeneratorKey()).isEqualTo("beef");
+  }
+
+  @Test
+  @DisplayName("更新時に空白のみの名前を送った場合は拒否すること")
+  void updateItemRejectsBlankNameAfterTrim() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    UpdateItemRequest request = UpdateItemRequest.builder().name("   ").build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(plainItem("牛乳")));
+
+    assertThatThrownBy(() -> service.updateItem(listId, itemId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("アイテム名は必須です");
+  }
+
+  @Test
+  @DisplayName("数量付きアイテムの不正なorigin/policy組み合わせは拒否すること")
+  void updateQuantifiedItemRejectsInvalidOriginPolicyCombination() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .quantified(
+                QuantifiedItemRequest.builder()
+                    .quantity(1000L)
+                    .baseUnit(BaseUnit.G)
+                    .origin(Origin.MANUAL)
+                    .regenerationPolicy(RegenerationPolicy.AUTO)
+                    .build())
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(plainItem("牛肉")));
+
+    assertThatThrownBy(() -> service.updateItem(listId, itemId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("数量付きアイテムの生成状態が不正です");
+  }
+
+  @Test
+  @DisplayName("自動生成アイテムの未知の生成ルールIDは拒否すること")
+  void updateGeneratedItemRejectsUnknownGeneratorKey() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .quantified(generatedAutoQuantifiedRequest(1000L, "unknown"))
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(plainItem("牛肉")));
+
+    assertThatThrownBy(() -> service.updateItem(listId, itemId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("未知の生成ルールIDです");
   }
 
   @Test
@@ -202,6 +333,22 @@ class ItemCommandServiceTest {
     item.setItemType(ItemType.PLAIN);
 
     return item;
+  }
+
+  private static ItemList itemList(String name) {
+    ItemList itemList = new ItemList();
+    itemList.setName(name);
+
+    return itemList;
+  }
+
+  private static QuantifiedItemRequest manualNoneQuantifiedRequest(long quantity) {
+    return QuantifiedItemRequest.builder()
+        .quantity(quantity)
+        .baseUnit(BaseUnit.G)
+        .origin(Origin.MANUAL)
+        .regenerationPolicy(RegenerationPolicy.NONE)
+        .build();
   }
 
   private static Item quantifiedItem(String itemName, long quantity) {

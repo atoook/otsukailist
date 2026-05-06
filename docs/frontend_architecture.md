@@ -122,7 +122,6 @@ export type Item = {
 };
 
 export type QuantifiedItem = {
-  name: string;
   quantity: number;
   baseUnit: "g" | "ml" | "piece" | "pack";
   origin: "manual" | "generated";

@@ -15,7 +15,8 @@ import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.exception.BadRequestException;
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
-import com.atoook.otsukailist.generation.BBQGenerationRules;
+import com.atoook.otsukailist.generation.GenerationRule;
+import com.atoook.otsukailist.generation.GenerationRules;
 import com.atoook.otsukailist.mapper.ItemMapper;
 import com.atoook.otsukailist.model.Item;
 import com.atoook.otsukailist.model.ItemCategory;
@@ -48,6 +49,9 @@ public class ItemCommandService {
   private static final String MSG_QUANTIFIED_NOT_ALLOWED = "通常アイテムに数量付きアイテム情報は指定できません";
   private static final String MSG_ITEM_NOT_QUANTIFIED = "数量付きアイテムではありません";
   private static final String MSG_GENERATOR_KEY_REQUIRED = "自動生成アイテムには生成ルールIDが必須です";
+  private static final String MSG_GENERATOR_KEY_UNKNOWN = "未知の生成ルールIDです";
+  private static final String MSG_ITEM_NAME_REQUIRED = "アイテム名は必須です";
+  private static final String MSG_QUANTIFIED_STATE_INVALID = "数量付きアイテムの生成状態が不正です";
 
   /**
    * Item追加（listIdスコープ） - 完了状態を作成時に許可するなら completedByMemberId もDTOに追加するのが整合的 - ミニマムなら「作成時は未完了固定」を推奨
@@ -143,7 +147,7 @@ public class ItemCommandService {
       throw new BadRequestException(MSG_QUANTIFIED_NOT_ALLOWED);
     }
     if (req.getQuantified() != null) {
-      validateGeneratorKey(req.getQuantified());
+      validateQuantifiedState(req.getQuantified());
     }
   }
 
@@ -171,7 +175,7 @@ public class ItemCommandService {
 
   private static void updateItemName(Item item, UpdateItemRequest req) {
     if (req.getName() != null) {
-      item.setName(req.getName().trim());
+      item.setName(normalizeRequiredText(req.getName(), MSG_ITEM_NAME_REQUIRED));
     }
   }
 
@@ -186,7 +190,7 @@ public class ItemCommandService {
     if (req.getQuantified() == null) {
       return false;
     }
-    validateGeneratorKey(req.getQuantified());
+    validateQuantifiedState(req.getQuantified());
     if (item.getItemType() == ItemType.PLAIN) {
       item.setItemType(ItemType.QUANTIFIED);
       item.setQuantified(ItemMapper.toQuantifiedEntity(req.getQuantified()));
@@ -306,8 +310,7 @@ public class ItemCommandService {
     if (normalizedGeneratorKey == null) {
       return null;
     }
-    BBQGenerationRules.BBQGenerationRule rule =
-        BBQGenerationRules.VALUES.get(normalizedGeneratorKey);
+    GenerationRule rule = GenerationRules.findByGeneratorKey(normalizedGeneratorKey);
     return rule == null ? null : rule.category();
   }
 
@@ -326,10 +329,27 @@ public class ItemCommandService {
     return resolveCategory(requestedCategory, req.getQuantified());
   }
 
-  private static void validateGeneratorKey(QuantifiedItemRequest quantified) {
+  private static void validateQuantifiedState(QuantifiedItemRequest quantified) {
+    if (quantified.getOrigin() == Origin.MANUAL
+        && quantified.getRegenerationPolicy() == RegenerationPolicy.NONE) {
+      return;
+    }
     if (quantified.getOrigin() == Origin.GENERATED
-        && normalizeNullableText(quantified.getGeneratorKey()) == null) {
+        && (quantified.getRegenerationPolicy() == RegenerationPolicy.AUTO
+            || quantified.getRegenerationPolicy() == RegenerationPolicy.LOCKED)) {
+      validateGeneratedRule(quantified);
+      return;
+    }
+    throw new BadRequestException(MSG_QUANTIFIED_STATE_INVALID);
+  }
+
+  private static void validateGeneratedRule(QuantifiedItemRequest quantified) {
+    String generatorKey = normalizeNullableText(quantified.getGeneratorKey());
+    if (generatorKey == null) {
       throw new BadRequestException(MSG_GENERATOR_KEY_REQUIRED);
+    }
+    if (!GenerationRules.containsGeneratorKey(generatorKey)) {
+      throw new BadRequestException(MSG_GENERATOR_KEY_UNKNOWN);
     }
   }
 
@@ -341,6 +361,14 @@ public class ItemCommandService {
   }
 
   private static String resolveItemName(CreateItemRequest req) {
-    return req.getName().trim();
+    return normalizeRequiredText(req.getName(), MSG_ITEM_NAME_REQUIRED);
+  }
+
+  private static String normalizeRequiredText(String value, String message) {
+    String normalizedValue = normalizeNullableText(value);
+    if (normalizedValue == null) {
+      throw new BadRequestException(message);
+    }
+    return normalizedValue;
   }
 }

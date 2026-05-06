@@ -93,8 +93,9 @@ MVP では以下を DB マスタ化しない。
 管理対象:
 
 - Backend: `backend/src/main/java/com/atoook/otsukailist/generation`
-- Frontend: `frontend/src/lib/itemCategoryConstants.ts`
-- Frontend: `frontend/src/lib/listGenerationConstants.ts`
+- Frontend category values: `frontend/src/types/item-category.ts`
+- Frontend category labels/sort order: `frontend/src/lib/itemCategoryConstants.ts`
+- Frontend unit/generation values: `frontend/src/types/list-generation.ts`
 
 ---
 
@@ -121,6 +122,18 @@ MVP では以下を DB マスタ化しない。
 - 再生成時の突合キー
 - 表示名の決定には直接使わない
 - 表示名は生成ルール定義の label を初期値として `item.name` にコピーする
+
+---
+
+## 生成ルールの拡張パターン
+
+生成ルールは **Strategy を Registry で管理する構成（table-driven）** として扱う。
+
+- `GenerationRule` を共通インターフェースとし、各生成ルールはこの Strategy を実装する。
+- `GenerationRules` は `generator_key -> GenerationRule` の対応を一元管理する Registry とする。
+- Service 層は BBQ などの具体ルールクラスに依存せず、`GenerationRules` 経由で key 検証・カテゴリ解決を行う。
+- BBQ 以外のテンプレートを追加する場合は、具体ルール定義を追加し、Registry に集約する。
+- 生成ルールの選択は Map ベースで行い、Service 層にテンプレート別の条件分岐を増やさない。
 
 ---
 

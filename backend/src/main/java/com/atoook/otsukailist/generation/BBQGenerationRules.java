@@ -19,5 +19,6 @@ public class BBQGenerationRules {
               new BBQGenerationRule("yakisoba", ItemCategory.STAPLE, BaseUnit.PIECE, "piece"));
 
   public record BBQGenerationRule(
-      String generatorKey, ItemCategory category, BaseUnit baseUnit, String displayUnit) {}
+      String generatorKey, ItemCategory category, BaseUnit baseUnit, String displayUnit)
+      implements GenerationRule {}
 }
