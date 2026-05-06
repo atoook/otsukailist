@@ -6,7 +6,6 @@ import MainButton from '../components/MainButton.vue';
 import TextInput from '../components/TextInput.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import DropDown from '../components/DropDown.vue';
-import IconTools from '../components/icons/IconTools.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import type { Item } from '../types/item';
 import { ITEM_CATEGORIES, type ItemCategory } from '../types/item-category';
@@ -35,7 +34,6 @@ export default defineComponent({
     TextInput,
     LoadingSpinner,
     DropDown,
-    IconTools,
     IconUsers
   },
   data(): {
@@ -380,7 +378,6 @@ export default defineComponent({
   </ContentArea>
   <ContentArea v-else>
     <div class="text-center mb-6">
-      <div class="text-5xl mb-3 flex justify-center"><IconTools /></div>
       <h2 class="text-2xl font-bold text-charcoal-800">アイテムを編集</h2>
     </div>
 

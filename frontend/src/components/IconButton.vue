@@ -1,6 +1,6 @@
 <template>
   <button type="button" :class="buttonClass" :disabled="disabled" v-bind="buttonAttrs">
-    <span :class="iconClass" aria-hidden="true">
+    <span :class="['flex h-full w-full items-center justify-center leading-none', iconClass]" aria-hidden="true">
       <slot />
     </span>
   </button>

@@ -27,7 +27,16 @@
         />
         <div v-if="quantifiedLabel || categoryLabel" class="mt-1 flex flex-wrap gap-1">
           <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="secondary" />
-          <BadgeTag v-if="categoryLabel" :text="categoryLabel" size="small" variant="secondary" />
+          <FilterBadgeButton
+            v-if="categoryLabel"
+            :text="categoryLabel"
+            variant="secondary"
+            :active="categoryFilterActive"
+            :filter-label="`${categoryLabel}カテゴリーで絞り込む`"
+            :clear-label="`${categoryLabel}カテゴリーの絞り込みを解除`"
+            @filter="handleCategoryFilter"
+            @clear="handleCategoryFilterClear"
+          />
         </div>
         <p v-if="shouldShowAutosaveHint" class="text-xs text-charcoal-500 mt-1">変更は自動保存されます</p>
       </div>
@@ -37,34 +46,33 @@
         </span>
         <div v-if="quantifiedLabel || categoryLabel" class="mt-1 flex flex-wrap gap-1">
           <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="secondary" />
-          <BadgeTag v-if="categoryLabel" :text="categoryLabel" size="small" variant="secondary" />
+          <FilterBadgeButton
+            v-if="categoryLabel"
+            :text="categoryLabel"
+            variant="secondary"
+            :active="categoryFilterActive"
+            :filter-label="`${categoryLabel}カテゴリーで絞り込む`"
+            :clear-label="`${categoryLabel}カテゴリーの絞り込みを解除`"
+            @filter="handleCategoryFilter"
+            @clear="handleCategoryFilterClear"
+          />
         </div>
       </div>
       <span v-if="showSaveIndicator" class="text-success-600 flex items-center" role="status" aria-label="保存済み"
         ><IconCheck
       /></span>
-      <span v-if="memberBadgeText" class="relative inline-flex shrink-0">
-        <button
-          type="button"
-          class="rounded-full focus:outline-none focus:ring-2 focus:ring-wood-300 disabled:cursor-default disabled:opacity-60"
-          :disabled="!memberId"
-          :aria-disabled="!memberId"
-          :aria-label="`${memberName}で絞り込む`"
-          @click="handleMemberFilter"
-        >
-          <BadgeTag :text="memberBadgeText" size="small" :variant="memberBadgeVariant" />
-        </button>
-        <IconButton
-          v-if="memberFilterActive && memberId"
-          class="absolute -right-1.5 -top-1.5 border border-ember-200 bg-wood-50"
-          variant="danger"
-          size="tiny"
-          :aria-label="`${memberName}の絞り込みを解除`"
-          @click.stop="handleMemberFilterClear"
-        >
-          <IconClose />
-        </IconButton>
-      </span>
+      <FilterBadgeButton
+        v-if="memberBadgeText"
+        class="shrink-0"
+        :text="memberBadgeText"
+        :variant="memberBadgeVariant"
+        :active="memberFilterActive"
+        :disabled="!memberId"
+        :filter-label="`${memberName}で絞り込む`"
+        :clear-label="`${memberName}の絞り込みを解除`"
+        @filter="handleMemberFilter"
+        @clear="handleMemberFilterClear"
+      />
       <IconButton variant="wood" size="small" :aria-label="`${item.name}を編集`" @click="handleEdit(item)">
         <IconEllipsisVertical />
       </IconButton>
@@ -85,16 +93,16 @@ import CheckBox from './CheckBox.vue';
 import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import BadgeTag from './BadgeTag.vue';
+import FilterBadgeButton from './FilterBadgeButton.vue';
 import IconButton from './IconButton.vue';
 import IconCheck from './icons/IconCheck.vue';
-import IconClose from './icons/IconClose.vue';
 import IconEllipsisVertical from './icons/IconEllipsisVertical.vue';
 import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isItemCompleted } from '../types/item';
 import { normalizeText } from '../utils/text-normalization';
 import { UNIT_DEFINITIONS } from '@/types/list-generation';
-import { ITEM_CATEGORIES } from '@/types/item-category';
+import { ITEM_CATEGORIES, type ItemCategory } from '@/types/item-category';
 
 export default {
   name: 'ItemBox',
@@ -103,9 +111,9 @@ export default {
     TextInput,
     SwipeContainer,
     BadgeTag,
+    FilterBadgeButton,
     IconButton,
     IconCheck,
-    IconClose,
     IconTrash,
     IconEllipsisVertical
   },
@@ -140,9 +148,23 @@ export default {
     memberFilterActive: {
       type: Boolean,
       default: false
+    },
+    categoryFilterActive: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['toggle', 'info', 'delete', 'modify', 'edit', 'member-filter', 'clear-member-filter'],
+  emits: [
+    'toggle',
+    'info',
+    'delete',
+    'modify',
+    'edit',
+    'member-filter',
+    'clear-member-filter',
+    'category-filter',
+    'clear-category-filter'
+  ],
   created() {
     this.newName = this.item.name;
   },
@@ -198,10 +220,6 @@ export default {
       this.$emit('edit', item);
     },
     handleMemberFilter() {
-      if (this.memberFilterActive) {
-        this.handleMemberFilterClear();
-        return;
-      }
       if (!this.memberId) {
         return;
       }
@@ -209,6 +227,15 @@ export default {
     },
     handleMemberFilterClear() {
       this.$emit('clear-member-filter');
+    },
+    handleCategoryFilter() {
+      if (!this.item.category) {
+        return;
+      }
+      this.$emit('category-filter', this.item.category as ItemCategory);
+    },
+    handleCategoryFilterClear() {
+      this.$emit('clear-category-filter');
     },
     handleKeyDown(event: KeyboardEvent) {
       // スペースキーまたはEnterキーでチェックボックストグル
