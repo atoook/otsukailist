@@ -18,12 +18,11 @@ CREATE INDEX IF NOT EXISTS idx_item_list_item_type ON item (list_id, item_type);
 
 CREATE TABLE IF NOT EXISTS item_quantified (
         item_id UUID PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
         quantity BIGINT NOT NULL CHECK (quantity >= 0),
         base_unit VARCHAR(20) NOT NULL,
         origin VARCHAR(20) NOT NULL,
         regeneration_policy VARCHAR(20) NOT NULL,
-        generator_key VARCHAR(80) NOT NULL,
+        generator_key VARCHAR(80),
 
         CONSTRAINT fk_item_quantified_item_id
             FOREIGN KEY (item_id) REFERENCES item(id) ON DELETE CASCADE,
