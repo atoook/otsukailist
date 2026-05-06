@@ -1,3 +1,6 @@
+import type { ItemType, QuantifiedItem } from './list-generation';
+import type { ItemCategory } from './item-category';
+
 export type UUID = string;
 
 export type MutationResponse<T> = {
@@ -20,6 +23,9 @@ export type Member = {
 export type Item = {
   id: UUID;
   name: string;
+  itemType: ItemType;
+  category: ItemCategory | null;
+  quantified: QuantifiedItem | null;
   completed: boolean;
   assignedMemberId: UUID | null;
   completedByMemberId: UUID | null;

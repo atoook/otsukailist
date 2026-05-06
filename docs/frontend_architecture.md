@@ -110,11 +110,23 @@ export type Member = {
 export type Item = {
   id: UUID;
   name: string;
+  itemType: "plain" | "quantified";
+  category: ItemCategory | null;
+  quantified: QuantifiedItem | null;
   completed: boolean;
-  completedByMemberId?: UUID | null;
-  completedAt?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
+  assignedMemberId: UUID | null;
+  completedByMemberId: UUID | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type QuantifiedItem = {
+  quantity: number;
+  baseUnit: "g" | "ml" | "piece" | "pack";
+  origin: "manual" | "generated";
+  regenerationPolicy: "none" | "auto" | "locked";
+  generatorKey: string | null;
 };
 
 export type ItemListSnapshot = {
@@ -140,6 +152,8 @@ export type DeleteResponse = {
   deletedMemberId?: UUID;
 };
 ```
+
+数量付き item とテンプレート自動生成の方針は `docs/list-generation-automation.md` を参照。
 
 ---
 

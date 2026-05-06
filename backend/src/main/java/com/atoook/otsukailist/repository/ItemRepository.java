@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,7 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
   // ※ findAll() や条件なし検索は使用禁止（設計思想に反する）
 
   // 一覧表示用の並び順（未完了: 追加順の最新先頭 / 完了: 完了日時の新しい順）
+  @EntityGraph(attributePaths = "quantified")
   @Query(
       """
       SELECT i
@@ -31,6 +33,7 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
   List<Item> findByItemListIdOrderByDisplayRules(@Param("itemListId") UUID itemListId);
 
   // 特定のアイテムを取得
+  @EntityGraph(attributePaths = "quantified")
   Optional<Item> findByIdAndItemListId(UUID itemId, UUID itemListId);
 
   // リスト内のアイテム存在チェック
