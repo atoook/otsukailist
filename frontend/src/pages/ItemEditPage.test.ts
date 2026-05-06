@@ -63,6 +63,18 @@ describe('ItemEditPage', () => {
       expect(vm.hasValidQuantifiedInput).toBe(true);
       expect(vm.hasRequiredInput).toBe(true);
     });
+
+    it('JSで安全に表現できない整数は更新不可にする', () => {
+      const vm = createVm({
+        itemName: '牛肉',
+        quantifiedQuantity: String(Number.MAX_SAFE_INTEGER + 1),
+        quantifiedBaseUnit: 'g'
+      });
+
+      expect(vm.hasQuantifiedDraftInput).toBe(true);
+      expect(vm.hasValidQuantifiedInput).toBe(false);
+      expect(vm.hasRequiredInput).toBe(false);
+    });
   });
 
   describe('数量付きアイテムの更新payload', () => {

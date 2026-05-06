@@ -163,14 +163,15 @@ export default {
       if (this.item.itemType !== 'quantified' || !this.item.quantified) {
         return '';
       }
-      const unitLabel = UNIT_DEFINITIONS[this.item.quantified.baseUnit].label;
+      const unitDefinition = UNIT_DEFINITIONS[this.item.quantified.baseUnit];
+      const unitLabel = unitDefinition?.label ?? this.item.quantified.baseUnit ?? '';
       return `${this.item.quantified.quantity}${unitLabel}`;
     },
     categoryLabel() {
       if (!this.item.category) {
         return '';
       }
-      return ITEM_CATEGORIES[this.item.category].label;
+      return ITEM_CATEGORIES[this.item.category]?.label ?? this.item.category;
     }
   },
   watch: {

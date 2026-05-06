@@ -305,6 +305,7 @@ export default defineComponent({
         !!this.normalizedItemName &&
         !!this.normalizedQuantifiedQuantity &&
         Number.isInteger(this.parsedQuantifiedQuantity) &&
+        Number.isSafeInteger(this.parsedQuantifiedQuantity) &&
         this.parsedQuantifiedQuantity >= 0 &&
         !!this.quantifiedBaseUnit &&
         (!this.requiresGeneratorKey || !!this.quantifiedGeneratorKey)
