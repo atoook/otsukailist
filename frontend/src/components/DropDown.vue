@@ -66,7 +66,7 @@ export default {
 
       // 幅をwidthプロパティで制御
       const widthClasses = {
-        full: 'flex-1',
+        full: 'w-full',
         fixed: 'w-28 min-[380px]:w-32'
       };
 
