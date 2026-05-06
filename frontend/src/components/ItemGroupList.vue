@@ -279,7 +279,7 @@ export default defineComponent({
       上のフォームからアイテムを追加してください。
     </div>
 
-    <!-- 検索結果がない場合 -->
+    <!-- 絞り込み結果がない場合 -->
     <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
       <div class="text-4xl mb-3 flex justify-center"><IconTired /></div>
       {{ emptyResultMessage }}
