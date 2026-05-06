@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 
 import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemPreparationType;
 import com.atoook.otsukailist.model.ItemType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -37,6 +38,10 @@ public class UpdateItemRequest {
 
   @JsonIgnore private boolean categoryPresent;
 
+  private ItemPreparationType preparationType;
+
+  @JsonIgnore private boolean preparationTypePresent;
+
   private UUID assignedMemberId;
 
   @JsonIgnore private boolean assignedMemberIdPresent;
@@ -50,6 +55,16 @@ public class UpdateItemRequest {
   public void setCategory(ItemCategory category) {
     this.category = category;
     this.categoryPresent = true;
+  }
+
+  @JsonSetter("preparationType")
+  public void setPreparationType(ItemPreparationType preparationType) {
+    this.preparationType = preparationType;
+    this.preparationTypePresent = true;
+  }
+
+  public ItemPreparationType getPreparationTypeOrDefault(ItemPreparationType defaultValue) {
+    return preparationTypePresent ? preparationType : defaultValue;
   }
 
   @JsonSetter("assignedMemberId")
@@ -72,6 +87,12 @@ public class UpdateItemRequest {
     public UpdateItemRequestBuilder category(ItemCategory category) {
       this.category = category;
       this.categoryPresent = true;
+      return this;
+    }
+
+    public UpdateItemRequestBuilder preparationType(ItemPreparationType preparationType) {
+      this.preparationType = preparationType;
+      this.preparationTypePresent = true;
       return this;
     }
   }

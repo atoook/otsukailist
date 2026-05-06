@@ -40,6 +40,9 @@ public class Item {
   @Column(name = "category", columnDefinition = "text")
   private ItemCategory category;
 
+  @Column(name = "preparation_type", columnDefinition = "text")
+  private ItemPreparationType preparationType;
+
   // DB物理名: is_completed（TINYINT(1)）
   @Column(name = "is_completed", nullable = false)
   private boolean completed;

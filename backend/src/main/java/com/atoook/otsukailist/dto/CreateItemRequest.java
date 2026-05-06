@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemPreparationType;
 import com.atoook.otsukailist.model.ItemType;
 
 import lombok.AllArgsConstructor;
@@ -31,6 +32,8 @@ public class CreateItemRequest {
   @Builder.Default private ItemType itemType = ItemType.PLAIN;
 
   private ItemCategory category;
+
+  private ItemPreparationType preparationType;
 
   @Valid private QuantifiedItemRequest quantified;
 }

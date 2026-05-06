@@ -1,12 +1,14 @@
 import { http } from '@/lib/http';
 import type { DeleteResponse, Item, MutationResponse, UUID } from '@/types/api';
 import type { ItemCategory } from '@/types/item-category';
+import type { ItemPreparationType } from '@/types/item-preparation-type';
 import type { ItemType, QuantifiedItem } from '@/types/list-generation';
 
 export type UpdateItemPayload = {
   name?: string;
   itemType?: ItemType;
   category?: ItemCategory | null;
+  preparationType?: ItemPreparationType | null;
   completed?: boolean;
   assignedMemberId?: UUID | null;
   completedByMemberId?: UUID | null;
@@ -16,6 +18,7 @@ export type UpdateItemPayload = {
 type CreateItemPayloadBase = {
   name: string;
   category?: ItemCategory | null;
+  preparationType?: ItemPreparationType | null;
 };
 
 type CreatePlainItemPayload = CreateItemPayloadBase & {

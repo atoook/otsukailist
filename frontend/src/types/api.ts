@@ -1,5 +1,6 @@
 import type { ItemType, QuantifiedItem } from './list-generation';
 import type { ItemCategory } from './item-category';
+import type { ItemPreparationType } from './item-preparation-type';
 
 export type UUID = string;
 
@@ -25,6 +26,7 @@ export type Item = {
   name: string;
   itemType: ItemType;
   category: ItemCategory | null;
+  preparationType: ItemPreparationType | null;
   quantified: QuantifiedItem | null;
   completed: boolean;
   assignedMemberId: UUID | null;

@@ -24,6 +24,7 @@ public class ItemMapper {
         .name(entity.getName().trim())
         .itemType(entity.getItemType() == null ? ItemType.PLAIN : entity.getItemType())
         .category(entity.getCategory())
+        .preparationType(entity.getPreparationType())
         .quantified(toQuantifiedResponse(entity.getQuantified()))
         .completed(entity.isCompleted())
         .assignedMemberId(entity.getAssignedMemberId())

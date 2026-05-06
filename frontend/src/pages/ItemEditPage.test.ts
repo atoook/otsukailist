@@ -82,6 +82,7 @@ describe('ItemEditPage', () => {
       const vm = createVm({
         itemName: '牛肉',
         selectedCategory: 'meat',
+        selectedPreparationType: '',
         itemEditMode: 'plain',
         quantifiedQuantity: '',
         quantifiedBaseUnit: ''
@@ -92,6 +93,7 @@ describe('ItemEditPage', () => {
       expect(payload).toMatchObject({
         name: '牛肉',
         category: 'meat',
+        preparationType: null,
         itemType: 'plain'
       });
       expect(payload.quantified).toBeUndefined();
@@ -101,6 +103,7 @@ describe('ItemEditPage', () => {
       const vm = createVm({
         itemName: '牛肉',
         selectedCategory: 'meat',
+        selectedPreparationType: '',
         itemEditMode: 'manual_none',
         quantifiedQuantity: '1000',
         quantifiedBaseUnit: 'g',
@@ -110,6 +113,7 @@ describe('ItemEditPage', () => {
       const payload = (vm.buildUpdatePayload as (name: string) => Record<string, unknown>)('牛肉');
 
       expect(payload.category).toBe('meat');
+      expect(payload.preparationType).toBeNull();
       expect(payload.itemType).toBe('quantified');
       expect(payload.quantified).toMatchObject({
         quantity: 1000,
@@ -164,6 +168,77 @@ describe('ItemEditPage', () => {
         regenerationPolicy: 'locked',
         generatorKey: 'beef'
       });
+    });
+
+    it('未指定は購入扱いとして null を送信する', () => {
+      const vm = createVm({
+        itemName: '包丁',
+        selectedCategory: '',
+        selectedPreparationType: '',
+        itemEditMode: 'plain',
+        quantifiedQuantity: '',
+        quantifiedBaseUnit: ''
+      });
+
+      const payload = (vm.buildUpdatePayload as (name: string) => Record<string, unknown>)('包丁');
+
+      expect(payload.preparationType).toBeNull();
+    });
+
+    it('持参物はカテゴリと数量を送信しない', () => {
+      const vm = createVm({
+        itemName: '包丁',
+        selectedCategory: 'daily_goods',
+        selectedPreparationType: 'bring',
+        itemEditMode: 'manual_none',
+        quantifiedQuantity: '1',
+        quantifiedBaseUnit: 'piece'
+      });
+
+      const payload = (vm.buildUpdatePayload as (name: string) => Record<string, unknown>)('包丁');
+
+      expect(payload).toMatchObject({
+        name: '包丁',
+        category: null,
+        preparationType: 'bring',
+        itemType: 'plain'
+      });
+      expect(payload.quantified).toBeUndefined();
+    });
+  });
+
+  describe('持参物チェックボックス', () => {
+    it('オンにするとカテゴリと数量入力状態をクリアする', () => {
+      const vm = createVm({
+        selectedCategory: 'daily_goods',
+        selectedPreparationType: '',
+        itemEditMode: 'manual_none',
+        quantifiedQuantity: '1',
+        quantifiedBaseUnit: 'piece',
+        quantifiedGeneratorKey: 'beef'
+      });
+
+      (vm.setBringItem as (value: boolean) => void)(true);
+
+      expect(vm.selectedPreparationType).toBe('bring');
+      expect(vm.selectedCategory).toBe('');
+      expect(vm.itemEditMode).toBe('plain');
+      expect(vm.quantifiedQuantity).toBe('');
+      expect(vm.quantifiedBaseUnit).toBe('');
+      expect(vm.quantifiedGeneratorKey).toBe('');
+    });
+
+    it('オンの間は数量入力をバリデーション対象にしない', () => {
+      const vm = createVm({
+        itemName: '包丁',
+        selectedPreparationType: 'bring',
+        quantifiedQuantity: 'abc',
+        quantifiedBaseUnit: ''
+      });
+
+      expect(vm.hasQuantifiedDraftInput).toBe(false);
+      expect(vm.hasValidQuantifiedInput).toBe(true);
+      expect(vm.hasRequiredInput).toBe(true);
     });
   });
 });

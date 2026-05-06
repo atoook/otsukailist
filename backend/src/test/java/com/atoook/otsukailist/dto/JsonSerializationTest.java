@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.atoook.otsukailist.model.BaseUnit;
 import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemPreparationType;
 import com.atoook.otsukailist.model.ItemType;
 import com.atoook.otsukailist.model.Origin;
 import com.atoook.otsukailist.model.RegenerationPolicy;
@@ -44,6 +45,7 @@ class JsonSerializationTest {
             .name("テストアイテム")
             .itemType(ItemType.PLAIN)
             .category(ItemCategory.SWEETS)
+            .preparationType(ItemPreparationType.BRING)
             .quantified(null)
             .completed(true)
             .assignedMemberId(assignedMemberId)
@@ -61,6 +63,7 @@ class JsonSerializationTest {
     assertThat(jsonNode.get("id").asText()).isEqualTo(id.toString());
     assertThat(jsonNode.get("itemType").asText()).isEqualTo("plain");
     assertThat(jsonNode.get("category").asText()).isEqualTo("sweets");
+    assertThat(jsonNode.get("preparationType").asText()).isEqualTo("bring");
     assertThat(jsonNode.get("quantified").isNull()).isTrue();
     assertThat(jsonNode.get("completed").asBoolean()).isTrue();
     assertThat(jsonNode.get("assignedMemberId").asText()).isEqualTo(assignedMemberId.toString());
@@ -82,6 +85,7 @@ class JsonSerializationTest {
     assertThat(deserialized.getName()).isEqualTo("テストアイテム");
     assertThat(deserialized.getItemType()).isEqualTo(ItemType.PLAIN);
     assertThat(deserialized.getCategory()).isEqualTo(ItemCategory.SWEETS);
+    assertThat(deserialized.getPreparationType()).isEqualTo(ItemPreparationType.BRING);
     assertThat(deserialized.getQuantified()).isNull();
   }
 
@@ -98,6 +102,7 @@ class JsonSerializationTest {
             .name("牛肉")
             .itemType(ItemType.QUANTIFIED)
             .category(ItemCategory.MEAT)
+            .preparationType(null)
             .quantified(
                 QuantifiedItemResponse.builder()
                     .quantity(1000L)
@@ -116,6 +121,7 @@ class JsonSerializationTest {
 
     assertThat(jsonNode.get("itemType").asText()).isEqualTo("quantified");
     assertThat(jsonNode.get("category").asText()).isEqualTo("meat");
+    assertThat(jsonNode.get("preparationType").isNull()).isTrue();
     assertThat(jsonNode.get("quantified").has("name")).isFalse();
     assertThat(jsonNode.get("quantified").get("quantity").asLong()).isEqualTo(1000L);
     assertThat(jsonNode.get("quantified").get("baseUnit").asText()).isEqualTo("g");
@@ -154,6 +160,7 @@ class JsonSerializationTest {
                     "name": "牛肉 1000g",
                     "itemType": "quantified",
                     "category": "meat",
+                    "preparationType": "bring",
                     "quantified": {
                       "quantity": 1000,
                       "baseUnit": "g",
@@ -168,6 +175,7 @@ class JsonSerializationTest {
 
     assertThat(request.getItemType()).isEqualTo(ItemType.QUANTIFIED);
     assertThat(request.getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(request.getPreparationType()).isEqualTo(ItemPreparationType.BRING);
     assertThat(request.getQuantified().getQuantity()).isEqualTo(1000L);
     assertThat(request.getQuantified().getBaseUnit()).isEqualTo(BaseUnit.G);
     assertThat(request.getQuantified().getOrigin()).isEqualTo(Origin.GENERATED);

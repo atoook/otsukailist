@@ -25,8 +25,18 @@
           @blur="handleBlur"
           variant="inline"
         />
-        <div v-if="quantifiedLabel || categoryLabel" class="mt-1 flex flex-wrap gap-1">
-          <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="secondary" />
+        <div v-if="quantifiedLabel || categoryLabel || preparationTypeLabel" class="mt-1 flex flex-wrap gap-1">
+          <FilterBadgeButton
+            v-if="preparationTypeLabel"
+            :text="preparationTypeLabel"
+            variant="secondary"
+            :active="preparationTypeFilterActive"
+            :filter-label="`${preparationTypeLabel}で絞り込む`"
+            :clear-label="`${preparationTypeLabel}の絞り込みを解除`"
+            @filter="handlePreparationTypeFilter"
+            @clear="handlePreparationTypeFilterClear"
+          />
+          <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="default" />
           <FilterBadgeButton
             v-if="categoryLabel"
             :text="categoryLabel"
@@ -44,8 +54,18 @@
         <span class="truncate line-through text-charcoal-500">
           {{ item.name }}
         </span>
-        <div v-if="quantifiedLabel || categoryLabel" class="mt-1 flex flex-wrap gap-1">
-          <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="secondary" />
+        <div v-if="quantifiedLabel || categoryLabel || preparationTypeLabel" class="mt-1 flex flex-wrap gap-1">
+          <FilterBadgeButton
+            v-if="preparationTypeLabel"
+            :text="preparationTypeLabel"
+            variant="secondary"
+            :active="preparationTypeFilterActive"
+            :filter-label="`${preparationTypeLabel}で絞り込む`"
+            :clear-label="`${preparationTypeLabel}の絞り込みを解除`"
+            @filter="handlePreparationTypeFilter"
+            @clear="handlePreparationTypeFilterClear"
+          />
+          <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="default" />
           <FilterBadgeButton
             v-if="categoryLabel"
             :text="categoryLabel"
@@ -103,6 +123,7 @@ import { isItem, isItemCompleted } from '../types/item';
 import { normalizeText } from '../utils/text-normalization';
 import { UNIT_DEFINITIONS } from '@/types/list-generation';
 import { ITEM_CATEGORIES, type ItemCategory } from '@/types/item-category';
+import { ITEM_PREPARATION_TYPES, type ItemPreparationType } from '@/types/item-preparation-type';
 
 export default {
   name: 'ItemBox',
@@ -152,6 +173,10 @@ export default {
     categoryFilterActive: {
       type: Boolean,
       default: false
+    },
+    preparationTypeFilterActive: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [
@@ -163,7 +188,9 @@ export default {
     'member-filter',
     'clear-member-filter',
     'category-filter',
-    'clear-category-filter'
+    'clear-category-filter',
+    'preparation-type-filter',
+    'clear-preparation-type-filter'
   ],
   created() {
     this.newName = this.item.name;
@@ -194,6 +221,12 @@ export default {
         return '';
       }
       return ITEM_CATEGORIES[this.item.category]?.label ?? this.item.category;
+    },
+    preparationTypeLabel() {
+      if (!this.item.preparationType) {
+        return '';
+      }
+      return ITEM_PREPARATION_TYPES[this.item.preparationType]?.label ?? this.item.preparationType;
     }
   },
   watch: {
@@ -236,6 +269,15 @@ export default {
     },
     handleCategoryFilterClear() {
       this.$emit('clear-category-filter');
+    },
+    handlePreparationTypeFilter() {
+      if (!this.item.preparationType) {
+        return;
+      }
+      this.$emit('preparation-type-filter', this.item.preparationType as ItemPreparationType);
+    },
+    handlePreparationTypeFilterClear() {
+      this.$emit('clear-preparation-type-filter');
     },
     handleKeyDown(event: KeyboardEvent) {
       // スペースキーまたはEnterキーでチェックボックストグル
