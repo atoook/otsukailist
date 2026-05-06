@@ -7,7 +7,7 @@ export const ITEM_CATEGORIES = {
   drinks: { code: 'drinks', label: '飲み物', sortOrder: 60 },
   seasonings: { code: 'seasonings', label: '調味料', sortOrder: 70 },
   sweets: { code: 'sweets', label: 'お菓子', sortOrder: 80 },
-  dailyGoods: { code: 'daily_goods', label: '日用品', sortOrder: 90 },
+  daily_goods: { code: 'daily_goods', label: '日用品', sortOrder: 90 },
   supplies: { code: 'supplies', label: '消耗品', sortOrder: 100 },
   other: { code: 'other', label: 'その他', sortOrder: 999 }
 } as const;

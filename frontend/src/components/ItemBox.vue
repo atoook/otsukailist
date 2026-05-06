@@ -25,11 +25,21 @@
           @blur="handleBlur"
           variant="inline"
         />
+        <div v-if="quantifiedLabel || categoryLabel" class="mt-1 flex flex-wrap gap-1">
+          <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="secondary" />
+          <BadgeTag v-if="categoryLabel" :text="categoryLabel" size="small" variant="secondary" />
+        </div>
         <p v-if="shouldShowAutosaveHint" class="text-xs text-charcoal-500 mt-1">変更は自動保存されます</p>
       </div>
-      <span v-else class="min-w-0 flex-1 truncate line-through text-charcoal-500">
-        {{ item.name }}
-      </span>
+      <div v-else class="min-w-0 flex-1 flex flex-col">
+        <span class="truncate line-through text-charcoal-500">
+          {{ item.name }}
+        </span>
+        <div v-if="quantifiedLabel || categoryLabel" class="mt-1 flex flex-wrap gap-1">
+          <BadgeTag v-if="quantifiedLabel" :text="quantifiedLabel" size="small" variant="secondary" />
+          <BadgeTag v-if="categoryLabel" :text="categoryLabel" size="small" variant="secondary" />
+        </div>
+      </div>
       <span v-if="showSaveIndicator" class="text-success-600 flex items-center" role="status" aria-label="保存済み"
         ><IconCheck
       /></span>
@@ -83,6 +93,8 @@ import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isItemCompleted } from '../types/item';
 import { normalizeText } from '../utils/text-normalization';
+import { UNIT_DEFINITIONS } from '@/types/list-generation';
+import { ITEM_CATEGORIES } from '@/types/item-category';
 
 export default {
   name: 'ItemBox',
@@ -146,6 +158,20 @@ export default {
     },
     memberBadgeText() {
       return this.memberName.trim().charAt(0);
+    },
+    quantifiedLabel() {
+      if (this.item.itemType !== 'quantified' || !this.item.quantified) {
+        return '';
+      }
+      const unitDefinition = UNIT_DEFINITIONS[this.item.quantified.baseUnit];
+      const unitLabel = unitDefinition?.label ?? this.item.quantified.baseUnit ?? '';
+      return `${this.item.quantified.quantity}${unitLabel}`;
+    },
+    categoryLabel() {
+      if (!this.item.category) {
+        return '';
+      }
+      return ITEM_CATEGORIES[this.item.category]?.label ?? this.item.category;
     }
   },
   watch: {
