@@ -144,7 +144,7 @@ MVP では以下を DB マスタ化しない。
 - `item_quantified` による数量付き item 詳細の保存
 - `list_generation_config` による将来の生成条件保存先の確保
 - `item.category` による plain / quantified 共通カテゴリの保存
-- `item.preparationType` による購入 / 持参などの準備方法の保存
+- `item.preparationType` による持参物の保存（`null` は購入扱い、`bring` は持参）
 - `generated` item に対する `generator_key` 必須バリデーション
 - `generated + auto` のカテゴリを生成ルールから決定する処理
 - `generated + auto` item 更新時の `locked` 遷移

@@ -11,11 +11,8 @@ public class ItemPreparationTypes {
   public static final Map<ItemPreparationType, ItemPreparationTypeDefinition> VALUES =
       Map.ofEntries(
           Map.entry(
-              ItemPreparationType.BUY,
-              new ItemPreparationTypeDefinition(ItemPreparationType.BUY, "購入", 10)),
-          Map.entry(
               ItemPreparationType.BRING,
-              new ItemPreparationTypeDefinition(ItemPreparationType.BRING, "持参", 20)));
+              new ItemPreparationTypeDefinition(ItemPreparationType.BRING, "持参", 10)));
 
   public record ItemPreparationTypeDefinition(
       ItemPreparationType code, String label, int sortOrder) {}

@@ -170,11 +170,11 @@ describe('ItemEditPage', () => {
       });
     });
 
-    it('buy が選択済みでも未指定として送信する', () => {
+    it('未指定は購入扱いとして null を送信する', () => {
       const vm = createVm({
         itemName: '包丁',
         selectedCategory: '',
-        selectedPreparationType: 'buy',
+        selectedPreparationType: '',
         itemEditMode: 'plain',
         quantifiedQuantity: '',
         quantifiedBaseUnit: ''

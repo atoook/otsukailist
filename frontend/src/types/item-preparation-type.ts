@@ -1,6 +1,5 @@
 export const ITEM_PREPARATION_TYPES = {
-  buy: { code: 'buy', label: '購入', sortOrder: 10 },
-  bring: { code: 'bring', label: '持参', sortOrder: 20 }
+  bring: { code: 'bring', label: '持参', sortOrder: 10 }
 } as const;
 
 export type ItemPreparationType =

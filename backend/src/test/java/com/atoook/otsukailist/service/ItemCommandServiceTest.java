@@ -248,7 +248,7 @@ class ItemCommandServiceTest {
     UUID listId = UUID.randomUUID();
     UUID itemId = UUID.randomUUID();
     Item item = plainItem("包丁");
-    item.setPreparationType(ItemPreparationType.BUY);
+    item.setPreparationType(null);
     UpdateItemRequest request =
         UpdateItemRequest.builder().preparationType(ItemPreparationType.BRING).build();
 
