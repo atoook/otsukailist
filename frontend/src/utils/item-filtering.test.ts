@@ -7,6 +7,7 @@ const baseItem: Item = {
   name: '牛肉',
   itemType: 'plain',
   category: 'meat',
+  preparationType: null,
   quantified: null,
   completed: false,
   assignedMemberId: null,

@@ -16,6 +16,7 @@ import com.atoook.otsukailist.model.BaseUnit;
 import com.atoook.otsukailist.model.Item;
 import com.atoook.otsukailist.model.ItemCategory;
 import com.atoook.otsukailist.model.ItemList;
+import com.atoook.otsukailist.model.ItemPreparationType;
 import com.atoook.otsukailist.model.ItemQuantified;
 import com.atoook.otsukailist.model.ItemType;
 import com.atoook.otsukailist.model.Origin;
@@ -62,6 +63,23 @@ class ItemCommandServiceTest {
     assertThat(result.getData().getName()).isEqualTo("牛乳");
     assertThat(result.getData().getItemType()).isEqualTo(ItemType.PLAIN);
     assertThat(result.getData().getQuantified()).isNull();
+  }
+
+  @Test
+  @DisplayName("作成時に指定された準備方法を保存すること")
+  void createItemStoresPreparationType() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList("買い物");
+    CreateItemRequest request =
+        CreateItemRequest.builder().name("包丁").preparationType(ItemPreparationType.BRING).build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    var result = service.createItem(listId, request);
+
+    assertThat(result.getData().getPreparationType()).isEqualTo(ItemPreparationType.BRING);
   }
 
   @Test
@@ -222,6 +240,26 @@ class ItemCommandServiceTest {
     assertThat(item.getQuantified().getBaseUnit()).isEqualTo(BaseUnit.G);
     assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
     assertThat(result.getData().getName()).isEqualTo("直接編集された名前");
+  }
+
+  @Test
+  @DisplayName("更新時に準備方法を変更できること")
+  void updateItemChangesPreparationType() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = plainItem("包丁");
+    item.setPreparationType(ItemPreparationType.BUY);
+    UpdateItemRequest request =
+        UpdateItemRequest.builder().preparationType(ItemPreparationType.BRING).build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.save(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    var result = service.updateItem(listId, itemId, request);
+
+    assertThat(item.getPreparationType()).isEqualTo(ItemPreparationType.BRING);
+    assertThat(result.getData().getPreparationType()).isEqualTo(ItemPreparationType.BRING);
   }
 
   @Test

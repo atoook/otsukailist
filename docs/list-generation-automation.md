@@ -82,6 +82,7 @@ MVP では以下を DB マスタ化しない。
 
 - 単位定義
 - item カテゴリ
+- item 準備方法
 - BBQ 生成ルール
 
 理由:
@@ -94,6 +95,7 @@ MVP では以下を DB マスタ化しない。
 
 - Backend: `backend/src/main/java/com/atoook/otsukailist/generation`
 - Frontend category values/labels/sort order: `frontend/src/types/item-category.ts`
+- Frontend preparation type values/labels/sort order: `frontend/src/types/item-preparation-type.ts`
 - Frontend unit/generation values: `frontend/src/types/list-generation.ts`
 
 ---
@@ -142,12 +144,13 @@ MVP では以下を DB マスタ化しない。
 - `item_quantified` による数量付き item 詳細の保存
 - `list_generation_config` による将来の生成条件保存先の確保
 - `item.category` による plain / quantified 共通カテゴリの保存
+- `item.preparationType` による購入 / 持参などの準備方法の保存
 - `generated` item に対する `generator_key` 必須バリデーション
 - `generated + auto` のカテゴリを生成ルールから決定する処理
 - `generated + auto` item 更新時の `locked` 遷移
 - `quantified -> plain` への戻し処理
-- API レスポンスでの `itemType` / `category` / `quantified` 返却
-- Frontend 型定義での `ItemType` / `BaseUnit` / `ItemCategory` / `QuantifiedItem` 分離
+- API レスポンスでの `itemType` / `category` / `preparationType` / `quantified` 返却
+- Frontend 型定義での `ItemType` / `BaseUnit` / `ItemCategory` / `ItemPreparationType` / `QuantifiedItem` 分離
 
 ---
 

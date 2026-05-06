@@ -73,6 +73,7 @@ public class ItemCommandService {
     item.setName(resolveItemName(req));
     item.setItemType(itemType);
     item.setCategory(resolveCategory(req.getCategory(), req.getQuantified()));
+    item.setPreparationType(req.getPreparationType());
     item.setCompleted(false);
     item.setAssignedMemberId(null);
     item.setCompletedByMemberId(null);
@@ -159,6 +160,7 @@ public class ItemCommandService {
     boolean quantifiedDetailsEdited = req.getQuantified() != null;
 
     updateItemName(item, req);
+    item.setPreparationType(req.getPreparationTypeOrDefault(item.getPreparationType()));
     rejectQuantifiedDetailsForPlainRequest(req, quantifiedDetailsEdited);
     if (revertingToPlain) {
       item.setCategory(requestedCategory);

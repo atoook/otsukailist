@@ -1,6 +1,10 @@
 import type { Item as ApiItem, UUID } from './api';
 import { ITEM_CATEGORY_VALUES, type ItemCategory } from './item-category';
 import {
+  ITEM_PREPARATION_TYPE_VALUES,
+  type ItemPreparationType
+} from './item-preparation-type';
+import {
   BASE_UNIT_VALUES,
   ITEM_ORIGIN_VALUES,
   ITEM_TYPE_VALUES,
@@ -26,6 +30,7 @@ export function isItem(value: unknown): value is Item {
     typeof candidate.name === 'string' &&
     isItemType(candidate.itemType) &&
     isItemCategory(candidate.category) &&
+    isItemPreparationType(candidate.preparationType) &&
     isQuantifiedItemForType(candidate) &&
     typeof candidate.completed === 'boolean' &&
     (candidate.assignedMemberId === null || isItemId(candidate.assignedMemberId)) &&
@@ -38,6 +43,13 @@ export function isItem(value: unknown): value is Item {
 
 function isItemCategory(value: unknown): value is ItemCategory | null {
   return value === null || (typeof value === 'string' && ITEM_CATEGORY_VALUES.includes(value as ItemCategory));
+}
+
+function isItemPreparationType(value: unknown): value is ItemPreparationType | null {
+  return (
+    value === null ||
+    (typeof value === 'string' && ITEM_PREPARATION_TYPE_VALUES.includes(value as ItemPreparationType))
+  );
 }
 
 function isItemType(value: unknown): value is ItemType {
