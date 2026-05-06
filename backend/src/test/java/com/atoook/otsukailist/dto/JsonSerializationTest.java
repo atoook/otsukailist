@@ -100,7 +100,6 @@ class JsonSerializationTest {
             .category(ItemCategory.MEAT)
             .quantified(
                 QuantifiedItemResponse.builder()
-                    .name("牛肉")
                     .quantity(1000L)
                     .baseUnit(BaseUnit.G)
                     .origin(Origin.GENERATED)
@@ -117,7 +116,7 @@ class JsonSerializationTest {
 
     assertThat(jsonNode.get("itemType").asText()).isEqualTo("quantified");
     assertThat(jsonNode.get("category").asText()).isEqualTo("meat");
-    assertThat(jsonNode.get("quantified").get("name").asText()).isEqualTo("牛肉");
+    assertThat(jsonNode.get("quantified").has("name")).isFalse();
     assertThat(jsonNode.get("quantified").get("quantity").asLong()).isEqualTo(1000L);
     assertThat(jsonNode.get("quantified").get("baseUnit").asText()).isEqualTo("g");
     assertThat(jsonNode.get("quantified").get("origin").asText()).isEqualTo("generated");
@@ -156,7 +155,6 @@ class JsonSerializationTest {
                     "itemType": "quantified",
                     "category": "meat",
                     "quantified": {
-                      "name": "牛肉",
                       "quantity": 1000,
                       "baseUnit": "g",
                       "origin": "generated",
@@ -170,7 +168,6 @@ class JsonSerializationTest {
 
     assertThat(request.getItemType()).isEqualTo(ItemType.QUANTIFIED);
     assertThat(request.getCategory()).isEqualTo(ItemCategory.MEAT);
-    assertThat(request.getQuantified().getName()).isEqualTo("牛肉");
     assertThat(request.getQuantified().getQuantity()).isEqualTo(1000L);
     assertThat(request.getQuantified().getBaseUnit()).isEqualTo(BaseUnit.G);
     assertThat(request.getQuantified().getOrigin()).isEqualTo(Origin.GENERATED);

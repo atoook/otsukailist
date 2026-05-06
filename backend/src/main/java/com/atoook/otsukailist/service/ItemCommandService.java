@@ -11,6 +11,7 @@ import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.DeleteItemResponse;
 import com.atoook.otsukailist.dto.ItemResponse;
 import com.atoook.otsukailist.dto.MutationResponse;
+import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.exception.BadRequestException;
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
@@ -65,7 +66,7 @@ public class ItemCommandService {
     ItemType itemType = req.getItemType() == null ? ItemType.PLAIN : req.getItemType();
     validateQuantifiedCreateRequest(itemType, req);
 
-    item.setName(resolveItemName(req, itemType));
+    item.setName(resolveItemName(req));
     item.setItemType(itemType);
     item.setCategory(resolveCategory(req.getCategory(), req.getQuantified()));
     item.setCompleted(false);
@@ -147,7 +148,8 @@ public class ItemCommandService {
   }
 
   private static void updateNameAndQuantified(Item item, UpdateItemRequest req) {
-    boolean directNameEdited = req.getName() != null;
+    boolean categoryEdited =
+        req.isCategoryPresent() && !Objects.equals(item.getCategory(), req.getCategory());
     boolean revertingToPlain =
         item.getItemType() == ItemType.QUANTIFIED && req.getItemType() == ItemType.PLAIN;
     boolean quantifiedDetailsEdited = req.getQuantified() != null;
@@ -162,36 +164,31 @@ public class ItemCommandService {
       revertToPlain(item);
       return;
     }
-    if (directNameEdited && !quantifiedDetailsEdited) {
-      syncQuantifiedNameFromItemName(item);
-      lockQuantifiedItem(item);
+    boolean shouldLockGeneratedAuto = categoryEdited;
+    shouldLockGeneratedAuto |= updateQuantifiedDetails(item, req);
+    if (shouldLockGeneratedAuto) {
+      lockGeneratedAutoQuantifiedItem(item);
     }
-
-    updateQuantifiedDetails(item, req);
   }
 
-  private static void updateQuantifiedDetails(Item item, UpdateItemRequest req) {
+  private static boolean updateQuantifiedDetails(Item item, UpdateItemRequest req) {
     if (req.getQuantified() == null) {
-      return;
+      return false;
     }
     validateGeneratorKey(req.getQuantified());
     if (item.getItemType() == ItemType.PLAIN) {
       item.setItemType(ItemType.QUANTIFIED);
       item.setQuantified(ItemMapper.toQuantifiedEntity(req.getQuantified()));
       item.setCategory(resolveCategory(item.getCategory(), req.getQuantified()));
-      item.setName(resolveQuantifiedItemName(item.getQuantified()));
-      return;
+      return false;
     }
     if (item.getItemType() != ItemType.QUANTIFIED || item.getQuantified() == null) {
       throw new BadRequestException(MSG_ITEM_NOT_QUANTIFIED);
     }
     boolean quantifiedChanged = hasQuantifiedChanged(item.getQuantified(), req);
     ItemMapper.updateQuantifiedEntity(item.getQuantified(), req.getQuantified());
-    if (quantifiedChanged) {
-      lockGeneratedQuantifiedItem(item);
-    }
     item.setCategory(resolveCategory(item.getCategory(), req.getQuantified()));
-    item.setName(resolveQuantifiedItemName(item.getQuantified()));
+    return quantifiedChanged;
   }
 
   private static void revertToPlain(Item item) {
@@ -237,27 +234,18 @@ public class ItemCommandService {
     item.setCompletedAt(Instant.now());
   }
 
-  private static void lockQuantifiedItem(Item item) {
-    if (item.getItemType() == ItemType.QUANTIFIED && item.getQuantified() != null) {
-      lockGeneratedQuantifiedItem(item);
+  private static void lockGeneratedAutoQuantifiedItem(Item item) {
+    if (item.getItemType() != ItemType.QUANTIFIED || item.getQuantified() == null) {
+      return;
     }
-  }
-
-  private static void syncQuantifiedNameFromItemName(Item item) {
-    if (item.getItemType() == ItemType.QUANTIFIED && item.getQuantified() != null) {
-      item.getQuantified().setName(item.getName().trim());
-    }
-  }
-
-  private static void lockGeneratedQuantifiedItem(Item item) {
-    if (item.getQuantified().getOrigin() == Origin.GENERATED) {
+    if (item.getQuantified().getOrigin() == Origin.GENERATED
+        && item.getQuantified().getRegenerationPolicy() == RegenerationPolicy.AUTO) {
       item.getQuantified().setRegenerationPolicy(RegenerationPolicy.LOCKED);
     }
   }
 
   private static boolean hasQuantifiedChanged(ItemQuantified current, UpdateItemRequest req) {
-    return !Objects.equals(current.getName(), req.getQuantified().getName().trim())
-        || current.getQuantity() != req.getQuantified().getQuantity()
+    return current.getQuantity() != req.getQuantified().getQuantity()
         || current.getBaseUnit() != req.getQuantified().getBaseUnit()
         || !Objects.equals(
             current.getGeneratorKey(),
@@ -265,7 +253,7 @@ public class ItemCommandService {
   }
 
   private static ItemCategory resolveCategory(
-      ItemCategory requestedCategory, com.atoook.otsukailist.dto.QuantifiedItemRequest quantified) {
+      ItemCategory requestedCategory, QuantifiedItemRequest quantified) {
     if (quantified == null
         || quantified.getOrigin() != Origin.GENERATED
         || quantified.getRegenerationPolicy() != RegenerationPolicy.AUTO) {
@@ -281,8 +269,7 @@ public class ItemCommandService {
     return rule == null ? requestedCategory : rule.category();
   }
 
-  private static void validateGeneratorKey(
-      com.atoook.otsukailist.dto.QuantifiedItemRequest quantified) {
+  private static void validateGeneratorKey(QuantifiedItemRequest quantified) {
     if (quantified.getOrigin() == Origin.GENERATED
         && normalizeNullableText(quantified.getGeneratorKey()) == null) {
       throw new BadRequestException(MSG_GENERATOR_KEY_REQUIRED);
@@ -296,15 +283,7 @@ public class ItemCommandService {
     return value.trim();
   }
 
-  private static String resolveItemName(CreateItemRequest req, ItemType itemType) {
-    if (itemType == ItemType.QUANTIFIED && req.getQuantified() != null) {
-      ItemQuantified quantified = ItemMapper.toQuantifiedEntity(req.getQuantified());
-      return resolveQuantifiedItemName(quantified);
-    }
+  private static String resolveItemName(CreateItemRequest req) {
     return req.getName().trim();
-  }
-
-  private static String resolveQuantifiedItemName(ItemQuantified quantified) {
-    return quantified.getName().trim();
   }
 }

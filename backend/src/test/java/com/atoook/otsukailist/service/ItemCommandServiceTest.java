@@ -41,18 +41,17 @@ class ItemCommandServiceTest {
   }
 
   @Test
-  @DisplayName("数量付きアイテム更新時は詳細名を item name として保存し数量単位を混ぜないこと")
-  void updateQuantifiedItemStoresOnlyQuantifiedNameAsItemName() {
+  @DisplayName("数量付きアイテム更新時は item name を名称として保持し数量単位を混ぜないこと")
+  void updateQuantifiedItemKeepsItemNameAsDisplayName() {
     UUID listId = UUID.randomUUID();
     UUID itemId = UUID.randomUUID();
-    Item item = quantifiedItem("牛肉 1000g", "牛肉", 1000L);
+    Item item = quantifiedItem("牛肉 1000g", 1000L);
     UpdateItemRequest request =
         UpdateItemRequest.builder()
             .name("直接編集された名前")
             .itemType(ItemType.QUANTIFIED)
             .quantified(
                 QuantifiedItemRequest.builder()
-                    .name("牛肉")
                     .quantity(1200L)
                     .baseUnit(BaseUnit.G)
                     .origin(Origin.GENERATED)
@@ -67,18 +66,17 @@ class ItemCommandServiceTest {
 
     var result = service.updateItem(listId, itemId, request);
 
-    assertThat(item.getName()).isEqualTo("牛肉");
-    assertThat(item.getQuantified().getName()).isEqualTo("牛肉");
+    assertThat(item.getName()).isEqualTo("直接編集された名前");
     assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.LOCKED);
-    assertThat(result.getData().getName()).isEqualTo("牛肉");
+    assertThat(result.getData().getName()).isEqualTo("直接編集された名前");
   }
 
   @Test
-  @DisplayName("数量付きアイテムの表示名だけを更新した場合は詳細名にも同期すること")
-  void updateQuantifiedItemDirectNameEditSyncsQuantifiedName() {
+  @DisplayName("数量付きアイテムの表示名だけを更新した場合は item name のみ変更しロックしないこと")
+  void updateQuantifiedItemDirectNameEditChangesOnlyItemNameWithoutLocking() {
     UUID listId = UUID.randomUUID();
     UUID itemId = UUID.randomUUID();
-    Item item = quantifiedItem("牛肉 1000g", "牛肉", 1000L);
+    Item item = quantifiedItem("牛肉 1000g", 1000L);
     UpdateItemRequest request = UpdateItemRequest.builder().name("直接編集された名前").build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
@@ -88,10 +86,9 @@ class ItemCommandServiceTest {
     var result = service.updateItem(listId, itemId, request);
 
     assertThat(item.getName()).isEqualTo("直接編集された名前");
-    assertThat(item.getQuantified().getName()).isEqualTo("直接編集された名前");
     assertThat(item.getQuantified().getQuantity()).isEqualTo(1000L);
     assertThat(item.getQuantified().getBaseUnit()).isEqualTo(BaseUnit.G);
-    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.LOCKED);
+    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
     assertThat(result.getData().getName()).isEqualTo("直接編集された名前");
   }
 
@@ -105,7 +102,6 @@ class ItemCommandServiceTest {
         UpdateItemRequest.builder()
             .quantified(
                 QuantifiedItemRequest.builder()
-                    .name("牛肉")
                     .quantity(1000L)
                     .baseUnit(BaseUnit.G)
                     .origin(Origin.MANUAL)
@@ -136,13 +132,12 @@ class ItemCommandServiceTest {
     return item;
   }
 
-  private static Item quantifiedItem(String itemName, String quantifiedName, long quantity) {
+  private static Item quantifiedItem(String itemName, long quantity) {
     Item item = new Item();
     item.setName(itemName);
     item.setItemType(ItemType.QUANTIFIED);
 
     ItemQuantified quantified = new ItemQuantified();
-    quantified.setName(quantifiedName);
     quantified.setQuantity(quantity);
     quantified.setBaseUnit(BaseUnit.G);
     quantified.setOrigin(Origin.GENERATED);

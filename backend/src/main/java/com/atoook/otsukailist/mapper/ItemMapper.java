@@ -70,7 +70,6 @@ public class ItemMapper {
       return;
     }
 
-    quantified.setName(request.getName().trim());
     quantified.setQuantity(request.getQuantity());
     quantified.setBaseUnit(request.getBaseUnit());
     quantified.setOrigin(request.getOrigin());
@@ -84,7 +83,6 @@ public class ItemMapper {
     }
 
     return QuantifiedItemResponse.builder()
-        .name(quantified.getName())
         .quantity(quantified.getQuantity())
         .baseUnit(quantified.getBaseUnit())
         .origin(quantified.getOrigin())

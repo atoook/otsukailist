@@ -7,7 +7,6 @@ export type ItemOrigin = 'manual' | 'generated';
 export type RegenerationPolicy = 'none' | 'auto' | 'locked';
 
 export type QuantifiedItem = {
-  name: string;
   quantity: number;
   baseUnit: BaseUnit;
   origin: ItemOrigin;

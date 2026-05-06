@@ -1,6 +1,5 @@
 package com.atoook.otsukailist.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -21,10 +20,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class QuantifiedItemRequest {
-
-  @NotBlank(message = "数量付きアイテム名は必須です")
-  @Size(max = 100, message = "数量付きアイテム名は100文字以下にしてください")
-  private String name;
 
   @NotNull(message = "数量は必須です")
   @PositiveOrZero(message = "数量は0以上にしてください")

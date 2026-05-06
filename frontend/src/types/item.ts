@@ -39,7 +39,6 @@ function isQuantifiedItemForType(item: Item): boolean {
   }
 
   return (
-    typeof item.quantified.name === 'string' &&
     typeof item.quantified.quantity === 'number' &&
     ['g', 'ml', 'piece', 'pack'].includes(item.quantified.baseUnit) &&
     ['manual', 'generated'].includes(item.quantified.origin) &&

@@ -14,8 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class QuantifiedItemResponse {
-  private String name;
-
   private long quantity;
 
   private BaseUnit baseUnit;

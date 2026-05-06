@@ -30,9 +30,6 @@ public class ItemQuantified {
   @JoinColumn(name = "item_id", nullable = false)
   private Item item;
 
-  @Column(name = "name", nullable = false, length = 255)
-  private String name;
-
   @Column(name = "quantity", nullable = false)
   private long quantity;
 
