@@ -9,6 +9,7 @@ import DropDown from '../components/DropDown.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import type { Item } from '../types/item';
 import { ITEM_CATEGORIES, type ItemCategory } from '../types/item-category';
+import type { ItemPreparationType } from '../types/item-preparation-type';
 import type { Member, MemberId } from '../types/member';
 import { UNIT_DEFINITIONS, type BaseUnit, type ItemOrigin, type RegenerationPolicy } from '../types/list-generation';
 import { normalizeText } from '../utils/text-normalization';
@@ -21,6 +22,7 @@ import { BBQ_GENERATION_RULES } from '@/lib/listGenerationConstants';
 
 const UNASSIGNED_MEMBER_VALUE = '';
 const UNCATEGORIZED_VALUE = '';
+const UNSET_PREPARATION_TYPE_VALUE = '';
 const UNSET_GENERATOR_KEY_VALUE = '';
 const UNSELECTED_BASE_UNIT_VALUE = '';
 
@@ -47,6 +49,7 @@ export default defineComponent({
     errorMessage: string;
     snapshotLoading: boolean;
     selectedCategory: ItemCategory | typeof UNCATEGORIZED_VALUE;
+    selectedPreparationType: ItemPreparationType | typeof UNSET_PREPARATION_TYPE_VALUE;
     itemEditMode: ItemEditMode;
     quantifiedQuantity: string;
     quantifiedBaseUnit: BaseUnit | typeof UNSELECTED_BASE_UNIT_VALUE;
@@ -63,6 +66,7 @@ export default defineComponent({
       errorMessage: '',
       snapshotLoading: false,
       selectedCategory: UNCATEGORIZED_VALUE,
+      selectedPreparationType: UNSET_PREPARATION_TYPE_VALUE,
       itemEditMode: 'plain',
       quantifiedQuantity: '',
       quantifiedBaseUnit: UNSELECTED_BASE_UNIT_VALUE,
@@ -111,6 +115,7 @@ export default defineComponent({
       this.selectedMemberId =
         (item.completed ? item.completedByMemberId : item.assignedMemberId) ?? UNASSIGNED_MEMBER_VALUE;
       this.selectedCategory = item.category ?? UNCATEGORIZED_VALUE;
+      this.selectedPreparationType = item.preparationType ?? UNSET_PREPARATION_TYPE_VALUE;
       this.members = this.listStore.members.map((m) => ({ ...m }));
       this.applyQuantifiedItem(item);
     },
@@ -169,6 +174,25 @@ export default defineComponent({
     setSelectedCategory(value: string): void {
       this.selectedCategory = value as ItemCategory | typeof UNCATEGORIZED_VALUE;
     },
+    getSelectedPreparationType(): ItemPreparationType | null {
+      return this.selectedPreparationType === 'bring' ? 'bring' : null;
+    },
+    setBringItem(value: boolean): void {
+      this.selectedPreparationType = value ? 'bring' : UNSET_PREPARATION_TYPE_VALUE;
+      if (value) {
+        this.clearPurchaseDetails();
+      }
+    },
+    handleBringItemChange(event: Event): void {
+      this.setBringItem((event.target as HTMLInputElement).checked);
+    },
+    clearPurchaseDetails(): void {
+      this.selectedCategory = UNCATEGORIZED_VALUE;
+      this.itemEditMode = 'plain';
+      this.quantifiedQuantity = '';
+      this.quantifiedBaseUnit = UNSELECTED_BASE_UNIT_VALUE;
+      this.quantifiedGeneratorKey = UNSET_GENERATOR_KEY_VALUE;
+    },
     setQuantifiedBaseUnit(value: string): void {
       this.quantifiedBaseUnit = value as BaseUnit | typeof UNSELECTED_BASE_UNIT_VALUE;
       if (this.quantifiedBaseUnit === UNSELECTED_BASE_UNIT_VALUE) {
@@ -178,10 +202,11 @@ export default defineComponent({
     buildUpdatePayload(normalizedName: string): UpdateItemPayload {
       const payload: UpdateItemPayload = {
         name: normalizedName,
-        category: this.getSelectedCategory()
+        category: this.isBringItem ? null : this.getSelectedCategory(),
+        preparationType: this.getSelectedPreparationType()
       };
 
-      if (this.hasSelectedBaseUnit) {
+      if (!this.isBringItem && this.hasSelectedBaseUnit) {
         payload.itemType = 'quantified';
         payload.quantified = {
           quantity: this.parsedQuantifiedQuantity,
@@ -292,13 +317,16 @@ export default defineComponent({
       return (
         !!this.normalizedItemName &&
         (!this.isCompleted || !!this.getCurrentSelectedMemberId()) &&
-        (!this.hasQuantifiedDraftInput || this.hasValidQuantifiedInput)
+        (this.isBringItem || !this.hasQuantifiedDraftInput || this.hasValidQuantifiedInput)
       );
     },
     hasQuantifiedDraftInput(): boolean {
-      return this.hasSelectedBaseUnit || !!this.normalizedQuantifiedQuantity;
+      return !this.isBringItem && (this.hasSelectedBaseUnit || !!this.normalizedQuantifiedQuantity);
     },
     hasValidQuantifiedInput(): boolean {
+      if (this.isBringItem) {
+        return true;
+      }
       return (
         !!this.normalizedItemName &&
         !!this.normalizedQuantifiedQuantity &&
@@ -360,6 +388,9 @@ export default defineComponent({
           .map((category) => ({ id: category.code, name: category.label }))
       ];
     },
+    isBringItem(): boolean {
+      return this.selectedPreparationType === 'bring';
+    },
     baseUnitOptions(): Array<{ id: string; name: string }> {
       return [
         { id: UNSELECTED_BASE_UNIT_VALUE, name: '未選択' },
@@ -397,7 +428,18 @@ export default defineComponent({
           />
         </div>
 
-        <div>
+        <label class="min-w-0 flex items-center gap-2 text-sm text-charcoal-700">
+          <input
+            type="checkbox"
+            name="itemPreparationType"
+            :checked="isBringItem"
+            class="h-4 w-4 accent-wood-500"
+            @change="handleBringItemChange"
+          />
+          <span class="min-w-0 truncate">持参する</span>
+        </label>
+
+        <div v-if="!isBringItem">
           <label for="itemCategory" class="mb-2 block text-sm font-medium text-charcoal-700">
             カテゴリ
             <span v-if="hasSelectedBaseUnit && usesGeneratedCategory" class="text-xs font-normal text-charcoal-500">
@@ -419,7 +461,7 @@ export default defineComponent({
           />
         </div>
 
-        <div>
+        <div v-if="!isBringItem">
           <label for="quantifiedQuantity" class="mb-2 block text-sm font-medium text-charcoal-700"> 数量(単位) </label>
           <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <TextInput

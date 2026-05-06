@@ -44,27 +44,43 @@ describe('item-filtering', () => {
     const items: Item[] = [
       item({ id: 'meat-1', name: '牛肉', category: 'meat', assignedMemberId: 'member-1' }),
       item({ id: 'drink-1', name: 'お茶', category: 'drinks', assignedMemberId: 'member-2' }),
-      item({ id: 'meat-2', name: '豚肉', category: 'meat', completed: true, completedByMemberId: 'member-2' })
+      item({ id: 'meat-2', name: '豚肉', category: 'meat', completed: true, completedByMemberId: 'member-2' }),
+      item({ id: 'bring-1', name: '包丁', category: null, preparationType: 'bring' })
     ];
 
     it('カテゴリーで絞り込む', () => {
       expect(
-        filterItems(items, { searchQuery: '', memberId: null, category: 'meat' }).map((candidate) => candidate.id)
+        filterItems(items, { searchQuery: '', memberId: null, category: 'meat', preparationType: null }).map(
+          (candidate) => candidate.id
+        )
       ).toEqual(['meat-1', 'meat-2']);
     });
 
     it('member とカテゴリーを組み合わせて絞り込む', () => {
       expect(
-        filterItems(items, { searchQuery: '', memberId: 'member-2', category: 'meat' }).map((candidate) => candidate.id)
+        filterItems(items, { searchQuery: '', memberId: 'member-2', category: 'meat', preparationType: null }).map(
+          (candidate) => candidate.id
+        )
       ).toEqual(['meat-2']);
     });
 
     it('検索語も他のフィルターと組み合わせる', () => {
       expect(
-        filterItems(items, { searchQuery: '茶', memberId: 'member-2', category: 'drinks' }).map(
+        filterItems(items, {
+          searchQuery: '茶',
+          memberId: 'member-2',
+          category: 'drinks',
+          preparationType: null
+        }).map((candidate) => candidate.id)
+      ).toEqual(['drink-1']);
+    });
+
+    it('準備方法で絞り込む', () => {
+      expect(
+        filterItems(items, { searchQuery: '', memberId: null, category: null, preparationType: 'bring' }).map(
           (candidate) => candidate.id
         )
-      ).toEqual(['drink-1']);
+      ).toEqual(['bring-1']);
     });
   });
 });

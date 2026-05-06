@@ -6,6 +6,7 @@ import IconChevronDown from './icons/IconChevronDown.vue';
 import IconTired from './icons/IconTired.vue';
 import type { Item, ItemId } from '../types/item';
 import type { ItemCategory } from '../types/item-category';
+import type { ItemPreparationType } from '../types/item-preparation-type';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
 import { deleteItem as deleteItemApi, updateItem } from '@/api/item';
@@ -67,9 +68,20 @@ export default defineComponent({
     categoryFilter: {
       type: String as PropType<ItemCategory | null>,
       default: null
+    },
+    preparationTypeFilter: {
+      type: String as PropType<ItemPreparationType | null>,
+      default: null
     }
   },
-  emits: ['member-filter', 'clear-member-filter', 'category-filter', 'clear-category-filter'],
+  emits: [
+    'member-filter',
+    'clear-member-filter',
+    'category-filter',
+    'clear-category-filter',
+    'preparation-type-filter',
+    'clear-preparation-type-filter'
+  ],
   setup() {
     const listStore = useListStore();
     const { run, loading } = useMutation();
@@ -260,6 +272,7 @@ export default defineComponent({
           :member-id="getItemMemberId(item) || undefined"
           :member-filter-active="getItemMemberId(item) === memberFilterId"
           :category-filter-active="item.category === categoryFilter"
+          :preparation-type-filter-active="item.preparationType === preparationTypeFilter"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
@@ -268,6 +281,8 @@ export default defineComponent({
           @clear-member-filter="$emit('clear-member-filter')"
           @category-filter="$emit('category-filter', $event)"
           @clear-category-filter="$emit('clear-category-filter')"
+          @preparation-type-filter="$emit('preparation-type-filter', $event)"
+          @clear-preparation-type-filter="$emit('clear-preparation-type-filter')"
         />
       </template>
     </template>

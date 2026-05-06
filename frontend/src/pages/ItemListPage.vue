@@ -12,6 +12,7 @@ import IconRefresh from '../components/icons/IconRefresh.vue';
 import IconCelebration from '../components/icons/IconCelebration.vue';
 import type { Item } from '../types/item';
 import type { ItemCategory } from '../types/item-category';
+import type { ItemPreparationType } from '../types/item-preparation-type';
 import { normalizeInput } from '../utils/text-normalization';
 import { formatActivityAt } from '../utils/date-format';
 import type { Member, MemberId } from '@/types/member';
@@ -42,6 +43,7 @@ export default defineComponent({
     selectedMemberId: MemberId | null;
     memberFilterId: MemberId | null;
     categoryFilter: ItemCategory | null;
+    preparationTypeFilter: ItemPreparationType | null;
     errorMessage: string;
     fallbackListName: string;
     snapshotLoading: boolean;
@@ -52,6 +54,7 @@ export default defineComponent({
       selectedMemberId: null,
       memberFilterId: null,
       categoryFilter: null,
+      preparationTypeFilter: null,
       errorMessage: '',
       fallbackListName: '',
       snapshotLoading: false
@@ -89,7 +92,8 @@ export default defineComponent({
       return filterItems(this.items, {
         searchQuery: this.searchQuery,
         memberId: this.memberFilterId,
-        category: this.categoryFilter
+        category: this.categoryFilter,
+        preparationType: this.preparationTypeFilter
       });
     },
     memberNames(): string {
@@ -184,6 +188,12 @@ export default defineComponent({
     },
     clearCategoryFilter(): void {
       this.categoryFilter = null;
+    },
+    handlePreparationTypeFilter(preparationType: ItemPreparationType): void {
+      this.preparationTypeFilter = preparationType;
+    },
+    clearPreparationTypeFilter(): void {
+      this.preparationTypeFilter = null;
     },
     navigateToListEdit() {
       this.$router.push({
@@ -285,10 +295,13 @@ export default defineComponent({
         :selected-member-id="selectedMemberId"
         :member-filter-id="memberFilterId"
         :category-filter="categoryFilter"
+        :preparation-type-filter="preparationTypeFilter"
         @member-filter="handleMemberFilter"
         @clear-member-filter="clearMemberFilter"
         @category-filter="handleCategoryFilter"
         @clear-category-filter="clearCategoryFilter"
+        @preparation-type-filter="handlePreparationTypeFilter"
+        @clear-preparation-type-filter="clearPreparationTypeFilter"
       />
     </div>
   </ContentArea>
