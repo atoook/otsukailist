@@ -2,9 +2,22 @@ export const ITEM_TYPE_VALUES = ['plain', 'quantified'] as const;
 
 export type ItemType = (typeof ITEM_TYPE_VALUES)[number];
 
-export const BASE_UNIT_VALUES = ['g', 'ml', 'piece', 'pack'] as const;
+export const UNIT_DEFINITIONS = {
+  g: { code: 'g', label: 'g', baseUnit: 'g', factor: 1 },
+  kg: { code: 'kg', label: 'kg', baseUnit: 'g', factor: 1000 },
+  ml: { code: 'ml', label: 'ml', baseUnit: 'ml', factor: 1 },
+  l: { code: 'l', label: 'L', baseUnit: 'ml', factor: 1000 },
+  piece: { code: 'piece', label: '個', baseUnit: 'piece', factor: 1 },
+  pack: { code: 'pack', label: '袋', baseUnit: 'pack', factor: 1 }
+} as const;
 
-export type BaseUnit = (typeof BASE_UNIT_VALUES)[number];
+export type UnitCode = keyof typeof UNIT_DEFINITIONS;
+
+export type BaseUnit = (typeof UNIT_DEFINITIONS)[UnitCode]['baseUnit'];
+
+export const BASE_UNIT_VALUES = Object.values(UNIT_DEFINITIONS)
+  .filter((definition) => definition.code === definition.baseUnit)
+  .map((definition) => definition.baseUnit);
 
 export const ITEM_ORIGIN_VALUES = ['manual', 'generated'] as const;
 
