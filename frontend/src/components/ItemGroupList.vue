@@ -27,7 +27,11 @@ const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
       if (aBringOrder !== bBringOrder) {
         return aBringOrder - bBringOrder;
       }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      const createdAtOrder = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (createdAtOrder !== 0) {
+        return createdAtOrder;
+      }
+      return a.id.localeCompare(b.id);
     },
     showHeader: false,
     collapsible: false,
