@@ -27,7 +27,7 @@ docker run --rm \
 起動確認:
 
 ```bash
-curl -i http://localhost:10000/actuator/health
+curl -i http://localhost:10000/actuator/health/liveness
 ```
 
 期待値:
@@ -44,7 +44,7 @@ curl -i http://localhost:10000/actuator/health
 - Branch: `main`
 - Root Directory: `backend`
 - Dockerfile: `backend/Dockerfile`
-- Health Check Path: `/actuator/health`
+- Health Check Path: `/actuator/health/liveness`
 
 ### 環境変数
 
@@ -71,7 +71,7 @@ curl -i http://localhost:10000/actuator/health
 ## 3. デプロイ後のスモークチェック
 
 ```bash
-curl -i https://<your-render-service>/actuator/health
+curl -i https://<your-render-service>/actuator/health/liveness
 ```
 
 ```bash
