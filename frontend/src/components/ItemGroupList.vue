@@ -21,7 +21,18 @@ const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
     key: 'incomplete',
     label: '未完了',
     predicate: (item) => !item.completed,
-    comparator: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    comparator: (a, b) => {
+      const aBringOrder = a.preparationType === 'bring' ? 1 : 0;
+      const bBringOrder = b.preparationType === 'bring' ? 1 : 0;
+      if (aBringOrder !== bBringOrder) {
+        return aBringOrder - bBringOrder;
+      }
+      const createdAtOrder = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (createdAtOrder !== 0) {
+        return createdAtOrder;
+      }
+      return a.id.localeCompare(b.id);
+    },
     showHeader: false,
     collapsible: false,
     defaultCollapsed: false
