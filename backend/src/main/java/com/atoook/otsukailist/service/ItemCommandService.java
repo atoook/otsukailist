@@ -75,7 +75,7 @@ public class ItemCommandService {
     item.setCategory(resolveCategory(req.getCategory(), req.getQuantified()));
     item.setPreparationType(req.getPreparationType());
     item.setCompleted(false);
-    item.setAssignedMemberId(null);
+    item.setAssignedMemberId(resolveAssignedMemberId(listId, req.getAssignedMemberId()));
     item.setCompletedByMemberId(null);
     item.setCompletedAt(null);
     item.setItemList(list);
@@ -92,6 +92,13 @@ public class ItemCommandService {
         .revision(revision)
         .data(ItemMapper.toResponse(saved))
         .build();
+  }
+
+  private UUID resolveAssignedMemberId(UUID listId, UUID assignedMemberId) {
+    if (assignedMemberId != null && !memberRepo.existsByIdAndItemListId(assignedMemberId, listId)) {
+      throw new BadRequestException(MSG_ASSIGNED_MEMBER_NOT_IN_LIST);
+    }
+    return assignedMemberId;
   }
 
   /** Item更新（rename / setCompleted） */
@@ -216,11 +223,7 @@ public class ItemCommandService {
       return;
     }
 
-    UUID assignedMemberId = req.getAssignedMemberId();
-    if (assignedMemberId != null && !memberRepo.existsByIdAndItemListId(assignedMemberId, listId)) {
-      throw new BadRequestException(MSG_ASSIGNED_MEMBER_NOT_IN_LIST);
-    }
-    item.setAssignedMemberId(assignedMemberId);
+    item.setAssignedMemberId(resolveAssignedMemberId(listId, req.getAssignedMemberId()));
   }
 
   private void updateCompletion(UUID listId, Item item, UpdateItemRequest req) {

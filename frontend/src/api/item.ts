@@ -19,6 +19,7 @@ type CreateItemPayloadBase = {
   name: string;
   category?: ItemCategory | null;
   preparationType?: ItemPreparationType | null;
+  assignedMemberId?: UUID | null;
 };
 
 type CreatePlainItemPayload = CreateItemPayloadBase & {

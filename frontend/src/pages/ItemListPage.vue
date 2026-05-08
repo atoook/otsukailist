@@ -226,7 +226,12 @@ export default defineComponent({
       </div>
 
       <!-- 新しいアイテム追加 -->
-      <ItemAddForm @error="errorMessage = $event" />
+      <ItemAddForm
+        :member-filter-id="memberFilterId"
+        :category-filter="categoryFilter"
+        :preparation-type-filter="preparationTypeFilter"
+        @error="errorMessage = $event"
+      />
 
       <!-- 検索ボックス -->
       <div v-if="items.length > 0" class="mb-4">
