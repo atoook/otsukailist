@@ -7,7 +7,6 @@ import IconBbq from '../components/icons/IconBbq.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
 import { fetchListsMeta } from '@/api/list';
-import { FEEDBACK_URL } from '@/lib/appConstants';
 
 export default {
   name: 'WelcomePage',
@@ -23,8 +22,7 @@ export default {
     return {
       listHistory: [],
       listMeta: {},
-      metaLoading: false,
-      feedbackUrl: FEEDBACK_URL
+      metaLoading: false
     };
   },
   async created() {
