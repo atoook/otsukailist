@@ -223,11 +223,7 @@ public class ItemCommandService {
       return;
     }
 
-    UUID assignedMemberId = req.getAssignedMemberId();
-    if (assignedMemberId != null && !memberRepo.existsByIdAndItemListId(assignedMemberId, listId)) {
-      throw new BadRequestException(MSG_ASSIGNED_MEMBER_NOT_IN_LIST);
-    }
-    item.setAssignedMemberId(assignedMemberId);
+    item.setAssignedMemberId(resolveAssignedMemberId(listId, req.getAssignedMemberId()));
   }
 
   private void updateCompletion(UUID listId, Item item, UpdateItemRequest req) {
