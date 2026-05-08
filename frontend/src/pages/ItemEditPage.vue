@@ -3,6 +3,7 @@ import { defineComponent } from 'vue';
 import { NavigationFailureType, isNavigationFailure } from 'vue-router';
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
+import TextArea from '../components/TextArea.vue';
 import TextInput from '../components/TextInput.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import DropDown from '../components/DropDown.vue';
@@ -33,6 +34,7 @@ export default defineComponent({
   components: {
     ContentArea,
     MainButton,
+    TextArea,
     TextInput,
     LoadingSpinner,
     DropDown,
@@ -420,10 +422,14 @@ export default defineComponent({
               アイテム名 <span class="text-ember-600">*</span>
             </label>
           </div>
-          <TextInput
+          <TextArea
             input-id="itemName"
             placeholder="例：マシュマロ"
             :model-value="itemName"
+            :rows="1"
+            auto-resize
+            prevent-enter
+            extra-class="max-h-28"
             @update:model-value="onItemNameInput"
           />
         </div>
