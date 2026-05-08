@@ -1,9 +1,6 @@
 import type { Item as ApiItem, UUID } from './api';
 import { ITEM_CATEGORY_VALUES, type ItemCategory } from './item-category';
-import {
-  ITEM_PREPARATION_TYPE_VALUES,
-  type ItemPreparationType
-} from './item-preparation-type';
+import { ITEM_PREPARATION_TYPE_VALUES, type ItemPreparationType } from './item-preparation-type';
 import {
   BASE_UNIT_VALUES,
   ITEM_ORIGIN_VALUES,
@@ -47,8 +44,7 @@ function isItemCategory(value: unknown): value is ItemCategory | null {
 
 function isItemPreparationType(value: unknown): value is ItemPreparationType | null {
   return (
-    value === null ||
-    (typeof value === 'string' && ITEM_PREPARATION_TYPE_VALUES.includes(value as ItemPreparationType))
+    value === null || (typeof value === 'string' && ITEM_PREPARATION_TYPE_VALUES.includes(value as ItemPreparationType))
   );
 }
 

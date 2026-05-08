@@ -8,12 +8,7 @@ export function isItemListId(value: unknown): value is ItemListId {
 }
 
 export function isItemList(value: unknown): value is ItemList {
-  if (
-    value == null ||
-    typeof value !== 'object' ||
-    !('listId' in value) ||
-    !isItemListId((value as ItemList).listId)
-  ) {
+  if (value == null || typeof value !== 'object' || !('listId' in value) || !isItemListId((value as ItemList).listId)) {
     return false;
   }
 
