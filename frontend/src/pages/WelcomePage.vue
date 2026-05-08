@@ -4,7 +4,6 @@ import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import IconBbq from '../components/icons/IconBbq.vue';
-import IconPray from '../components/icons/IconPray.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
 import { fetchListsMeta } from '@/api/list';
@@ -18,7 +17,6 @@ export default {
     SwipeContainer,
     BadgeTag,
     IconBbq,
-    IconPray,
     IconClipboard
   },
   data() {
@@ -107,25 +105,9 @@ export default {
       <p class="text-charcoal-800 mb-4 leading-snug text-3xl font-bold">買い忘れも、買い過ぎも、これで終わり。</p>
       <div class="text-8xl mb-4 flex justify-center"><IconBbq /></div>
       <p class="text-charcoal-600 mb-8 leading-relaxed">
-        URLを送るだけ。みんなで作る「Otsukaiリスト」は、無料で使える買い物リストです。
+        登録・ログイン不要、URLを送るだけ。<br />「Otsukaiリスト」は、みんなで使える、無料の買い物リストです。
       </p>
       <MainButton @click="navigateToCreateList">はじめる</MainButton>
-    </div>
-
-    <!-- フィードバックリンク -->
-    <div class="mt-8 text-center">
-      <p class="text-xs text-charcoal-500">
-        ご意見・ご感想は
-        <a
-          :href="feedbackUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="underline hover:text-charcoal-700"
-          aria-label="フィードバックリストへ（別タブで開きます）"
-          >フィードバックリストへ</a
-        >
-        どうぞ <IconPray />
-      </p>
     </div>
 
     <!-- 最近見たリスト -->
