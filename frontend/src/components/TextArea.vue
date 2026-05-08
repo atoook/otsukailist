@@ -81,20 +81,21 @@ export default {
   mounted() {
     this.adjustHeight();
   },
-  updated() {
-    this.adjustHeight();
+  watch: {
+    modelValue() {
+      this.$nextTick(() => this.adjustHeight());
+    }
   },
   methods: {
     handleInput(event) {
       this.$emit('update:modelValue', event.target.value);
-      this.$nextTick(() => this.adjustHeight());
     },
     handleKeyDown(event) {
       if (event.key === 'Enter' && !event.isComposing) {
         if (this.preventEnter) {
           event.preventDefault();
+          this.$emit('enter');
         }
-        this.$emit('enter');
       }
     },
     adjustHeight() {
