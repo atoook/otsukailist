@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, type PropType } from 'vue';
 import MainButton from './MainButton.vue';
 import TextInput from './TextInput.vue';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
@@ -7,10 +7,27 @@ import { createItem } from '@/api/item';
 import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { getErrorMessage } from '@/lib/http';
+import type { ItemCategory } from '@/types/item-category';
+import type { ItemPreparationType } from '@/types/item-preparation-type';
+import type { MemberId } from '@/types/member';
 
 export default defineComponent({
   name: 'ItemAddForm',
   components: { MainButton, TextInput },
+  props: {
+    categoryFilter: {
+      type: String as PropType<ItemCategory | null>,
+      default: null
+    },
+    preparationTypeFilter: {
+      type: String as PropType<ItemPreparationType | null>,
+      default: null
+    },
+    memberFilterId: {
+      type: String as PropType<MemberId | null>,
+      default: null
+    }
+  },
   setup() {
     const listStore = useListStore();
     const { run, loading } = useMutation();
@@ -46,7 +63,14 @@ export default defineComponent({
       }
 
       try {
-        const result = await this.mutationRun(() => createItem(listId, { name: normalizedName }));
+        const result = await this.mutationRun(() =>
+          createItem(listId, {
+            name: normalizedName,
+            category: this.categoryFilter,
+            preparationType: this.preparationTypeFilter,
+            assignedMemberId: this.memberFilterId
+          })
+        );
         if (result.applied) {
           this.listStore.upsertItem(result.data);
           this.newItemName = '';

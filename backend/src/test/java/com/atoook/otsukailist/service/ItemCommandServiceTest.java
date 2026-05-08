@@ -83,6 +83,46 @@ class ItemCommandServiceTest {
   }
 
   @Test
+  @DisplayName("作成時に指定されたカテゴリと担当者を保存すること")
+  void createItemStoresCategoryAndAssignedMember() {
+    UUID listId = UUID.randomUUID();
+    UUID memberId = UUID.randomUUID();
+    ItemList list = itemList("買い物");
+    CreateItemRequest request =
+        CreateItemRequest.builder()
+            .name("豚バラ")
+            .category(ItemCategory.MEAT)
+            .assignedMemberId(memberId)
+            .build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(true);
+    when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    var result = service.createItem(listId, request);
+
+    assertThat(result.getData().getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(result.getData().getAssignedMemberId()).isEqualTo(memberId);
+  }
+
+  @Test
+  @DisplayName("作成時にリスト外の担当者を指定した場合は拒否すること")
+  void createItemRejectsAssignedMemberOutsideList() {
+    UUID listId = UUID.randomUUID();
+    UUID memberId = UUID.randomUUID();
+    CreateItemRequest request =
+        CreateItemRequest.builder().name("炭").assignedMemberId(memberId).build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(false);
+
+    assertThatThrownBy(() -> service.createItem(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("指定された担当者はリストのメンバーではありません");
+  }
+
+  @Test
   @DisplayName("数量付きアイテム作成時は詳細情報が必須であること")
   void createQuantifiedItemRequiresQuantifiedDetails() {
     UUID listId = UUID.randomUUID();
