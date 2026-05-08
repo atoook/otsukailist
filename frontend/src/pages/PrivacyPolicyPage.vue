@@ -80,7 +80,7 @@ export default {
       <section class="space-y-2">
         <h2 class="text-base font-semibold text-charcoal-800">7. お問い合わせ</h2>
         <p class="text-sm leading-relaxed">
-          本ポリシーに関する問い合わせは、本サービス上のフィードバック導線、または運営者が別途指定する方法によりご連絡ください。
+          本ポリシーに関する問い合わせは、本サービス上のお問い合わせ導線、または運営者が別途指定する方法によりご連絡ください。
         </p>
       </section>
 
