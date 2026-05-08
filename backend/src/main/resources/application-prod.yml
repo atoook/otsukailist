@@ -4,6 +4,9 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT:5432}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE:require}${POSTGRES_PARAMS:}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+    hikari:
+      minimum-idle: ${DB_POOL_MINIMUM_IDLE:0}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:60000}
   jpa:
     show-sql: false
     properties:
