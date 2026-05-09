@@ -101,12 +101,14 @@ export default defineComponent({
   data(): {
     collapsedGroups: Record<string, boolean>;
     errorMessage: string;
+    deleteLoading: Record<string, boolean>;
   } {
     return {
       collapsedGroups: Object.fromEntries(
         ITEM_GROUP_DEFINITIONS.map((def) => [def.key, def.defaultCollapsed ?? false])
       ) as Record<string, boolean>,
-      errorMessage: ''
+      errorMessage: '',
+      deleteLoading: {}
     };
   },
   computed: {
@@ -170,6 +172,9 @@ export default defineComponent({
       }
     },
     async deleteItem(itemId: ItemId) {
+      if (this.deleteLoading[itemId]) {
+        return;
+      }
       const listId = this.listStore.listId;
       if (!listId) {
         this.errorMessage = 'リストが初期化されていません。';
@@ -177,6 +182,7 @@ export default defineComponent({
         return;
       }
       try {
+        this.deleteLoading = { ...this.deleteLoading, [itemId]: true };
         const result = await this.mutationRun(() => deleteItemApi(listId, itemId));
         if (result.applied) {
           this.listStore.removeItem(itemId);
@@ -185,6 +191,10 @@ export default defineComponent({
         console.error('Failed to delete item', err);
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの削除に失敗しました。';
         this.showErrorFeedback();
+      } finally {
+        const deleteLoading = { ...this.deleteLoading };
+        delete deleteLoading[itemId];
+        this.deleteLoading = deleteLoading;
       }
     },
     async modifyItem(updatedItem: Item) {
@@ -284,6 +294,7 @@ export default defineComponent({
           :member-filter-active="getItemMemberId(item) === memberFilterId"
           :category-filter-active="item.category === categoryFilter"
           :preparation-type-filter-active="item.preparationType === preparationTypeFilter"
+          :isDeleteLoading="deleteLoading[item.id] ?? false"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
