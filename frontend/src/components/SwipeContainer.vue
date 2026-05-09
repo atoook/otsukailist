@@ -31,6 +31,8 @@
 </template>
 
 <script>
+const SWIPE_START_THRESHOLD = 8;
+
 export default {
   name: 'SwipeContainer',
   props: {
@@ -55,7 +57,9 @@ export default {
     return {
       swipeOffset: 0,
       isDragging: false,
+      isSwiping: false,
       startX: 0,
+      startY: 0,
       currentX: 0
     };
   },
@@ -88,13 +92,28 @@ export default {
         // ドラッグフローは継続
         console.warn('Failed to capture pointer:', error);
       }
-      this.startDrag(e.clientX);
+      this.startDrag(e.clientX, e.clientY);
     },
     handlePointerMove(e) {
-      if (this.isDragging) {
-        e.preventDefault();
-        this.updateDrag(e.clientX);
+      if (!this.isDragging) {
+        return;
       }
+
+      const diffX = e.clientX - this.startX;
+      const diffY = e.clientY - this.startY;
+
+      if (!this.isSwiping) {
+        if (Math.abs(diffX) < SWIPE_START_THRESHOLD) {
+          return;
+        }
+        if (Math.abs(diffY) > Math.abs(diffX) || diffX > 0) {
+          return;
+        }
+        this.isSwiping = true;
+      }
+
+      e.preventDefault();
+      this.updateDrag(e.clientX);
     },
     handlePointerEnd(e) {
       // ポインターキャプチャを解放
@@ -109,9 +128,11 @@ export default {
     },
 
     // 共通のドラッグロジック
-    startDrag(clientX) {
+    startDrag(clientX, clientY) {
       this.isDragging = true;
+      this.isSwiping = false;
       this.startX = clientX;
+      this.startY = clientY;
       this.currentX = clientX;
     },
     updateDrag(clientX) {
@@ -125,6 +146,7 @@ export default {
     },
     endDrag() {
       this.isDragging = false;
+      this.isSwiping = false;
 
       // しきい値を超えていない場合は元に戻す
       if (this.swipeOffset > -this.threshold) {
