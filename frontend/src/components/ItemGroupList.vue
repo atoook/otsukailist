@@ -294,7 +294,7 @@ export default defineComponent({
           :member-filter-active="getItemMemberId(item) === memberFilterId"
           :category-filter-active="item.category === categoryFilter"
           :preparation-type-filter-active="item.preparationType === preparationTypeFilter"
-          :isDeleteLoading="deleteLoading[item.id] ?? false"
+          :is-delete-loading="deleteLoading[item.id] ?? false"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
