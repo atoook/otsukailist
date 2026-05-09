@@ -115,7 +115,9 @@ export default defineComponent({
         placeholder="アイテムを追加..."
         variant="inline"
       />
-      <MainButton @click="addItem" :disabled="!newItemName.trim() || mutationLoading"> 追加 </MainButton>
+      <MainButton @click="addItem" :disabled="!newItemName.trim() || mutationLoading">
+        {{ mutationLoading ? '追加中' : '追加' }}
+      </MainButton>
     </div>
     <p v-if="shouldShowInheritedFilterHint" class="mt-1 px-1 text-xs text-charcoal-600">
       {{ inheritedFilterLabels.join(' / ') }}で追加されます

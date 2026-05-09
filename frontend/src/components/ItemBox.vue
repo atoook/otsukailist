@@ -99,10 +99,29 @@
     </div>
 
     <template #hiddenActions>
-      <button @click="handleDelete(item.id)" :aria-label="`${item.name}を削除`" tabindex="-1" role="button">
-        <BadgeTag text="削除" size="small" class="bg-ember-400 border-ember-600 text-white"
-          ><template #icon><IconTrash /></template
-        ></BadgeTag>
+      <button
+        type="button"
+        @click="handleDelete(item.id)"
+        :disabled="isDeleteLoading"
+        :aria-busy="isDeleteLoading"
+        :aria-label="`${item.name}を削除`"
+        tabindex="-1"
+        class="disabled:cursor-wait disabled:opacity-80"
+      >
+        <BadgeTag
+          :text="isDeleteLoading ? '削除中' : '削除'"
+          size="small"
+          class="bg-ember-400 border-ember-600 text-white"
+        >
+          <template #icon>
+            <span
+              v-if="isDeleteLoading"
+              class="h-3 w-3 rounded-full border-2 border-white/50 border-t-white animate-spin"
+              aria-hidden="true"
+            ></span>
+            <IconTrash v-else />
+          </template>
+        </BadgeTag>
       </button>
     </template>
   </SwipeContainer>
@@ -175,6 +194,10 @@ export default {
       default: false
     },
     preparationTypeFilterActive: {
+      type: Boolean,
+      default: false
+    },
+    isDeleteLoading: {
       type: Boolean,
       default: false
     }
