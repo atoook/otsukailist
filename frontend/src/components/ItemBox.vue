@@ -101,7 +101,10 @@
     <template #hiddenActions>
       <button
         type="button"
-        @click="handleDelete(item.id)"
+        @pointerdown="handleDeletePointerStart"
+        @pointerup="handleDeletePointerEnd(item.id)"
+        @pointercancel="handleDeletePointerCancel"
+        @click="handleDeleteClick(item.id)"
         :disabled="isDeleteLoading"
         :aria-busy="isDeleteLoading"
         :aria-label="`${item.name}を削除`"
@@ -163,7 +166,9 @@ export default {
       newName: '',
       isInputFocused: false,
       showSaveIndicator: false,
-      saveIndicatorTimer: null as number | null
+      saveIndicatorTimer: null as number | null,
+      deletePointerStarted: false,
+      lastPointerDeleteAt: 0
     };
   },
   props: {
@@ -268,6 +273,26 @@ export default {
     },
     handleInfo(item: Item) {
       this.$emit('info', item);
+    },
+    handleDeletePointerStart() {
+      this.deletePointerStarted = true;
+    },
+    handleDeletePointerEnd(itemId: ItemId) {
+      if (!this.deletePointerStarted) {
+        return;
+      }
+      this.deletePointerStarted = false;
+      this.lastPointerDeleteAt = Date.now();
+      this.handleDelete(itemId);
+    },
+    handleDeletePointerCancel() {
+      this.deletePointerStarted = false;
+    },
+    handleDeleteClick(itemId: ItemId) {
+      if (Date.now() - this.lastPointerDeleteAt < 500) {
+        return;
+      }
+      this.handleDelete(itemId);
     },
     handleDelete(itemId: ItemId) {
       this.$emit('delete', itemId);
