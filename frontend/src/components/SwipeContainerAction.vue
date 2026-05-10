@@ -4,6 +4,7 @@
     @pointerdown="handlePointerStart($event)"
     @pointerup="handlePointerEnd($event)"
     @pointercancel="handlePointerCancel"
+    @lostpointercapture="handlePointerCancel"
     @click="handleClick($event)"
   >
     <slot />
@@ -37,6 +38,7 @@ export default {
         return;
       }
       this.pointerStarted = true;
+      this.capturePointer(event);
     },
     handlePointerEnd(event: PointerEvent) {
       if (!this.pointerStarted || !this.isPrimaryPointer(event)) {
@@ -44,11 +46,34 @@ export default {
         return;
       }
       this.pointerStarted = false;
+      this.releasePointer(event);
       this.lastPointerActivateAt = Date.now();
       this.$emit('activate');
     },
     handlePointerCancel() {
       this.pointerStarted = false;
+    },
+    capturePointer(event: PointerEvent) {
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      try {
+        target.setPointerCapture(event.pointerId);
+      } catch (error) {
+        console.warn('Failed to capture action pointer:', error);
+      }
+    },
+    releasePointer(event: PointerEvent) {
+      const target = event.currentTarget;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+      try {
+        target.releasePointerCapture(event.pointerId);
+      } catch (error) {
+        console.warn('Failed to release action pointer:', error);
+      }
     },
     handleClick(event: MouseEvent) {
       if (!this.isPrimaryClick(event)) {

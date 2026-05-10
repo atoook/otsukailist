@@ -65,4 +65,14 @@ describe('SwipeContainerAction', () => {
 
     expect(vm.$emit).not.toHaveBeenCalled();
   });
+
+  it('pointer capture を失った場合は次の pointerup で activate しない', () => {
+    const vm = createVm();
+
+    (vm.handlePointerStart as (event: PointerEvent) => void)(createPointerEvent());
+    (vm.handlePointerCancel as () => void)();
+    (vm.handlePointerEnd as (event: PointerEvent) => void)(createPointerEvent());
+
+    expect(vm.$emit).not.toHaveBeenCalled();
+  });
 });
