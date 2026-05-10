@@ -176,10 +176,12 @@ export default {
       }
     },
     addWindowPointerListeners() {
+      window.addEventListener('pointermove', this.handlePointerMove);
       window.addEventListener('pointerup', this.handlePointerEnd);
       window.addEventListener('pointercancel', this.handlePointerEnd);
     },
     removeWindowPointerListeners() {
+      window.removeEventListener('pointermove', this.handlePointerMove);
       window.removeEventListener('pointerup', this.handlePointerEnd);
       window.removeEventListener('pointercancel', this.handlePointerEnd);
     },
