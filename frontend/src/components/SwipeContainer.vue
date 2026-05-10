@@ -85,11 +85,14 @@ export default {
   methods: {
     // 統一されたポインターイベント（マウス・タッチ・ペン全対応）
     handlePointerStart(e) {
+      if (this.isDragging || this.activePointerId !== null) {
+        return;
+      }
       this.activePointerId = e.pointerId;
       this.startDrag(e.clientX, e.clientY);
     },
     handlePointerMove(e) {
-      if (!this.isDragging) {
+      if (!this.isDragging || e.pointerId !== this.activePointerId) {
         return;
       }
 
@@ -111,6 +114,9 @@ export default {
       this.updateDrag(e.clientX);
     },
     handlePointerEnd(e) {
+      if (e.pointerId !== this.activePointerId) {
+        return;
+      }
       this.releasePointer(e);
       this.endDrag();
     },
