@@ -60,8 +60,7 @@ export default {
       isSwiping: false,
       startX: 0,
       startY: 0,
-      currentX: 0,
-      activePointerId: null
+      currentX: 0
     };
   },
   computed: {
@@ -75,7 +74,6 @@ export default {
   },
   unmounted() {
     document.removeEventListener('click', this.handleOutsideClick);
-    this.removeWindowPointerListeners();
   },
   watch: {
     showHiddenActions(newValue) {
@@ -86,14 +84,18 @@ export default {
   methods: {
     // 統一されたポインターイベント（マウス・タッチ・ペン全対応）
     handlePointerStart(e) {
-      if (this.isDragging || this.activePointerId !== null) {
-        return;
+      // ポインターをキャプチャ（追跡を継続）
+      try {
+        e.target.setPointerCapture(e.pointerId);
+      } catch (error) {
+        // ポインターキャプチャに失敗（無効なpointerIdや切断された要素など）
+        // ドラッグフローは継続
+        console.warn('Failed to capture pointer:', error);
       }
-      this.activePointerId = e.pointerId;
       this.startDrag(e.clientX, e.clientY);
     },
     handlePointerMove(e) {
-      if (!this.isDragging || e.pointerId !== this.activePointerId) {
+      if (!this.isDragging) {
         return;
       }
 
@@ -108,42 +110,21 @@ export default {
           return;
         }
         this.isSwiping = true;
-        this.capturePointer(e);
       }
 
       e.preventDefault();
       this.updateDrag(e.clientX);
     },
     handlePointerEnd(e) {
-      if (e.pointerId !== this.activePointerId) {
-        return;
-      }
-      this.releasePointer(e);
-      this.endDrag();
-    },
-    capturePointer(e) {
-      if (this.activePointerId === null || !e.currentTarget?.setPointerCapture) {
-        return;
-      }
+      // ポインターキャプチャを解放
       try {
-        e.currentTarget.setPointerCapture(this.activePointerId);
+        e.target.releasePointerCapture(e.pointerId);
       } catch (error) {
-        // ポインターキャプチャに失敗してもドラッグフローは継続
-        console.warn('Failed to capture pointer:', error);
-      }
-    },
-    releasePointer(e) {
-      if (this.activePointerId === null || !e.currentTarget?.releasePointerCapture) {
-        return;
-      }
-      try {
-        e.currentTarget.releasePointerCapture(this.activePointerId);
-      } catch (error) {
-        // ポインターキャプチャの解放に失敗しても後続処理は継続
+        // ポインターキャプチャの解放に失敗（無効なpointerIdや切断された要素など）
+        // ドラッグフローは継続
         console.warn('Failed to release pointer capture:', error);
-      } finally {
-        this.activePointerId = null;
       }
+      this.endDrag();
     },
 
     // 共通のドラッグロジック
@@ -153,7 +134,6 @@ export default {
       this.startX = clientX;
       this.startY = clientY;
       this.currentX = clientX;
-      this.addWindowPointerListeners();
     },
     updateDrag(clientX) {
       this.currentX = clientX;
@@ -167,23 +147,11 @@ export default {
     endDrag() {
       this.isDragging = false;
       this.isSwiping = false;
-      this.activePointerId = null;
-      this.removeWindowPointerListeners();
 
       // しきい値を超えていない場合は元に戻す
       if (this.swipeOffset > -this.threshold) {
         this.resetSwipe();
       }
-    },
-    addWindowPointerListeners() {
-      window.addEventListener('pointermove', this.handlePointerMove);
-      window.addEventListener('pointerup', this.handlePointerEnd);
-      window.addEventListener('pointercancel', this.handlePointerEnd);
-    },
-    removeWindowPointerListeners() {
-      window.removeEventListener('pointermove', this.handlePointerMove);
-      window.removeEventListener('pointerup', this.handlePointerEnd);
-      window.removeEventListener('pointercancel', this.handlePointerEnd);
     },
     resetSwipe() {
       this.swipeOffset = 0;
