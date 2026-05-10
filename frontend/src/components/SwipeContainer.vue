@@ -75,6 +75,7 @@ export default {
   },
   unmounted() {
     document.removeEventListener('click', this.handleOutsideClick);
+    this.removeWindowPointerListeners();
   },
   watch: {
     showHiddenActions(newValue) {
@@ -152,6 +153,7 @@ export default {
       this.startX = clientX;
       this.startY = clientY;
       this.currentX = clientX;
+      this.addWindowPointerListeners();
     },
     updateDrag(clientX) {
       this.currentX = clientX;
@@ -166,11 +168,20 @@ export default {
       this.isDragging = false;
       this.isSwiping = false;
       this.activePointerId = null;
+      this.removeWindowPointerListeners();
 
       // しきい値を超えていない場合は元に戻す
       if (this.swipeOffset > -this.threshold) {
         this.resetSwipe();
       }
+    },
+    addWindowPointerListeners() {
+      window.addEventListener('pointerup', this.handlePointerEnd);
+      window.addEventListener('pointercancel', this.handlePointerEnd);
+    },
+    removeWindowPointerListeners() {
+      window.removeEventListener('pointerup', this.handlePointerEnd);
+      window.removeEventListener('pointercancel', this.handlePointerEnd);
     },
     resetSwipe() {
       this.swipeOffset = 0;
