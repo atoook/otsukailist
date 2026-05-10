@@ -2,6 +2,7 @@
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
+import SwipeContainerAction from '../components/SwipeContainerAction.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import IconBbq from '../components/icons/IconBbq.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
@@ -14,6 +15,7 @@ export default {
     ContentArea,
     MainButton,
     SwipeContainer,
+    SwipeContainerAction,
     BadgeTag,
     IconBbq,
     IconClipboard
@@ -142,13 +144,12 @@ export default {
               <span class="text-charcoal-300 text-xs ml-2" aria-hidden="true">›</span>
             </router-link>
             <template #hiddenActions>
-              <button
-                type="button"
-                @click="removeHistoryEntry(entry.listId)"
+              <SwipeContainerAction
+                @activate="removeHistoryEntry(entry.listId)"
                 :aria-label="`${entry.name}を履歴からクリア`"
               >
                 <BadgeTag text="履歴からクリア" size="small" class="bg-ember-400 border-ember-600 text-white" />
-              </button>
+              </SwipeContainerAction>
             </template>
           </SwipeContainer>
         </li>

@@ -99,12 +99,8 @@
     </div>
 
     <template #hiddenActions>
-      <button
-        type="button"
-        @pointerdown="handleDeletePointerStart($event)"
-        @pointerup="handleDeletePointerEnd($event, item.id)"
-        @pointercancel="handleDeletePointerCancel"
-        @click="handleDeleteClick(item.id)"
+      <SwipeContainerAction
+        @activate="handleDelete(item.id)"
         :disabled="isDeleteLoading"
         :aria-busy="isDeleteLoading"
         :aria-label="`${item.name}を削除`"
@@ -125,7 +121,7 @@
             <IconTrash v-else />
           </template>
         </BadgeTag>
-      </button>
+      </SwipeContainerAction>
     </template>
   </SwipeContainer>
 </template>
@@ -134,6 +130,7 @@
 import CheckBox from './CheckBox.vue';
 import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
+import SwipeContainerAction from './SwipeContainerAction.vue';
 import BadgeTag from './BadgeTag.vue';
 import FilterBadgeButton from './FilterBadgeButton.vue';
 import IconButton from './IconButton.vue';
@@ -147,15 +144,13 @@ import { UNIT_DEFINITIONS } from '@/types/list-generation';
 import { ITEM_CATEGORIES, type ItemCategory } from '@/types/item-category';
 import { ITEM_PREPARATION_TYPES, type ItemPreparationType } from '@/types/item-preparation-type';
 
-// pointerup 直後に合成 click が続く場合があるため、短時間だけ click 側を抑止する。
-const CLICK_SUPPRESSION_MS = 500;
-
 export default {
   name: 'ItemBox',
   components: {
     CheckBox,
     TextInput,
     SwipeContainer,
+    SwipeContainerAction,
     BadgeTag,
     FilterBadgeButton,
     IconButton,
@@ -169,9 +164,7 @@ export default {
       newName: '',
       isInputFocused: false,
       showSaveIndicator: false,
-      saveIndicatorTimer: null as number | null,
-      deletePointerStarted: false,
-      lastPointerDeleteAt: 0
+      saveIndicatorTimer: null as number | null
     };
   },
   props: {
@@ -276,34 +269,6 @@ export default {
     },
     handleInfo(item: Item) {
       this.$emit('info', item);
-    },
-    isPrimaryDeletePointer(event: PointerEvent) {
-      return event.isPrimary !== false && event.button === 0;
-    },
-    handleDeletePointerStart(event: PointerEvent) {
-      if (!this.isPrimaryDeletePointer(event)) {
-        this.deletePointerStarted = false;
-        return;
-      }
-      this.deletePointerStarted = true;
-    },
-    handleDeletePointerEnd(event: PointerEvent, itemId: ItemId) {
-      if (!this.deletePointerStarted || !this.isPrimaryDeletePointer(event)) {
-        this.deletePointerStarted = false;
-        return;
-      }
-      this.deletePointerStarted = false;
-      this.lastPointerDeleteAt = Date.now();
-      this.handleDelete(itemId);
-    },
-    handleDeletePointerCancel() {
-      this.deletePointerStarted = false;
-    },
-    handleDeleteClick(itemId: ItemId) {
-      if (Date.now() - this.lastPointerDeleteAt < CLICK_SUPPRESSION_MS) {
-        return;
-      }
-      this.handleDelete(itemId);
     },
     handleDelete(itemId: ItemId) {
       this.$emit('delete', itemId);
