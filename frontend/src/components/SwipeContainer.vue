@@ -60,7 +60,8 @@ export default {
       isSwiping: false,
       startX: 0,
       startY: 0,
-      currentX: 0
+      currentX: 0,
+      activePointerId: null
     };
   },
   computed: {
@@ -84,14 +85,7 @@ export default {
   methods: {
     // 統一されたポインターイベント（マウス・タッチ・ペン全対応）
     handlePointerStart(e) {
-      // ポインターをキャプチャ（追跡を継続）
-      try {
-        e.target.setPointerCapture(e.pointerId);
-      } catch (error) {
-        // ポインターキャプチャに失敗（無効なpointerIdや切断された要素など）
-        // ドラッグフローは継続
-        console.warn('Failed to capture pointer:', error);
-      }
+      this.activePointerId = e.pointerId;
       this.startDrag(e.clientX, e.clientY);
     },
     handlePointerMove(e) {
@@ -110,21 +104,39 @@ export default {
           return;
         }
         this.isSwiping = true;
+        this.capturePointer(e);
       }
 
       e.preventDefault();
       this.updateDrag(e.clientX);
     },
     handlePointerEnd(e) {
-      // ポインターキャプチャを解放
-      try {
-        e.target.releasePointerCapture(e.pointerId);
-      } catch (error) {
-        // ポインターキャプチャの解放に失敗（無効なpointerIdや切断された要素など）
-        // ドラッグフローは継続
-        console.warn('Failed to release pointer capture:', error);
-      }
+      this.releasePointer(e);
       this.endDrag();
+    },
+    capturePointer(e) {
+      if (this.activePointerId === null || !e.currentTarget?.setPointerCapture) {
+        return;
+      }
+      try {
+        e.currentTarget.setPointerCapture(this.activePointerId);
+      } catch (error) {
+        // ポインターキャプチャに失敗してもドラッグフローは継続
+        console.warn('Failed to capture pointer:', error);
+      }
+    },
+    releasePointer(e) {
+      if (this.activePointerId === null || !e.currentTarget?.releasePointerCapture) {
+        return;
+      }
+      try {
+        e.currentTarget.releasePointerCapture(this.activePointerId);
+      } catch (error) {
+        // ポインターキャプチャの解放に失敗しても後続処理は継続
+        console.warn('Failed to release pointer capture:', error);
+      } finally {
+        this.activePointerId = null;
+      }
     },
 
     // 共通のドラッグロジック
@@ -147,6 +159,7 @@ export default {
     endDrag() {
       this.isDragging = false;
       this.isSwiping = false;
+      this.activePointerId = null;
 
       // しきい値を超えていない場合は元に戻す
       if (this.swipeOffset > -this.threshold) {
