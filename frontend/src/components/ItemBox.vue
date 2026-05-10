@@ -101,8 +101,8 @@
     <template #hiddenActions>
       <button
         type="button"
-        @pointerdown="handleDeletePointerStart"
-        @pointerup="handleDeletePointerEnd(item.id)"
+        @pointerdown="handleDeletePointerStart($event)"
+        @pointerup="handleDeletePointerEnd($event, item.id)"
         @pointercancel="handleDeletePointerCancel"
         @click="handleDeleteClick(item.id)"
         :disabled="isDeleteLoading"
@@ -274,11 +274,19 @@ export default {
     handleInfo(item: Item) {
       this.$emit('info', item);
     },
-    handleDeletePointerStart() {
+    isPrimaryDeletePointer(event: PointerEvent) {
+      return event.isPrimary !== false && event.button === 0;
+    },
+    handleDeletePointerStart(event: PointerEvent) {
+      if (!this.isPrimaryDeletePointer(event)) {
+        this.deletePointerStarted = false;
+        return;
+      }
       this.deletePointerStarted = true;
     },
-    handleDeletePointerEnd(itemId: ItemId) {
-      if (!this.deletePointerStarted) {
+    handleDeletePointerEnd(event: PointerEvent, itemId: ItemId) {
+      if (!this.deletePointerStarted || !this.isPrimaryDeletePointer(event)) {
+        this.deletePointerStarted = false;
         return;
       }
       this.deletePointerStarted = false;
