@@ -26,6 +26,28 @@
     </div>
   </label>
 </template>
-<> import IconCheck from './icons/IconCheck.vue'; export default { name: 'CheckBox', components: { IconCheck }, props: {
-checked: { type: Boolean, default: false }, ariaLabel: { type: String, required: true }, disabled: { type: Boolean,
-default: false } }, emits: ['toggle', 'keydow
+<script>
+import IconCheck from './icons/IconCheck.vue';
+
+export default {
+  name: 'CheckBox',
+  components: {
+    IconCheck
+  },
+  props: {
+    checked: {
+      type: Boolean,
+      default: false
+    },
+    ariaLabel: {
+      type: String,
+      required: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['toggle', 'keydown']
+};
+</script>
