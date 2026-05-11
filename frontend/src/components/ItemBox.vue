@@ -353,6 +353,9 @@ export default {
     },
     handleBlur() {
       this.isInputFocused = false;
+      if (this.isDeleteActionOpen) {
+        return;
+      }
       if (!this.isModified) {
         return;
       }
