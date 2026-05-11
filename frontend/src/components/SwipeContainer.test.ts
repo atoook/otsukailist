@@ -23,6 +23,14 @@ function createVm(overrides: Record<string, unknown> = {}) {
   return vm;
 }
 
+function createPointerMoveEvent(clientX: number, clientY = 0) {
+  return {
+    clientX,
+    clientY,
+    preventDefault: vi.fn()
+  } as unknown as PointerEvent;
+}
+
 describe('SwipeContainer', () => {
   it('閉じている状態では右スワイプで offset を増やさない', () => {
     const vm = createVm();
@@ -50,5 +58,29 @@ describe('SwipeContainer', () => {
     (vm.endDrag as () => void)();
 
     expect(vm.swipeOffset).toBe(0);
+  });
+
+  it('閉じている状態の右スワイプでは swipe を開始せず preventDefault もしない', () => {
+    const vm = createVm();
+    const event = createPointerMoveEvent(140);
+
+    (vm.startDrag as (clientX: number, clientY: number) => void)(100, 0);
+    (vm.handlePointerMove as (event: PointerEvent) => void)(event);
+
+    expect(vm.isSwiping).toBe(false);
+    expect(vm.swipeOffset).toBe(0);
+    expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('開いている状態の右スワイプでは swipe を開始して offset を戻す', () => {
+    const vm = createVm({ swipeOffset: -100 });
+    const event = createPointerMoveEvent(140);
+
+    (vm.startDrag as (clientX: number, clientY: number) => void)(100, 0);
+    (vm.handlePointerMove as (event: PointerEvent) => void)(event);
+
+    expect(vm.isSwiping).toBe(true);
+    expect(vm.swipeOffset).toBe(-60);
+    expect(event.preventDefault).toHaveBeenCalledOnce();
   });
 });
