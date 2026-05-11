@@ -1,9 +1,10 @@
 <template>
-  <label class="relative w-6 h-6 cursor-pointer">
+  <label :class="['relative w-6 h-6', disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer']">
     <!-- 実際のチェックボックス（操作主体） -->
     <input
       type="checkbox"
       :checked="checked"
+      :disabled="disabled"
       :aria-label="ariaLabel"
       @change="$emit('toggle')"
       @keydown="$emit('keydown', $event)"
@@ -38,6 +39,10 @@ export default {
     ariaLabel: {
       type: String,
       required: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['toggle', 'keydown']
