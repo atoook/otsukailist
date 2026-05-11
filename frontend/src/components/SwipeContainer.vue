@@ -60,6 +60,7 @@ export default {
       isSwiping: false,
       startX: 0,
       startY: 0,
+      startOffset: 0,
       currentX: 0
     };
   },
@@ -106,7 +107,10 @@ export default {
         if (Math.abs(diffX) < SWIPE_START_THRESHOLD) {
           return;
         }
-        if (Math.abs(diffY) > Math.abs(diffX) || diffX > 0) {
+        if (Math.abs(diffY) > Math.abs(diffX)) {
+          return;
+        }
+        if (this.startOffset === 0 && diffX > 0) {
           return;
         }
         this.isSwiping = true;
@@ -133,16 +137,16 @@ export default {
       this.isSwiping = false;
       this.startX = clientX;
       this.startY = clientY;
+      this.startOffset = this.swipeOffset;
       this.currentX = clientX;
     },
     updateDrag(clientX) {
       this.currentX = clientX;
       const diff = this.currentX - this.startX;
+      const nextOffset = this.startOffset + diff;
 
-      // 左スワイプ（負の値）のみ許可
-      if (diff <= 0) {
-        this.swipeOffset = Math.max(diff, -this.maxSwipe);
-      }
+      // 閉じている状態からは左スワイプのみ、開いている状態からは右スワイプで戻せるようにする
+      this.swipeOffset = Math.min(0, Math.max(nextOffset, -this.maxSwipe));
     },
     endDrag() {
       this.isDragging = false;
