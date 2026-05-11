@@ -24,7 +24,8 @@ export default {
     return {
       listHistory: [],
       listMeta: {},
-      metaLoading: false
+      metaLoading: false,
+      historyActionOpen: {}
     };
   },
   async created() {
@@ -67,6 +68,20 @@ export default {
     removeHistoryEntry(listId) {
       removeListHistoryEntry(listId);
       this.listHistory = this.listHistory.filter((e) => e.listId !== listId);
+      delete this.historyActionOpen[listId];
+    },
+    handleHistoryActionStateChange(listId, isOpen) {
+      this.historyActionOpen = {
+        ...this.historyActionOpen,
+        [listId]: isOpen
+      };
+    },
+    handleHistoryLinkClick(event, listId, navigate) {
+      if (!this.historyActionOpen[listId]) {
+        navigate(event);
+        return;
+      }
+      event.preventDefault();
     },
     formatLastActivity(isoString) {
       if (!isoString) return null;
@@ -117,31 +132,47 @@ export default {
       </div>
       <ul class="space-y-2">
         <li v-for="entry in listHistory" :key="entry.listId" class="rounded-lg overflow-hidden">
-          <SwipeContainer hidden-bg-color="#fef7f0">
+          <SwipeContainer
+            hidden-bg-color="#fef7f0"
+            @swipe-state-change="handleHistoryActionStateChange(entry.listId, $event)"
+          >
             <router-link
               :to="`/lists/${entry.listId}`"
-              class="flex items-center px-4 py-3 bg-white border border-charcoal-200 rounded-lg hover:bg-charcoal-50 transition-colors"
+              custom
+              v-slot="{ href, navigate }"
             >
-              <span class="text-charcoal-400 mr-3 text-base flex items-center"><IconClipboard /></span>
-              <span class="text-sm text-charcoal-700 font-medium truncate flex-1">
-                {{ listMeta[entry.listId]?.name ?? entry.name }}
-              </span>
-              <span class="flex items-center gap-2 ml-2 shrink-0">
-                <template v-if="metaLoading">
-                  <span class="text-xs text-charcoal-300 animate-pulse">···</span>
-                </template>
-                <template v-else-if="formattedListMeta[entry.listId]">
-                  <span class="text-xs text-charcoal-500">
-                    {{ formattedListMeta[entry.listId].completeCount }}/{{
-                      formattedListMeta[entry.listId].itemCount
-                    }}件
-                  </span>
-                  <span v-if="formattedListMeta[entry.listId].formattedActivity" class="text-xs text-charcoal-400">
-                    {{ formattedListMeta[entry.listId].formattedActivity }}
-                  </span>
-                </template>
-              </span>
-              <span class="text-charcoal-300 text-xs ml-2" aria-hidden="true">›</span>
+              <a
+                :href="href"
+                :aria-disabled="historyActionOpen[entry.listId] || undefined"
+                class="flex items-center px-4 py-3 border rounded-lg transition-colors"
+                :class="
+                  historyActionOpen[entry.listId]
+                    ? 'bg-wood-200 border-wood-300 cursor-default'
+                    : 'bg-white border-charcoal-200 hover:bg-charcoal-50'
+                "
+                @click="handleHistoryLinkClick($event, entry.listId, navigate)"
+              >
+                <span class="text-charcoal-400 mr-3 text-base flex items-center"><IconClipboard /></span>
+                <span class="text-sm text-charcoal-700 font-medium truncate flex-1">
+                  {{ listMeta[entry.listId]?.name ?? entry.name }}
+                </span>
+                <span class="flex items-center gap-2 ml-2 shrink-0">
+                  <template v-if="metaLoading">
+                    <span class="text-xs text-charcoal-300 animate-pulse">···</span>
+                  </template>
+                  <template v-else-if="formattedListMeta[entry.listId]">
+                    <span class="text-xs text-charcoal-500">
+                      {{ formattedListMeta[entry.listId].completeCount }}/{{
+                        formattedListMeta[entry.listId].itemCount
+                      }}件
+                    </span>
+                    <span v-if="formattedListMeta[entry.listId].formattedActivity" class="text-xs text-charcoal-400">
+                      {{ formattedListMeta[entry.listId].formattedActivity }}
+                    </span>
+                  </template>
+                </span>
+                <span class="text-charcoal-300 text-xs ml-2" aria-hidden="true">›</span>
+              </a>
             </router-link>
             <template #hiddenActions>
               <SwipeContainerAction
