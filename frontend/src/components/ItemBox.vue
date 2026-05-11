@@ -1,14 +1,16 @@
 <template>
-  <SwipeContainer :hiddenBgColor="'#fef7f0'">
+  <SwipeContainer :hiddenBgColor="'#fef7f0'" @swipe-state-change="handleDeleteActionStateChange">
     <div
       :id="`item-${item.id}`"
-      class="flex items-center gap-2 p-3 bg-wood-100 border border-wood-200 rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60"
+      class="flex items-center gap-2 p-3 border rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60 transition-[background-color,border-color,box-shadow,opacity] duration-200"
+      :class="isDeleteActionOpen ? 'bg-wood-200 border-wood-300 shadow-none' : 'bg-wood-100 border-wood-200'"
       role="listitem"
       :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}`"
     >
       <!-- カスタムチェックボックス -->
       <CheckBox
         :checked="isCompleted"
+        :disabled="isDeleteActionOpen"
         :aria-label="`${item.name}を完了としてマーク`"
         @toggle="handleToggle(item)"
         @keydown="handleKeyDown"
@@ -20,6 +22,7 @@
           :input-id="item.id"
           input-name="itemName"
           :model-value="newName"
+          :disabled="isDeleteActionOpen"
           @update:model-value="handleModify"
           @enter="isModified && syncUpdate()"
           @blur="handleBlur"
@@ -31,6 +34,7 @@
             :text="preparationTypeLabel"
             variant="secondary"
             :active="preparationTypeFilterActive"
+            :disabled="isDeleteActionOpen"
             :filter-label="`${preparationTypeLabel}で絞り込む`"
             :clear-label="`${preparationTypeLabel}の絞り込みを解除`"
             @filter="handlePreparationTypeFilter"
@@ -42,6 +46,7 @@
             :text="categoryLabel"
             variant="secondary"
             :active="categoryFilterActive"
+            :disabled="isDeleteActionOpen"
             :filter-label="`${categoryLabel}カテゴリーで絞り込む`"
             :clear-label="`${categoryLabel}カテゴリーの絞り込みを解除`"
             @filter="handleCategoryFilter"
@@ -60,6 +65,7 @@
             :text="preparationTypeLabel"
             variant="secondary"
             :active="preparationTypeFilterActive"
+            :disabled="isDeleteActionOpen"
             :filter-label="`${preparationTypeLabel}で絞り込む`"
             :clear-label="`${preparationTypeLabel}の絞り込みを解除`"
             @filter="handlePreparationTypeFilter"
@@ -71,6 +77,7 @@
             :text="categoryLabel"
             variant="secondary"
             :active="categoryFilterActive"
+            :disabled="isDeleteActionOpen"
             :filter-label="`${categoryLabel}カテゴリーで絞り込む`"
             :clear-label="`${categoryLabel}カテゴリーの絞り込みを解除`"
             @filter="handleCategoryFilter"
@@ -87,13 +94,19 @@
         :text="memberBadgeText"
         :variant="memberBadgeVariant"
         :active="memberFilterActive"
-        :disabled="!memberId"
+        :disabled="!memberId || isDeleteActionOpen"
         :filter-label="`${memberName}で絞り込む`"
         :clear-label="`${memberName}の絞り込みを解除`"
         @filter="handleMemberFilter"
         @clear="handleMemberFilterClear"
       />
-      <IconButton variant="wood" size="small" :aria-label="`${item.name}を編集`" @click="handleEdit(item)">
+      <IconButton
+        variant="wood"
+        size="small"
+        :disabled="isDeleteActionOpen"
+        :aria-label="`${item.name}を編集`"
+        @click="handleEdit(item)"
+      >
         <IconEllipsisVertical />
       </IconButton>
     </div>
@@ -164,7 +177,8 @@ export default {
       newName: '',
       isInputFocused: false,
       showSaveIndicator: false,
-      saveIndicatorTimer: null as number | null
+      saveIndicatorTimer: null as number | null,
+      isDeleteActionOpen: false
     };
   },
   props: {
@@ -270,6 +284,16 @@ export default {
     handleInfo(item: Item) {
       this.$emit('info', item);
     },
+    handleDeleteActionStateChange(isOpen: boolean) {
+      this.isDeleteActionOpen = isOpen;
+      if (!isOpen) {
+        return;
+      }
+      const activeElement = document.activeElement;
+      if (activeElement instanceof HTMLElement && this.$el?.contains(activeElement)) {
+        activeElement.blur();
+      }
+    },
     handleDelete(itemId: ItemId) {
       this.$emit('delete', itemId);
     },
@@ -329,6 +353,9 @@ export default {
     },
     handleBlur() {
       this.isInputFocused = false;
+      if (this.isDeleteActionOpen) {
+        return;
+      }
       if (!this.isModified) {
         return;
       }
