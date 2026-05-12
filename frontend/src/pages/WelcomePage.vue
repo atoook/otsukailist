@@ -4,6 +4,7 @@ import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
 import SwipeContainerAction from '../components/SwipeContainerAction.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import WelcomeGuideSection from '../components/WelcomeGuideSection.vue';
 import IconBbq from '../components/icons/IconBbq.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
@@ -17,6 +18,7 @@ export default {
     SwipeContainer,
     SwipeContainerAction,
     BadgeTag,
+    WelcomeGuideSection,
     IconBbq,
     IconClipboard
   },
@@ -186,5 +188,7 @@ export default {
         </li>
       </ul>
     </div>
+
+    <WelcomeGuideSection />
   </ContentArea>
 </template>
