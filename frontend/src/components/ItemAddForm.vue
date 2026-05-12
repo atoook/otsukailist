@@ -115,8 +115,20 @@ export default defineComponent({
         placeholder="アイテムを追加..."
         variant="inline"
       />
-      <MainButton @click="addItem" :disabled="!newItemName.trim() || mutationLoading">
-        {{ mutationLoading ? '追加中' : '追加' }}
+      <MainButton
+        @click="addItem"
+        :disabled="!newItemName.trim() || mutationLoading"
+        :aria-busy="mutationLoading"
+        :aria-label="mutationLoading ? '追加中' : '追加'"
+      >
+        <span class="relative inline-grid min-w-[2em] place-items-center">
+          <span :class="{ 'opacity-0': mutationLoading }">追加</span>
+          <span
+            v-if="mutationLoading"
+            class="absolute h-5 w-5 rounded-full border-2 border-wood-50/50 border-t-wood-50 animate-spin"
+            aria-hidden="true"
+          ></span>
+        </span>
       </MainButton>
     </div>
     <p v-if="shouldShowInheritedFilterHint" class="mt-1 px-1 text-xs text-charcoal-600">
