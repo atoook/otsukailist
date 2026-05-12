@@ -4,35 +4,35 @@ import IconCheck from './icons/IconCheck.vue';
 import IconEdit from './icons/IconEdit.vue';
 import IconUsers from './icons/IconUsers.vue';
 
-const GUIDE_COPY = {
+const GUIDE_COPY = Object.freeze({
   eyebrow: '登録なしですぐ使える',
   title: '作って、送って、みんなで買う。',
   description:
     'はじめるを押したら、買い物リスト名とメンバーを決めるだけ。URLを共有すれば、同じリストを全員で確認できます。',
   noteTitle: 'BBQやまとめ買いにも。',
   noteDescription: '買うものと持参するものを一つのリストにまとめて、担当ごとの準備状況まで見やすく整理できます。'
-};
+});
 
-const GUIDE_STEPS = [
-  {
+const GUIDE_STEPS = Object.freeze([
+  Object.freeze({
     stepLabel: 'STEP 1',
     title: 'リストを作る',
     description: 'タイトルと買い物メンバーを入力して、買い物リストの土台を作ります。',
     icon: markRaw(IconEdit)
-  },
-  {
+  }),
+  Object.freeze({
     stepLabel: 'STEP 2',
     title: 'URLを送って一緒に編集',
     description: '家族や友だちにリンクを共有。みんなで品目を追加したり、担当を決めたりできます。',
     icon: markRaw(IconUsers)
-  },
-  {
+  }),
+  Object.freeze({
     stepLabel: 'STEP 3',
     title: '買ったらチェック',
     description: '野菜売り場では野菜だけなど、カテゴリで絞り込みながらチェック。重複買いや買い忘れを減らせます。',
     icon: markRaw(IconCheck)
-  }
-];
+  })
+]);
 
 export default {
   name: 'WelcomeGuideSection',
@@ -46,10 +46,10 @@ export default {
 </script>
 
 <template>
-  <section class="mt-12 border-t border-charcoal-200 pt-8" aria-labelledby="welcome-guide-title">
+  <section class="mt-12 border-t border-charcoal-200 pt-8">
     <div class="mb-5">
       <p class="text-xs font-semibold text-wood-600 mb-2">{{ copy.eyebrow }}</p>
-      <h2 id="welcome-guide-title" class="text-xl font-bold text-charcoal-800 leading-snug">
+      <h2 class="text-xl font-bold text-charcoal-800 leading-snug">
         {{ copy.title }}
       </h2>
       <p class="text-sm text-charcoal-600 leading-relaxed mt-2">
