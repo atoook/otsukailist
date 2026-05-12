@@ -5,7 +5,10 @@ import SwipeContainer from '../components/SwipeContainer.vue';
 import SwipeContainerAction from '../components/SwipeContainerAction.vue';
 import BadgeTag from '../components/BadgeTag.vue';
 import IconBbq from '../components/icons/IconBbq.vue';
+import IconCheck from '../components/icons/IconCheck.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
+import IconEdit from '../components/icons/IconEdit.vue';
+import IconUsers from '../components/icons/IconUsers.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
 import { fetchListsMeta } from '@/api/list';
 
@@ -18,7 +21,10 @@ export default {
     SwipeContainerAction,
     BadgeTag,
     IconBbq,
-    IconClipboard
+    IconCheck,
+    IconClipboard,
+    IconEdit,
+    IconUsers
   },
   data() {
     return {
@@ -186,5 +192,71 @@ export default {
         </li>
       </ul>
     </div>
+
+    <section class="mt-12 border-t border-charcoal-200 pt-8" aria-labelledby="welcome-guide-title">
+      <div class="mb-5">
+        <p class="text-xs font-semibold text-wood-600 mb-2">登録なしですぐ使える</p>
+        <h2 id="welcome-guide-title" class="text-xl font-bold text-charcoal-800 leading-snug">
+          作って、送って、みんなで買う。
+        </h2>
+        <p class="text-sm text-charcoal-600 leading-relaxed mt-2">
+          はじめるを押したら、買い物リスト名とメンバーを決めるだけ。URLを共有すれば、同じリストを全員で確認できます。
+        </p>
+      </div>
+
+      <ol class="space-y-3">
+        <li class="bg-white border border-charcoal-200 rounded-lg p-4">
+          <div class="flex gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-wood-50 text-wood-600 text-lg">
+              <IconEdit />
+            </span>
+            <div>
+              <span class="text-xs font-semibold text-charcoal-400">STEP 1</span>
+              <h3 class="text-sm font-semibold text-charcoal-800 mt-1 mb-1">リストを作る</h3>
+              <p class="text-xs text-charcoal-600 leading-relaxed">
+                タイトルと買い物メンバーを入力して、買い物リストの土台を作ります。
+              </p>
+            </div>
+          </div>
+        </li>
+
+        <li class="bg-white border border-charcoal-200 rounded-lg p-4">
+          <div class="flex gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-wood-50 text-wood-600 text-lg">
+              <IconUsers />
+            </span>
+            <div>
+              <span class="text-xs font-semibold text-charcoal-400">STEP 2</span>
+              <h3 class="text-sm font-semibold text-charcoal-800 mt-1 mb-1">URLを送って一緒に編集</h3>
+              <p class="text-xs text-charcoal-600 leading-relaxed">
+                家族や友だちにリンクを共有。みんなで品目を追加したり、担当を決めたりできます。
+              </p>
+            </div>
+          </div>
+        </li>
+
+        <li class="bg-white border border-charcoal-200 rounded-lg p-4">
+          <div class="flex gap-3">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-wood-50 text-wood-600 text-lg">
+              <IconCheck />
+            </span>
+            <div>
+              <span class="text-xs font-semibold text-charcoal-400">STEP 3</span>
+              <h3 class="text-sm font-semibold text-charcoal-800 mt-1 mb-1">買ったらチェック</h3>
+              <p class="text-xs text-charcoal-600 leading-relaxed">
+                野菜売り場では野菜だけなど、カテゴリで絞り込みながらチェック。重複買いや買い忘れを減らせます。
+              </p>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <div class="mt-5 rounded-lg bg-wood-50 border border-wood-100 px-4 py-3">
+        <p class="text-sm font-semibold text-charcoal-800">BBQやまとめ買いにも。</p>
+        <p class="text-xs text-charcoal-600 leading-relaxed mt-1">
+          買うものと持参するものを一つのリストにまとめて、担当ごとの準備状況まで見やすく整理できます。
+        </p>
+      </div>
+    </section>
   </ContentArea>
 </template>
