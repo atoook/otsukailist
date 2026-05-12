@@ -124,7 +124,7 @@ export default defineComponent({
       >
         <span class="relative inline-grid min-w-[2em] place-items-center">
           <span :class="{ 'opacity-0': mutationLoading }">追加</span>
-          <InlineSpinner v-if="mutationLoading" class="absolute" size="md" tone="primary" />
+          <InlineSpinner v-if="mutationLoading" class="absolute inset-0 m-auto" size="md" tone="primary" />
         </span>
       </MainButton>
     </div>

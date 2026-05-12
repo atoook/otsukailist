@@ -5,10 +5,10 @@
       class="flex items-center gap-2 p-3 border rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60 transition-[background-color,border-color,box-shadow,opacity] duration-200"
       :class="[
         isDeleteActionOpen ? 'bg-wood-200 border-wood-300 shadow-none' : 'bg-wood-100 border-wood-200',
-        isToggleLoading ? 'opacity-80' : ''
+        isItemMutationLoading ? 'opacity-80' : ''
       ]"
       role="listitem"
-      :aria-busy="isToggleLoading"
+      :aria-busy="isItemMutationLoading"
       :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}`"
     >
       <!-- カスタムチェックボックス -->
@@ -256,8 +256,11 @@ export default {
     isCompleted() {
       return isItemCompleted(this.item);
     },
+    isItemMutationLoading() {
+      return this.isToggleLoading || this.isDeleteLoading;
+    },
     isItemActionDisabled() {
-      return this.isDeleteActionOpen || this.isToggleLoading;
+      return this.isDeleteActionOpen || this.isItemMutationLoading;
     },
     shouldShowAutosaveHint() {
       return this.isInputFocused && this.isModified;
