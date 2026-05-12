@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue';
+import InlineSpinner from './InlineSpinner.vue';
 import MainButton from './MainButton.vue';
 import TextInput from './TextInput.vue';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
@@ -15,7 +16,7 @@ import type { MemberId } from '@/types/member';
 
 export default defineComponent({
   name: 'ItemAddForm',
-  components: { MainButton, TextInput },
+  components: { InlineSpinner, MainButton, TextInput },
   props: {
     categoryFilter: {
       type: String as PropType<ItemCategory | null>,
@@ -123,11 +124,7 @@ export default defineComponent({
       >
         <span class="relative inline-grid min-w-[2em] place-items-center">
           <span :class="{ 'opacity-0': mutationLoading }">追加</span>
-          <span
-            v-if="mutationLoading"
-            class="absolute h-5 w-5 rounded-full border-2 border-wood-50/50 border-t-wood-50 animate-spin"
-            aria-hidden="true"
-          ></span>
+          <InlineSpinner v-if="mutationLoading" class="absolute" size="md" tone="primary" />
         </span>
       </MainButton>
     </div>

@@ -26,10 +26,7 @@
           role="status"
           aria-label="更新中"
         >
-          <span
-            class="h-4 w-4 rounded-full border-2 border-wood-300 border-t-ember-600 animate-spin"
-            aria-hidden="true"
-          ></span>
+          <InlineSpinner size="sm" tone="wood" />
         </span>
       </div>
 
@@ -143,11 +140,7 @@
           class="bg-ember-400 border-ember-600 text-white"
         >
           <template #icon>
-            <span
-              v-if="isDeleteLoading"
-              class="h-3 w-3 rounded-full border-2 border-white/50 border-t-white animate-spin"
-              aria-hidden="true"
-            ></span>
+            <InlineSpinner v-if="isDeleteLoading" size="xs" tone="inverse" />
             <IconTrash v-else />
           </template>
         </BadgeTag>
@@ -158,6 +151,7 @@
 
 <script lang="ts">
 import CheckBox from './CheckBox.vue';
+import InlineSpinner from './InlineSpinner.vue';
 import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import SwipeContainerAction from './SwipeContainerAction.vue';
@@ -178,6 +172,7 @@ export default {
   name: 'ItemBox',
   components: {
     CheckBox,
+    InlineSpinner,
     TextInput,
     SwipeContainer,
     SwipeContainerAction,
