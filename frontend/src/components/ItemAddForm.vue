@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue';
+import InlineSpinner from './InlineSpinner.vue';
 import MainButton from './MainButton.vue';
 import TextInput from './TextInput.vue';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
@@ -15,7 +16,7 @@ import type { MemberId } from '@/types/member';
 
 export default defineComponent({
   name: 'ItemAddForm',
-  components: { MainButton, TextInput },
+  components: { InlineSpinner, MainButton, TextInput },
   props: {
     categoryFilter: {
       type: String as PropType<ItemCategory | null>,
@@ -115,8 +116,16 @@ export default defineComponent({
         placeholder="アイテムを追加..."
         variant="inline"
       />
-      <MainButton @click="addItem" :disabled="!newItemName.trim() || mutationLoading">
-        {{ mutationLoading ? '追加中' : '追加' }}
+      <MainButton
+        @click="addItem"
+        :disabled="!newItemName.trim() || mutationLoading"
+        :aria-busy="mutationLoading"
+        :aria-label="mutationLoading ? '追加中' : '追加'"
+      >
+        <span class="relative inline-grid min-w-[2em] place-items-center">
+          <span :class="{ 'opacity-0': mutationLoading }">追加</span>
+          <InlineSpinner v-if="mutationLoading" class="absolute inset-0 m-auto" size="md" tone="primary" />
+        </span>
       </MainButton>
     </div>
     <p v-if="shouldShowInheritedFilterHint" class="mt-1 px-1 text-xs text-charcoal-600">

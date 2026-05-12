@@ -3,18 +3,32 @@
     <div
       :id="`item-${item.id}`"
       class="flex items-center gap-2 p-3 border rounded-lg shadow-sm focus:outline-none focus-within:ring-2 focus-within:ring-wood-300 focus-within:ring-opacity-60 transition-[background-color,border-color,box-shadow,opacity] duration-200"
-      :class="isDeleteActionOpen ? 'bg-wood-200 border-wood-300 shadow-none' : 'bg-wood-100 border-wood-200'"
+      :class="[
+        isDeleteActionOpen ? 'bg-wood-200 border-wood-300 shadow-none' : 'bg-wood-100 border-wood-200',
+        isItemMutationLoading ? 'opacity-80' : ''
+      ]"
       role="listitem"
+      :aria-busy="isItemMutationLoading"
       :aria-label="`アイテム: ${item.name}. ${isCompleted ? '完了済み' : '未完了'}`"
     >
       <!-- カスタムチェックボックス -->
-      <CheckBox
-        :checked="isCompleted"
-        :disabled="isDeleteActionOpen"
-        :aria-label="`${item.name}を完了としてマーク`"
-        @toggle="handleToggle(item)"
-        @keydown="handleKeyDown"
-      />
+      <div class="relative h-6 w-6 shrink-0">
+        <CheckBox
+          :checked="isCompleted"
+          :disabled="isItemActionDisabled"
+          :aria-label="`${item.name}を${isCompleted ? '未完了' : '完了'}としてマーク`"
+          @toggle="handleToggle(item)"
+          @keydown="handleKeyDown"
+        />
+        <span
+          v-if="isToggleLoading"
+          class="absolute inset-0 flex items-center justify-center rounded-md bg-wood-100/80"
+          role="status"
+          aria-label="更新中"
+        >
+          <InlineSpinner size="sm" tone="wood" />
+        </span>
+      </div>
 
       <!-- アイテム名 -->
       <div v-if="!isCompleted" class="min-w-0 flex-1 flex flex-col" @focusin="handleInlineInputFocus">
@@ -22,7 +36,7 @@
           :input-id="item.id"
           input-name="itemName"
           :model-value="newName"
-          :disabled="isDeleteActionOpen"
+          :disabled="isItemActionDisabled"
           @update:model-value="handleModify"
           @enter="isModified && syncUpdate()"
           @blur="handleBlur"
@@ -34,7 +48,7 @@
             :text="preparationTypeLabel"
             variant="secondary"
             :active="preparationTypeFilterActive"
-            :disabled="isDeleteActionOpen"
+            :disabled="isItemActionDisabled"
             :filter-label="`${preparationTypeLabel}で絞り込む`"
             :clear-label="`${preparationTypeLabel}の絞り込みを解除`"
             @filter="handlePreparationTypeFilter"
@@ -46,7 +60,7 @@
             :text="categoryLabel"
             variant="secondary"
             :active="categoryFilterActive"
-            :disabled="isDeleteActionOpen"
+            :disabled="isItemActionDisabled"
             :filter-label="`${categoryLabel}カテゴリーで絞り込む`"
             :clear-label="`${categoryLabel}カテゴリーの絞り込みを解除`"
             @filter="handleCategoryFilter"
@@ -65,7 +79,7 @@
             :text="preparationTypeLabel"
             variant="secondary"
             :active="preparationTypeFilterActive"
-            :disabled="isDeleteActionOpen"
+            :disabled="isItemActionDisabled"
             :filter-label="`${preparationTypeLabel}で絞り込む`"
             :clear-label="`${preparationTypeLabel}の絞り込みを解除`"
             @filter="handlePreparationTypeFilter"
@@ -77,7 +91,7 @@
             :text="categoryLabel"
             variant="secondary"
             :active="categoryFilterActive"
-            :disabled="isDeleteActionOpen"
+            :disabled="isItemActionDisabled"
             :filter-label="`${categoryLabel}カテゴリーで絞り込む`"
             :clear-label="`${categoryLabel}カテゴリーの絞り込みを解除`"
             @filter="handleCategoryFilter"
@@ -94,7 +108,7 @@
         :text="memberBadgeText"
         :variant="memberBadgeVariant"
         :active="memberFilterActive"
-        :disabled="!memberId || isDeleteActionOpen"
+        :disabled="!memberId || isItemActionDisabled"
         :filter-label="`${memberName}で絞り込む`"
         :clear-label="`${memberName}の絞り込みを解除`"
         @filter="handleMemberFilter"
@@ -103,7 +117,7 @@
       <IconButton
         variant="wood"
         size="small"
-        :disabled="isDeleteActionOpen"
+        :disabled="isItemActionDisabled"
         :aria-label="`${item.name}を編集`"
         @click="handleEdit(item)"
       >
@@ -126,11 +140,7 @@
           class="bg-ember-400 border-ember-600 text-white"
         >
           <template #icon>
-            <span
-              v-if="isDeleteLoading"
-              class="h-3 w-3 rounded-full border-2 border-white/50 border-t-white animate-spin"
-              aria-hidden="true"
-            ></span>
+            <InlineSpinner v-if="isDeleteLoading" size="xs" tone="inverse" />
             <IconTrash v-else />
           </template>
         </BadgeTag>
@@ -141,6 +151,7 @@
 
 <script lang="ts">
 import CheckBox from './CheckBox.vue';
+import InlineSpinner from './InlineSpinner.vue';
 import TextInput from './TextInput.vue';
 import SwipeContainer from './SwipeContainer.vue';
 import SwipeContainerAction from './SwipeContainerAction.vue';
@@ -161,6 +172,7 @@ export default {
   name: 'ItemBox',
   components: {
     CheckBox,
+    InlineSpinner,
     TextInput,
     SwipeContainer,
     SwipeContainerAction,
@@ -215,6 +227,10 @@ export default {
     isDeleteLoading: {
       type: Boolean,
       default: false
+    },
+    isToggleLoading: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [
@@ -239,6 +255,12 @@ export default {
   computed: {
     isCompleted() {
       return isItemCompleted(this.item);
+    },
+    isItemMutationLoading() {
+      return this.isToggleLoading || this.isDeleteLoading;
+    },
+    isItemActionDisabled() {
+      return this.isDeleteActionOpen || this.isItemMutationLoading;
     },
     shouldShowAutosaveHint() {
       return this.isInputFocused && this.isModified;
@@ -279,6 +301,9 @@ export default {
   },
   methods: {
     handleToggle(item: Item) {
+      if (this.isItemActionDisabled) {
+        return;
+      }
       this.$emit('toggle', item);
     },
     handleInfo(item: Item) {
@@ -331,11 +356,17 @@ export default {
       // スペースキーまたはEnterキーでチェックボックストグル
       if (event.code === 'Space' || event.code === 'Enter') {
         event.preventDefault();
+        if (this.isItemActionDisabled) {
+          return;
+        }
         this.handleToggle(this.item);
       }
       // DeleteキーまたはBackspaceキーで削除
       else if (event.code === 'Delete' || event.code === 'Backspace') {
         event.preventDefault();
+        if (this.isItemActionDisabled) {
+          return;
+        }
         this.handleDelete(this.item.id);
       }
     },
@@ -353,7 +384,7 @@ export default {
     },
     handleBlur() {
       this.isInputFocused = false;
-      if (this.isDeleteActionOpen) {
+      if (this.isItemActionDisabled) {
         return;
       }
       if (!this.isModified) {

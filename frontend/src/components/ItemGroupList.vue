@@ -101,6 +101,7 @@ export default defineComponent({
   data(): {
     collapsedGroups: Record<string, boolean>;
     errorMessage: string;
+    toggleLoading: Record<string, boolean>;
     deleteLoading: Record<string, boolean>;
   } {
     return {
@@ -108,6 +109,7 @@ export default defineComponent({
         ITEM_GROUP_DEFINITIONS.map((def) => [def.key, def.defaultCollapsed ?? false])
       ) as Record<string, boolean>,
       errorMessage: '',
+      toggleLoading: {},
       deleteLoading: {}
     };
   },
@@ -148,6 +150,9 @@ export default defineComponent({
       }
     },
     async toggleItem(item: Item) {
+      if (this.toggleLoading[item.id]) {
+        return;
+      }
       this.errorMessage = '';
       const listId = this.listStore.listId;
       if (!listId) {
@@ -161,6 +166,7 @@ export default defineComponent({
         completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null)
       };
       try {
+        this.toggleLoading = { ...this.toggleLoading, [item.id]: true };
         const result = await this.mutationRun(() => updateItem(listId, item.id, updatedItem));
         if (result.applied) {
           this.listStore.upsertItem(result.data);
@@ -169,6 +175,10 @@ export default defineComponent({
         console.error('Failed to update item', err);
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
+      } finally {
+        const toggleLoading = { ...this.toggleLoading };
+        delete toggleLoading[item.id];
+        this.toggleLoading = toggleLoading;
       }
     },
     async deleteItem(itemId: ItemId) {
@@ -294,6 +304,7 @@ export default defineComponent({
           :member-filter-active="getItemMemberId(item) === memberFilterId"
           :category-filter-active="item.category === categoryFilter"
           :preparation-type-filter-active="item.preparationType === preparationTypeFilter"
+          :is-toggle-loading="toggleLoading[item.id] ?? false"
           :is-delete-loading="deleteLoading[item.id] ?? false"
           @toggle="toggleItem"
           @delete="deleteItem"
