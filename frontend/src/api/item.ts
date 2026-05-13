@@ -34,6 +34,16 @@ type CreateQuantifiedItemPayload = CreateItemPayloadBase & {
 
 export type CreateItemPayload = CreatePlainItemPayload | CreateQuantifiedItemPayload;
 
+export type SyncGeneratedItemsPayload = {
+  generatorKeysInScope: string[];
+  items: CreateQuantifiedItemPayload[];
+};
+
+export type SyncGeneratedItemsResponse = {
+  items: Item[];
+  deletedItemIds: UUID[];
+};
+
 export async function createItem(listId: UUID, payload: CreateItemPayload) {
   const res = await http.post<MutationResponse<Item>>(`/lists/${listId}/items`, payload);
   return res.data;
@@ -46,5 +56,13 @@ export async function updateItem(listId: UUID, itemId: UUID, payload: UpdateItem
 
 export async function deleteItem(listId: UUID, itemId: UUID) {
   const res = await http.delete<MutationResponse<DeleteResponse>>(`/lists/${listId}/items/${itemId}`);
+  return res.data;
+}
+
+export async function syncGeneratedItems(listId: UUID, payload: SyncGeneratedItemsPayload) {
+  const res = await http.post<MutationResponse<SyncGeneratedItemsResponse>>(
+    `/lists/${listId}/generated-items/sync`,
+    payload
+  );
   return res.data;
 }

@@ -48,6 +48,19 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
   // リスト内のアイテム存在チェック
   boolean existsByIdAndItemListId(UUID itemId, UUID itemListId);
 
+  @EntityGraph(attributePaths = "quantified")
+  @Query(
+      """
+      SELECT i
+      FROM Item i
+      JOIN i.quantified q
+      WHERE i.itemList.id = :itemListId
+        AND q.origin = com.atoook.otsukailist.model.Origin.GENERATED
+        AND q.generatorKey IN :generatorKeys
+      """)
+  List<Item> findGeneratedItemsByGeneratorKeys(
+      @Param("itemListId") UUID itemListId, @Param("generatorKeys") List<String> generatorKeys);
+
   /** 複数リストのアイテム集計をまとめて取得する。 存在しないlistIdは結果に含まれない（削除済み判定に使う）。 */
   @Query(
       """

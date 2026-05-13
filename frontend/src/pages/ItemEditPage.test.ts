@@ -147,7 +147,7 @@ describe('ItemEditPage', () => {
       });
     });
 
-    it('generated_locked は既存の選択カテゴリを保持して送信する', () => {
+    it('generated_locked も生成ルール由来カテゴリを送信する', () => {
       const vm = createVm({
         itemName: '牛肉',
         selectedCategory: 'sweets',
@@ -159,7 +159,7 @@ describe('ItemEditPage', () => {
 
       const payload = (vm.buildUpdatePayload as (name: string) => Record<string, unknown>)('牛肉');
 
-      expect(payload.category).toBe('sweets');
+      expect(payload.category).toBe('meat');
       expect(payload.itemType).toBe('quantified');
       expect(payload.quantified).toMatchObject({
         quantity: 1000,
@@ -185,7 +185,7 @@ describe('ItemEditPage', () => {
       expect(payload.preparationType).toBeNull();
     });
 
-    it('持参物はカテゴリと数量を送信しない', () => {
+    it('持参物でもカテゴリと数量があれば保持して送信する', () => {
       const vm = createVm({
         itemName: '包丁',
         selectedCategory: 'daily_goods',
@@ -199,16 +199,64 @@ describe('ItemEditPage', () => {
 
       expect(payload).toMatchObject({
         name: '包丁',
-        category: null,
+        category: 'daily_goods',
         preparationType: 'bring',
-        itemType: 'plain'
+        itemType: 'quantified',
+        quantified: {
+          quantity: 1,
+          baseUnit: 'piece',
+          origin: 'manual',
+          regenerationPolicy: 'none',
+          generatorKey: null
+        }
       });
-      expect(payload.quantified).toBeUndefined();
+    });
+
+    it('generated_auto の持参物は自動生成情報を保持して送信する', () => {
+      const vm = createVm({
+        itemName: '牛肉',
+        selectedCategory: 'meat',
+        selectedPreparationType: 'bring',
+        itemEditMode: 'generated_auto',
+        quantifiedQuantity: '1000',
+        quantifiedBaseUnit: 'g',
+        quantifiedGeneratorKey: 'beef'
+      });
+
+      const payload = (vm.buildUpdatePayload as (name: string) => Record<string, unknown>)('牛肉');
+
+      expect(payload).toMatchObject({
+        name: '牛肉',
+        category: 'meat',
+        preparationType: 'bring',
+        itemType: 'quantified',
+        quantified: {
+          quantity: 1000,
+          baseUnit: 'g',
+          origin: 'generated',
+          regenerationPolicy: 'auto',
+          generatorKey: 'beef'
+        }
+      });
+    });
+
+    it('generated_auto は数量と単位を空にすると更新不可にする', () => {
+      const vm = createVm({
+        itemName: '牛肉',
+        itemEditMode: 'generated_auto',
+        quantifiedQuantity: '',
+        quantifiedBaseUnit: '',
+        quantifiedGeneratorKey: 'beef'
+      });
+
+      expect(vm.hasQuantifiedDraftInput).toBe(true);
+      expect(vm.hasValidQuantifiedInput).toBe(false);
+      expect(vm.hasRequiredInput).toBe(false);
     });
   });
 
   describe('持参物チェックボックス', () => {
-    it('オンにするとカテゴリと数量入力状態をクリアする', () => {
+    it('オンにしてもカテゴリと数量入力状態を保持する', () => {
       const vm = createVm({
         selectedCategory: 'daily_goods',
         selectedPreparationType: '',
@@ -221,23 +269,35 @@ describe('ItemEditPage', () => {
       (vm.setBringItem as (value: boolean) => void)(true);
 
       expect(vm.selectedPreparationType).toBe('bring');
-      expect(vm.selectedCategory).toBe('');
-      expect(vm.itemEditMode).toBe('plain');
-      expect(vm.quantifiedQuantity).toBe('');
-      expect(vm.quantifiedBaseUnit).toBe('');
-      expect(vm.quantifiedGeneratorKey).toBe('');
+      expect(vm.selectedCategory).toBe('daily_goods');
+      expect(vm.itemEditMode).toBe('manual_none');
+      expect(vm.quantifiedQuantity).toBe('1');
+      expect(vm.quantifiedBaseUnit).toBe('piece');
+      expect(vm.quantifiedGeneratorKey).toBe('beef');
     });
 
-    it('オンの間は数量入力をバリデーション対象にしない', () => {
+    it('オンの間も数量入力があればバリデーション対象にする', () => {
       const vm = createVm({
         itemName: '包丁',
         selectedPreparationType: 'bring',
         quantifiedQuantity: 'abc',
+        quantifiedBaseUnit: 'g'
+      });
+
+      expect(vm.hasQuantifiedDraftInput).toBe(true);
+      expect(vm.hasValidQuantifiedInput).toBe(false);
+      expect(vm.hasRequiredInput).toBe(false);
+    });
+
+    it('オンでも数量入力がなければ通常アイテムとして更新可能にする', () => {
+      const vm = createVm({
+        itemName: '包丁',
+        selectedPreparationType: 'bring',
+        quantifiedQuantity: '',
         quantifiedBaseUnit: ''
       });
 
       expect(vm.hasQuantifiedDraftInput).toBe(false);
-      expect(vm.hasValidQuantifiedInput).toBe(true);
       expect(vm.hasRequiredInput).toBe(true);
     });
   });
