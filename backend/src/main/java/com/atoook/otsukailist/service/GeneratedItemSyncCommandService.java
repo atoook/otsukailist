@@ -27,6 +27,7 @@ import com.atoook.otsukailist.model.Origin;
 import com.atoook.otsukailist.model.RegenerationPolicy;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.ItemRepository;
+import com.atoook.otsukailist.repository.MemberRepository;
 import com.atoook.otsukailist.service.message.ErrorMessages;
 
 import lombok.RequiredArgsConstructor;
@@ -37,8 +38,13 @@ public class GeneratedItemSyncCommandService {
 
   private final ItemRepository itemRepo;
   private final ItemListRepository itemListRepo;
+  private final MemberRepository memberRepo;
   private final ListRevisionService listRevisionService;
 
+  private static final String MSG_ASSIGNED_MEMBER_NOT_IN_LIST = "指定された担当者はリストのメンバーではありません";
+  private static final String MSG_GENERATED_ITEM_DUPLICATED = "生成アイテムが重複しています";
+
+  /** Generated item update command normalized from a sync request. */
   public record GeneratedItemUpdateCommand(
       String name,
       ItemCategory category,
@@ -46,11 +52,20 @@ public class GeneratedItemSyncCommandService {
       UUID assignedMemberId,
       QuantifiedItemRequest quantified) {
 
+    /** Returns the stable generator key for matching generated items. */
     public String generatorKey() {
       return quantified.getGeneratorKey();
     }
   }
 
+  /**
+   * Sync generated item candidates within the provided generator-key scope.
+   *
+   * @param listId target list ID
+   * @param commands generated item update commands
+   * @param generatorKeysInScope generator keys managed by the current template
+   * @return synced items and deleted item IDs with latest list revision
+   */
   @Transactional
   public MutationResponse<SyncGeneratedItemsResponse> syncGeneratedItems(
       UUID listId, List<GeneratedItemUpdateCommand> commands, List<String> generatorKeysInScope) {
@@ -63,6 +78,7 @@ public class GeneratedItemSyncCommandService {
     List<GeneratedItemUpdateCommand> safeCommands = commands == null ? List.of() : commands;
     List<String> safeGeneratorKeysInScope =
         generatorKeysInScope == null ? List.of() : generatorKeysInScope;
+    validateAssignedMembers(listId, safeCommands);
     Set<String> generatedKeys =
         safeCommands.stream()
             .map(GeneratedItemUpdateCommand::generatorKey)
@@ -70,10 +86,8 @@ public class GeneratedItemSyncCommandService {
     Map<String, Item> existingItems =
         safeGeneratorKeysInScope.isEmpty()
             ? Map.of()
-            : itemRepo.findGeneratedItemsByGeneratorKeys(listId, safeGeneratorKeysInScope).stream()
-                .collect(
-                    Collectors.toMap(
-                        item -> item.getQuantified().getGeneratorKey(), Function.identity()));
+            : toExistingItemMap(
+                itemRepo.findGeneratedItemsByGeneratorKeys(listId, safeGeneratorKeysInScope));
 
     List<Item> changedItems =
         safeCommands.stream()
@@ -115,6 +129,27 @@ public class GeneratedItemSyncCommandService {
     }
 
     return createGeneratedItem(list, command);
+  }
+
+  private void validateAssignedMembers(UUID listId, List<GeneratedItemUpdateCommand> commands) {
+    for (GeneratedItemUpdateCommand command : commands) {
+      UUID assignedMemberId = command.assignedMemberId();
+      if (assignedMemberId != null
+          && !memberRepo.existsByIdAndItemListId(assignedMemberId, listId)) {
+        throw new BadRequestException(MSG_ASSIGNED_MEMBER_NOT_IN_LIST);
+      }
+    }
+  }
+
+  private static Map<String, Item> toExistingItemMap(List<Item> items) {
+    return items.stream()
+        .collect(
+            Collectors.toMap(
+                item -> item.getQuantified().getGeneratorKey(),
+                Function.identity(),
+                (left, right) -> {
+                  throw new BadRequestException(MSG_GENERATED_ITEM_DUPLICATED);
+                }));
   }
 
   private static Item createGeneratedItem(ItemList list, GeneratedItemUpdateCommand command) {

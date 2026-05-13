@@ -161,7 +161,6 @@ public class ItemCommandService {
 
   private static void updateNameCategoryAndQuantified(Item item, UpdateItemRequest req) {
     ItemCategory requestedCategory = resolveRequestedCategory(item, req);
-    boolean categoryEdited = isUserCategoryEdit(item, req, requestedCategory);
     boolean revertingToPlain =
         item.getItemType() == ItemType.QUANTIFIED && req.getItemType() == ItemType.PLAIN;
     boolean quantifiedDetailsEdited = req.getQuantified() != null;
@@ -175,9 +174,8 @@ public class ItemCommandService {
       return;
     }
     boolean quantifiedDetailsChanged = updateQuantifiedDetails(item, req);
-    boolean shouldLockGeneratedAuto = categoryEdited || quantifiedDetailsChanged;
-    item.setCategory(resolveCategoryAfterUpdate(requestedCategory, req, shouldLockGeneratedAuto));
-    if (shouldLockGeneratedAuto) {
+    item.setCategory(resolveCategoryAfterUpdate(item, requestedCategory));
+    if (quantifiedDetailsChanged) {
       lockGeneratedAutoQuantifiedItem(item);
     }
   }
@@ -276,35 +274,15 @@ public class ItemCommandService {
     return generatedCategory == null ? requestedCategory : generatedCategory;
   }
 
-  private static boolean isUserCategoryEdit(
-      Item item, UpdateItemRequest req, ItemCategory requestedCategory) {
-    if (!req.isCategoryPresent() || Objects.equals(item.getCategory(), requestedCategory)) {
-      return false;
-    }
-    ItemCategory generatedCategory = resolveGeneratedCategory(item, req);
-    return generatedCategory == null || !Objects.equals(requestedCategory, generatedCategory);
-  }
-
-  private static ItemCategory resolveGeneratedCategory(Item item, UpdateItemRequest req) {
-    if (req.getQuantified() != null) {
-      return resolveGeneratedCategory(req.getQuantified());
-    }
-    return resolveGeneratedCategory(item.getQuantified());
-  }
-
   private static ItemCategory resolveGeneratedCategory(ItemQuantified quantified) {
-    if (quantified == null
-        || quantified.getOrigin() != Origin.GENERATED
-        || quantified.getRegenerationPolicy() != RegenerationPolicy.AUTO) {
+    if (quantified == null || quantified.getOrigin() != Origin.GENERATED) {
       return null;
     }
     return resolveGeneratedCategory(quantified.getGeneratorKey());
   }
 
   private static ItemCategory resolveGeneratedCategory(QuantifiedItemRequest quantified) {
-    if (quantified == null
-        || quantified.getOrigin() != Origin.GENERATED
-        || quantified.getRegenerationPolicy() != RegenerationPolicy.AUTO) {
+    if (quantified == null || quantified.getOrigin() != Origin.GENERATED) {
       return null;
     }
     return resolveGeneratedCategory(quantified.getGeneratorKey());
@@ -327,11 +305,9 @@ public class ItemCommandService {
   }
 
   private static ItemCategory resolveCategoryAfterUpdate(
-      ItemCategory requestedCategory, UpdateItemRequest req, boolean shouldLockGeneratedAuto) {
-    if (shouldLockGeneratedAuto) {
-      return requestedCategory;
-    }
-    return resolveCategory(requestedCategory, req.getQuantified());
+      Item item, ItemCategory requestedCategory) {
+    ItemCategory generatedCategory = resolveGeneratedCategory(item.getQuantified());
+    return generatedCategory == null ? requestedCategory : generatedCategory;
   }
 
   private static void validateQuantifiedState(QuantifiedItemRequest quantified) {

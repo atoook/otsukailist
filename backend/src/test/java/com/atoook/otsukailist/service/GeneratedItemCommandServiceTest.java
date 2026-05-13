@@ -23,6 +23,7 @@ import com.atoook.otsukailist.model.Origin;
 import com.atoook.otsukailist.model.RegenerationPolicy;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.ItemRepository;
+import com.atoook.otsukailist.repository.MemberRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,7 @@ class GeneratedItemCommandServiceTest {
 
   @Mock private ItemRepository itemRepo;
   @Mock private ItemListRepository itemListRepo;
+  @Mock private MemberRepository memberRepo;
   @Mock private ListRevisionService listRevisionService;
 
   private GeneratedItemCommandService service;
@@ -43,7 +45,8 @@ class GeneratedItemCommandServiceTest {
   @BeforeEach
   void setUp() {
     GeneratedItemSyncCommandService generatedItemSyncCommandService =
-        new GeneratedItemSyncCommandService(itemRepo, itemListRepo, listRevisionService);
+        new GeneratedItemSyncCommandService(
+            itemRepo, itemListRepo, memberRepo, listRevisionService);
     service = new GeneratedItemCommandService(generatedItemSyncCommandService);
   }
 
@@ -201,6 +204,48 @@ class GeneratedItemCommandServiceTest {
         .hasMessage("生成ルールID一覧が不正です");
   }
 
+  @Test
+  @DisplayName("担当者がリストのメンバーでない場合はエラーにすること")
+  void syncGeneratedItemsRejectsAssignedMemberOutsideList() {
+    UUID listId = UUID.randomUUID();
+    UUID memberId = UUID.randomUUID();
+    ItemList list = itemList(listId);
+    SyncGeneratedItemsRequest request =
+        SyncGeneratedItemsRequest.builder()
+            .generatorKeysInScope(List.of("beef"))
+            .items(List.of(generatedItemRequest("牛肉", 1500L, "beef", memberId)))
+            .build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(false);
+
+    assertThatThrownBy(() -> service.syncGeneratedItems(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("指定された担当者はリストのメンバーではありません");
+  }
+
+  @Test
+  @DisplayName("同じgeneratorKeyの既存生成itemが重複している場合はエラーにすること")
+  void syncGeneratedItemsRejectsDuplicatedExistingGeneratedItems() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList(listId);
+    Item first = generatedAutoItem(list, "牛肉1", 1000L, "beef");
+    Item second = generatedAutoItem(list, "牛肉2", 1200L, "beef");
+    SyncGeneratedItemsRequest request =
+        SyncGeneratedItemsRequest.builder()
+            .generatorKeysInScope(List.of("beef"))
+            .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
+            .build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
+        .thenReturn(List.of(first, second));
+
+    assertThatThrownBy(() -> service.syncGeneratedItems(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("生成アイテムが重複しています");
+  }
+
   private static ItemList itemList(UUID listId) {
     ItemList list = new ItemList();
     list.setId(listId);
@@ -228,9 +273,15 @@ class GeneratedItemCommandServiceTest {
 
   private static CreateItemRequest generatedItemRequest(
       String name, long quantity, String generatorKey) {
+    return generatedItemRequest(name, quantity, generatorKey, null);
+  }
+
+  private static CreateItemRequest generatedItemRequest(
+      String name, long quantity, String generatorKey, UUID assignedMemberId) {
     return CreateItemRequest.builder()
         .name(name)
         .itemType(ItemType.QUANTIFIED)
+        .assignedMemberId(assignedMemberId)
         .quantified(
             QuantifiedItemRequest.builder()
                 .quantity(quantity)

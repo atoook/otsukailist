@@ -133,7 +133,8 @@ OtsukaiList の基本体験は「自由入力できる軽い買い物リスト�
 - `quantity`
 - `base_unit`
 - `generator_key`
-- `category`
+
+`category` は `generator_key` に紐づく属性として扱うため、generated item では `auto` / `locked` に関係なく編集不可とする。カテゴリを変えたい場合は別 item として扱うべきなので、既存 generated item を削除して手動追加または別生成候補で対応する。
 
 現行 backend 実装では、名称変更だけでは locked にしない。`item.name` は通常の自由編集体験に寄せるため、生成 item でも編集しやすくしている。
 
@@ -648,7 +649,7 @@ POST /api/lists/{listId}/generated-items/sync
 }
 ```
 
-Backend では `generated + auto` の場合、`generatorKey` から category を解決する。Frontend からも category を送るが、生成ルールと矛盾する場合は backend の生成ルールが優先される。
+Backend では `generated` item の場合、`auto` / `locked` に関係なく `generatorKey` から category を解決する。Frontend からも category を送るが、生成ルールと矛盾する場合は backend の生成ルールが優先される。
 
 ### Step 5: 既存 item がある場合
 
@@ -746,6 +747,8 @@ Frontend の `generateBBQItems` を再実行する。
 - `category`
 - `preparationType`
 
+ただし generated item の `category` は `generatorKey` 由来で固定し、詳細編集 UI でも編集不可にする。
+
 MVP では通常リスト体験を優先し、一覧上のクイック操作は複雑にしない。
 
 ---
@@ -760,7 +763,7 @@ Backend は生成エンジンではなく、永続化と整合性維持を担う
 - revision 管理
 - `list_generation_config` の保存・取得
 - `generated` item の generator key バリデーション
-- `generated + auto` の category 解決
+- `generated` item の category 解決
 - ユーザー編集時の `locked` 遷移
 - 共有リストとしての整合性維持
 
@@ -991,7 +994,7 @@ Backend:
 
 既存 item 更新テストでは以下を維持する。
 
-- `generated + auto` の数量・単位・カテゴリ変更で `locked` になる
+- `generated + auto` の数量・単位変更で `locked` になる
 - `manual + none` は再生成対象にならない
 - 未知の `generatorKey` は reject される
 
