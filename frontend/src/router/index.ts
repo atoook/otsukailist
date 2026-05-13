@@ -5,6 +5,7 @@ const WelcomePage = () => import('../pages/WelcomePage.vue');
 const CreateListPage = () => import('../pages/CreateListPage.vue');
 const ShareListPage = () => import('../pages/ShareListPage.vue');
 const ItemListPage = () => import('../pages/ItemListPage.vue');
+const BBQGenerationPage = () => import('../pages/BBQGenerationPage.vue');
 const ListEditPage = () => import('../pages/ListEditPage.vue');
 const ItemEditPage = () => import('../pages/ItemEditPage.vue');
 const TermsPage = () => import('../pages/TermsPage.vue');
@@ -30,6 +31,11 @@ const routes: RouteRecordRaw[] = [
     path: '/lists/:id',
     name: 'ItemList',
     component: ItemListPage
+  },
+  {
+    path: '/lists/:id/templates/bbq',
+    name: 'BBQGeneration',
+    component: BBQGenerationPage
   },
   {
     path: '/lists/:id/edit',

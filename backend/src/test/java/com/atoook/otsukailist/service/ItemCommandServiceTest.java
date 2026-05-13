@@ -358,8 +358,8 @@ class ItemCommandServiceTest {
   }
 
   @Test
-  @DisplayName("generated auto のカテゴリを明示変更した場合は指定カテゴリを保持してロックすること")
-  void updateGeneratedAutoCategoryKeepsRequestedCategoryAndLocks() {
+  @DisplayName("generated auto のカテゴリを明示変更しても生成ルールカテゴリを保持してロックしないこと")
+  void updateGeneratedAutoCategoryKeepsGeneratedRuleCategoryWithoutLocking() {
     UUID listId = UUID.randomUUID();
     UUID itemId = UUID.randomUUID();
     Item item = quantifiedItem("牛肉", 1000L);
@@ -377,7 +377,32 @@ class ItemCommandServiceTest {
 
     service.updateItem(listId, itemId, request);
 
-    assertThat(item.getCategory()).isEqualTo(ItemCategory.SWEETS);
+    assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
+  }
+
+  @Test
+  @DisplayName("generated locked のカテゴリを明示変更しても生成ルールカテゴリを保持すること")
+  void updateGeneratedLockedCategoryKeepsGeneratedRuleCategory() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = quantifiedItem("牛肉", 1000L);
+    item.setCategory(ItemCategory.MEAT);
+    item.getQuantified().setRegenerationPolicy(RegenerationPolicy.LOCKED);
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .category(ItemCategory.SWEETS)
+            .itemType(ItemType.QUANTIFIED)
+            .quantified(generatedLockedQuantifiedRequest(1000L, "beef"))
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.save(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    service.updateItem(listId, itemId, request);
+
+    assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
     assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.LOCKED);
   }
 
@@ -452,6 +477,17 @@ class ItemCommandServiceTest {
         .baseUnit(BaseUnit.G)
         .origin(Origin.GENERATED)
         .regenerationPolicy(RegenerationPolicy.AUTO)
+        .generatorKey(generatorKey)
+        .build();
+  }
+
+  private static QuantifiedItemRequest generatedLockedQuantifiedRequest(
+      long quantity, String generatorKey) {
+    return QuantifiedItemRequest.builder()
+        .quantity(quantity)
+        .baseUnit(BaseUnit.G)
+        .origin(Origin.GENERATED)
+        .regenerationPolicy(RegenerationPolicy.LOCKED)
         .generatorKey(generatorKey)
         .build();
   }
