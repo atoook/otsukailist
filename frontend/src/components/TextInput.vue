@@ -100,7 +100,7 @@ export default {
         ].join(' '),
         inline: [
           // Flexible inline input (no padding - container provides it)
-          'flex-1',
+          'min-w-0 flex-1',
           // Minimal styling for inline use
           'border-transparent bg-transparent',
           // No focus ring for inline

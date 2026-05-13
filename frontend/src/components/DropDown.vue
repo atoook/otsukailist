@@ -66,8 +66,8 @@ export default {
 
       // 幅をwidthプロパティで制御
       const widthClasses = {
-        full: 'flex-1',
-        fixed: 'w-32'
+        full: 'w-full',
+        fixed: 'w-28 min-[380px]:w-32'
       };
 
       const rightPadding = this.showArrow ? 'pr-8' : 'pr-3';

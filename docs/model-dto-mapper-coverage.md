@@ -25,13 +25,39 @@ DB項目をどのDTO／マッパーが扱っているかをまとめた一覧。
 | Field                 | DTO (読み/書き)                                                                           | Mapper                                             | Notes                                                            |
 | --------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------- |
 | `id`                  | 読み: `ItemResponse.id`                                                                   | `ItemMapper.toResponse`                            |                                                                  |
-| `name`                | 書き: `CreateItemRequest.name`, `UpdateItemRequest.name`<br>読み: `ItemResponse.name`     | `ItemMapper.toResponse`, `ItemMapper.updateEntity` | 作成時は `ItemCommandService` が `trim()` と未完了初期化を担当。 |
+| `name`                | 書き: `CreateItemRequest.name`, `UpdateItemRequest.name`<br>読み: `ItemResponse.name`     | `ItemMapper.toResponse`                            | 作成・更新時は `ItemCommandService` が `trim()` と未完了初期化を担当。`plain` / `quantified` 共通の唯一の名称フィールド。 |
+| `itemType`            | 書き: `CreateItemRequest.itemType`, `UpdateItemRequest.itemType`<br>読み: `ItemResponse.itemType` | `ItemMapper.toResponse`                            | `plain` / `quantified` を区別する。未指定時は `plain`。 |
+| `category`            | 書き: `CreateItemRequest.category`, `UpdateItemRequest.category`<br>読み: `ItemResponse.category` | `ItemMapper.toResponse`                            | plain / quantified 共通の分類。更新時は `ItemCommandService` が生成ルール補正と `locked` 判定を含めて反映する。`generated + auto` のルール由来カテゴリはユーザー編集扱いにしない。 |
 | `completed`           | 書き: `UpdateItemRequest.completed`<br>読み: `ItemResponse.completed`                     | `ItemMapper.toResponse`                            | 作成時は常に未完了。完了/未完了切替はサービス層の責務。          |
 | `completedByMemberId` | 書き: `UpdateItemRequest.completedByMemberId`<br>読み: `ItemResponse.completedByMemberId` | `ItemMapper.toResponse`                            | 完了時のメンバー存在チェックは `ItemCommandService` で実施。     |
 | `completedAt`         | 読み: `ItemResponse.completedAt`                                                          | `ItemMapper.toResponse`                            |                                                                  |
 | `createdAt`           | 読み: `ItemResponse.createdAt`                                                            | `ItemMapper.toResponse`                            |                                                                  |
 | `updatedAt`           | 読み: `ItemResponse.updatedAt`                                                            | `ItemMapper.toResponse`                            |                                                                  |
 | `itemList`            | （DTOなし）                                                                               | （なし）                                           | 紐付きリストは `ItemCommandService` が確定させて直接設定。       |
+| `quantified`          | 書き: `CreateItemRequest.quantified`, `UpdateItemRequest.quantified`<br>読み: `ItemResponse.quantified` | `ItemMapper.toQuantifiedEntity`, `ItemMapper.updateQuantifiedEntity`, `ItemMapper.toQuantifiedResponse` | `ItemQuantified` と 1:1。`plain` の場合は `null`。作成・更新フローの制御は `ItemCommandService` が担当する。 |
+
+## ItemQuantified (`backend/src/main/java/com/atoook/otsukailist/model/ItemQuantified.java`)
+
+| Field                  | DTO (読み/書き)                                                                 | Mapper                                                     | Notes |
+| ---------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----- |
+| `itemId`               | （DTOなし）                                                                     | （なし）                                                   | `item.id` と同一の PK。`@MapsId` で `Item` と 1:1。 |
+| `item`                 | （DTOなし）                                                                     | （なし）                                                   | 親 item。`Item.setQuantified()` で双方向関連を同期する。 |
+| `quantity`             | 書き: `QuantifiedItemRequest.quantity`<br>読み: `QuantifiedItemResponse.quantity` | `ItemMapper.updateQuantifiedEntity`, `ItemMapper.toQuantifiedResponse` | `baseUnit` 基準で保存する。 |
+| `baseUnit`             | 書き: `QuantifiedItemRequest.baseUnit`<br>読み: `QuantifiedItemResponse.baseUnit` | `ItemMapper.updateQuantifiedEntity`, `ItemMapper.toQuantifiedResponse` | `g` / `ml` / `piece` / `pack`。 |
+| `origin`               | 書き: `QuantifiedItemRequest.origin`<br>読み: `QuantifiedItemResponse.origin`   | `ItemMapper.updateQuantifiedEntity`, `ItemMapper.toQuantifiedResponse` | `manual` / `generated`。 |
+| `regenerationPolicy`   | 書き: `QuantifiedItemRequest.regenerationPolicy`<br>読み: `QuantifiedItemResponse.regenerationPolicy` | `ItemMapper.updateQuantifiedEntity`, `ItemMapper.toQuantifiedResponse` | `none` / `auto` / `locked`。再生成対象は `generated + auto`。 |
+| `generatorKey`         | 書き: `QuantifiedItemRequest.generatorKey`<br>読み: `QuantifiedItemResponse.generatorKey` | `ItemMapper.updateQuantifiedEntity`, `ItemMapper.toQuantifiedResponse` | 生成ルール ID。`generated` の場合は必須。 |
+
+## ListGenerationConfig (`backend/src/main/java/com/atoook/otsukailist/model/ListGenerationConfig.java`)
+
+| Field        | DTO (読み/書き) | Mapper | Notes |
+| ------------ | --------------- | ------ | ----- |
+| `id`         | （未公開）      | （なし） | 生成設定レコード ID。 |
+| `itemList`   | （未公開）      | （なし） | 親リスト。 |
+| `configType` | （未公開）      | （なし） | `bbq` / `camping` / `hotpot` / `travel`。 |
+| `configJson` | （未公開）      | （なし） | テンプレート生成条件を JSONB で保存する想定。 |
+| `createdAt`  | （未公開）      | （なし） | 監査用。 |
+| `updatedAt`  | （未公開）      | （なし） | 監査用。 |
 
 ## Member (`backend/src/main/java/com/atoook/otsukailist/model/Member.java`)
 

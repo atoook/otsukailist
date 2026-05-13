@@ -6,6 +6,9 @@ const CreateListPage = () => import('../pages/CreateListPage.vue');
 const ShareListPage = () => import('../pages/ShareListPage.vue');
 const ItemListPage = () => import('../pages/ItemListPage.vue');
 const ListEditPage = () => import('../pages/ListEditPage.vue');
+const ItemEditPage = () => import('../pages/ItemEditPage.vue');
+const TermsPage = () => import('../pages/TermsPage.vue');
+const PrivacyPolicyPage = () => import('../pages/PrivacyPolicyPage.vue');
 
 const routes: RouteRecordRaw[] = [
   {
@@ -32,6 +35,21 @@ const routes: RouteRecordRaw[] = [
     path: '/lists/:id/edit',
     name: 'ListEdit',
     component: ListEditPage
+  },
+  {
+    path: '/lists/:id/items/:itemId/edit',
+    name: 'ItemEdit',
+    component: ItemEditPage
+  },
+  {
+    path: '/terms',
+    name: 'Terms',
+    component: TermsPage
+  },
+  {
+    path: '/privacy',
+    name: 'PrivacyPolicy',
+    component: PrivacyPolicyPage
   }
 ];
 

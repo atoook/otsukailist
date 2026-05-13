@@ -2,8 +2,15 @@ package com.atoook.otsukailist.dto;
 
 import java.util.UUID;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 
+import com.atoook.otsukailist.model.ItemCategory;
+import com.atoook.otsukailist.model.ItemPreparationType;
+import com.atoook.otsukailist.model.ItemType;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +32,68 @@ public class UpdateItemRequest {
   // 完了状態（nullの場合は更新しない）
   private Boolean completed;
 
+  private ItemType itemType;
+
+  private ItemCategory category;
+
+  @JsonIgnore private boolean categoryPresent;
+
+  private ItemPreparationType preparationType;
+
+  @JsonIgnore private boolean preparationTypePresent;
+
+  private UUID assignedMemberId;
+
+  @JsonIgnore private boolean assignedMemberIdPresent;
+
   // completed=true のとき必須（未完了に戻すときは不要）
   private UUID completedByMemberId;
+
+  @Valid private QuantifiedItemRequest quantified;
+
+  @JsonSetter("category")
+  public void setCategory(ItemCategory category) {
+    this.category = category;
+    this.categoryPresent = true;
+  }
+
+  @JsonSetter("preparationType")
+  public void setPreparationType(ItemPreparationType preparationType) {
+    this.preparationType = preparationType;
+    this.preparationTypePresent = true;
+  }
+
+  public ItemPreparationType getPreparationTypeOrDefault(ItemPreparationType defaultValue) {
+    return preparationTypePresent ? preparationType : defaultValue;
+  }
+
+  @JsonSetter("assignedMemberId")
+  public void setAssignedMemberId(UUID assignedMemberId) {
+    this.assignedMemberId = assignedMemberId;
+    this.assignedMemberIdPresent = true;
+  }
+
+  /**
+   * Custom Lombok builder to ensure assignedMemberIdPresent is set when assignedMemberId is set via
+   * builder.
+   */
+  public static class UpdateItemRequestBuilder {
+    public UpdateItemRequestBuilder assignedMemberId(UUID assignedMemberId) {
+      this.assignedMemberId = assignedMemberId;
+      this.assignedMemberIdPresent = true;
+      return this;
+    }
+
+    public UpdateItemRequestBuilder category(ItemCategory category) {
+      this.category = category;
+      this.categoryPresent = true;
+      return this;
+    }
+
+    public UpdateItemRequestBuilder preparationType(ItemPreparationType preparationType) {
+      this.preparationType = preparationType;
+      this.preparationTypePresent = true;
+      return this;
+    }
+  }
 }

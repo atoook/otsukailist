@@ -6,18 +6,21 @@ import DropDown from '../components/DropDown.vue';
 import ItemAddForm from '../components/ItemAddForm.vue';
 import ItemGroupList from '../components/ItemGroupList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
+import IconButton from '../components/IconButton.vue';
 import IconEdit from '../components/icons/IconEdit.vue';
 import IconRefresh from '../components/icons/IconRefresh.vue';
 import IconCelebration from '../components/icons/IconCelebration.vue';
 import type { Item } from '../types/item';
-import { normalizeInput, normalizeForSearch } from '../utils/text-normalization';
+import type { ItemCategory } from '../types/item-category';
+import type { ItemPreparationType } from '../types/item-preparation-type';
+import { normalizeInput } from '../utils/text-normalization';
 import { formatActivityAt } from '../utils/date-format';
 import type { Member, MemberId } from '@/types/member';
 import { fetchSnapshot } from '@/api/list';
 import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
 import { getSelectedMemberId, setSelectedMemberId, addOrUpdateListHistory } from '@/lib/userCache';
-import { FEEDBACK_LIST_ID } from '@/lib/appConstants';
+import { filterItems } from '@/utils/item-filtering';
 
 export default defineComponent({
   name: 'ItemListPage',
@@ -28,6 +31,7 @@ export default defineComponent({
     ItemAddForm,
     ItemGroupList,
     LoadingSpinner,
+    IconButton,
     IconEdit,
     IconRefresh,
     IconCelebration
@@ -36,6 +40,9 @@ export default defineComponent({
     currentListId: string | null;
     searchQuery: string;
     selectedMemberId: MemberId | null;
+    memberFilterId: MemberId | null;
+    categoryFilter: ItemCategory | null;
+    preparationTypeFilter: ItemPreparationType | null;
     errorMessage: string;
     fallbackListName: string;
     snapshotLoading: boolean;
@@ -44,6 +51,9 @@ export default defineComponent({
       currentListId: null,
       searchQuery: '',
       selectedMemberId: null,
+      memberFilterId: null,
+      categoryFilter: null,
+      preparationTypeFilter: null,
       errorMessage: '',
       fallbackListName: '',
       snapshotLoading: false
@@ -78,13 +88,11 @@ export default defineComponent({
       return this.listStore.items;
     },
     filteredItems(): Item[] {
-      const normalizedQuery = normalizeForSearch(this.searchQuery);
-      if (!normalizedQuery) {
-        return this.items;
-      }
-      return this.items.filter((item) => {
-        const normalizedItemName = normalizeForSearch(item.name);
-        return normalizedItemName.includes(normalizedQuery);
+      return filterItems(this.items, {
+        searchQuery: this.searchQuery,
+        memberId: this.memberFilterId,
+        category: this.categoryFilter,
+        preparationType: this.preparationTypeFilter
       });
     },
     memberNames(): string {
@@ -110,6 +118,12 @@ export default defineComponent({
     allCompleted(): boolean {
       return this.items.length > 0 && this.items.every((item) => item.completed);
     },
+    emptyFilterMessage(): string {
+      if (this.searchQuery) {
+        return `「${this.searchQuery}」に一致するアイテムが見つかりませんでした。`;
+      }
+      return '条件に一致するアイテムが見つかりませんでした。';
+    },
     formattedLastItemActivityAt(): string | null {
       return formatActivityAt(this.listStore.lastItemActivityAt);
     }
@@ -118,6 +132,9 @@ export default defineComponent({
     members(newMembers: Member[]) {
       if (!this.selectedMemberId && newMembers.length > 0) {
         this.selectedMemberId = newMembers[0]?.id ?? null;
+      }
+      if (this.memberFilterId && !newMembers.some((member) => member.id === this.memberFilterId)) {
+        this.memberFilterId = null;
       }
     }
   },
@@ -139,10 +156,7 @@ export default defineComponent({
           this.selectedMemberId = snapshot.members[0]?.id ?? null;
         }
 
-        // リスト履歴に追加/更新（フィードバックリストは除外）
-        if (listId !== FEEDBACK_LIST_ID) {
-          addOrUpdateListHistory({ listId, name: snapshot.name });
-        }
+        addOrUpdateListHistory({ listId, name: snapshot.name });
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
@@ -158,6 +172,24 @@ export default defineComponent({
     },
     onSearchInput(value: string): void {
       this.searchQuery = normalizeInput(value);
+    },
+    handleMemberFilter(memberId: MemberId): void {
+      this.memberFilterId = memberId;
+    },
+    clearMemberFilter(): void {
+      this.memberFilterId = null;
+    },
+    handleCategoryFilter(category: ItemCategory): void {
+      this.categoryFilter = category;
+    },
+    clearCategoryFilter(): void {
+      this.categoryFilter = null;
+    },
+    handlePreparationTypeFilter(preparationType: ItemPreparationType): void {
+      this.preparationTypeFilter = preparationType;
+    },
+    clearPreparationTypeFilter(): void {
+      this.preparationTypeFilter = null;
     },
     navigateToListEdit() {
       this.$router.push({
@@ -181,14 +213,9 @@ export default defineComponent({
           <h2 class="text-2xl font-black text-charcoal-800 text-center">
             {{ listName }}
           </h2>
-          <button
-            type="button"
-            @click="navigateToListEdit"
-            aria-label="リスト名を編集"
-            class="flex items-center focus:outline-none focus:ring-2 focus:ring-charcoal-400 rounded"
-          >
-            <span class="text-charcoal-800 flex items-center"><IconEdit /></span>
-          </button>
+          <IconButton @click="navigateToListEdit" aria-label="リスト名を編集" variant="ghost" size="small">
+            <IconEdit />
+          </IconButton>
         </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
       </div>
@@ -199,7 +226,12 @@ export default defineComponent({
       </div>
 
       <!-- 新しいアイテム追加 -->
-      <ItemAddForm @error="errorMessage = $event" />
+      <ItemAddForm
+        :member-filter-id="memberFilterId"
+        :category-filter="categoryFilter"
+        :preparation-type-filter="preparationTypeFilter"
+        @error="errorMessage = $event"
+      />
 
       <!-- 検索ボックス -->
       <div v-if="items.length > 0" class="mb-4">
@@ -216,27 +248,34 @@ export default defineComponent({
         </div>
       </div>
       <!-- チェック時に記録する購入者選択 + サマリー -->
-      <div v-if="filteredItems.length > 0" class="w-full flex justify-between items-center mb-2">
-        <div class="flex flex-col gap-0.5">
-          <span class="text-xs text-charcoal-600"
+      <div
+        v-if="filteredItems.length > 0"
+        class="@container flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-2"
+      >
+        <div class="flex min-w-max flex-col gap-0.5 @max-[19rem]:mx-auto">
+          <span class="inline-flex whitespace-nowrap text-xs text-charcoal-600"
             >{{ itemSummary }}<IconCelebration v-if="allCompleted" class="ml-1"
           /></span>
-          <span v-if="formattedLastItemActivityAt" class="text-xs text-charcoal-500 flex items-center gap-1">
+          <span
+            v-if="formattedLastItemActivityAt"
+            class="inline-flex items-center gap-1 whitespace-nowrap text-xs text-charcoal-500"
+          >
             最終更新: {{ formattedLastItemActivityAt }}
-            <button
-              type="button"
+            <IconButton
               @click="currentListId && loadSnapshot(currentListId)"
               :disabled="snapshotLoading"
               aria-label="リストを再読み込み"
-              class="text-charcoal-400 hover:text-charcoal-600 disabled:opacity-40 transition-colors"
+              variant="muted"
+              size="xsmall"
+              :icon-class="{ 'animate-spin': snapshotLoading }"
             >
-              <span :class="{ 'animate-spin': snapshotLoading }" class="flex items-center"><IconRefresh /></span>
-            </button>
+              <IconRefresh />
+            </IconButton>
           </span>
         </div>
-        <div class="flex items-center gap-2 text-sm">
+        <div class="ml-auto flex shrink-0 items-center gap-2 text-sm">
           <label for="memberSelect">
-            <span class="text-charcoal-600 font-medium">買った人</span>
+            <span class="whitespace-nowrap text-charcoal-600 font-medium">買った人</span>
           </label>
           <DropDown
             selectId="memberSelect"
@@ -253,8 +292,17 @@ export default defineComponent({
       <ItemGroupList
         :filtered-items="filteredItems"
         :items="items"
-        :search-query="searchQuery"
+        :empty-result-message="emptyFilterMessage"
         :selected-member-id="selectedMemberId"
+        :member-filter-id="memberFilterId"
+        :category-filter="categoryFilter"
+        :preparation-type-filter="preparationTypeFilter"
+        @member-filter="handleMemberFilter"
+        @clear-member-filter="clearMemberFilter"
+        @category-filter="handleCategoryFilter"
+        @clear-category-filter="clearCategoryFilter"
+        @preparation-type-filter="handlePreparationTypeFilter"
+        @clear-preparation-type-filter="clearPreparationTypeFilter"
       />
     </div>
   </ContentArea>

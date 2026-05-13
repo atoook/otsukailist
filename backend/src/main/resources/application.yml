@@ -22,6 +22,11 @@ spring:
         type:
           "[preferred_uuid_jdbc_type]": UUID
 
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
 # ログ設定
 logging:
   level:

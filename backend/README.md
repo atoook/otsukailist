@@ -11,7 +11,7 @@ cp .env.example .env  # または cp ../db/.env .env
 # データベース起動
 cd ../db && docker-compose up -d
 
-# アプリケーション起動
+# アプリケーション起動（FlywayがDBマイグレーションを適用）
 ./gradlew bootRun
 
 # テスト実行
@@ -32,6 +32,7 @@ cd ../db && docker-compose up -d
 - **Framework**: Spring Boot 3.5.7
 - **Database**: PostgreSQL 16
 - **ORM**: Spring Data JPA (Hibernate)
+- **Migration**: Flyway
 - **Build**: Gradle
 - **Java**: 17+
 
@@ -74,6 +75,9 @@ spring-dotenv により .env ファイルが自動読み込みされます。
 ## 🧪 テスト
 
 ```bash
+# テストDB起動
+./gradlew setupTestEnv
+
 # 全テスト実行
 ./gradlew test
 
@@ -82,6 +86,9 @@ spring-dotenv により .env ファイルが自動読み込みされます。
 
 # テストレポート表示
 open build/reports/tests/test/index.html
+
+# テストDB停止
+./gradlew cleanTestEnv
 ```
 
 ## 🚦 API エンドポイント
@@ -121,9 +128,25 @@ spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.format_sql=true
 
+# Flyway
+spring.flyway.enabled=true
+spring.flyway.baseline-on-migrate=true
+
 # WebSocket
 spring.websocket.allowed-origins=http://localhost:3000
 ```
+
+### DBマイグレーション
+
+スキーマ変更は `src/main/resources/db/migration` にFlyway SQLとして追加します。
+
+```text
+V1__create_tables.sql
+V2__add_item_assigned_member_id.sql
+V3__example_next_change.sql
+```
+
+Dockerの初期化SQLではなく、Spring Boot起動時のFlyway実行を正とします。Hibernateは `ddl-auto=validate` で、マイグレーション後のDBとEntityの整合性だけを検証します。
 
 ## 🤝 開発ガイド
 

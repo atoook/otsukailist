@@ -3,7 +3,7 @@ type CronEnv = {
   API_BASE_URL?: string;
   /**
    * Explicit warmup URL. Takes precedence over API_BASE_URL.
-   * Use this to override the default /actuator/health derivation.
+   * Use this to override the default /actuator/health/liveness derivation.
    */
   WARMUP_URL?: string;
 };
@@ -28,12 +28,12 @@ function resolveWarmupUrl(env: CronEnv): WarmupUrlResult {
     const url = new URL(env.API_BASE_URL);
     const pathSegments = url.pathname.split("/").filter(Boolean);
 
-    // API_BASE_URL usually ends with /api. Warm up backend health endpoint directly.
+    // API_BASE_URL usually ends with /api. Warm up the service without touching DB health.
     if (pathSegments[pathSegments.length - 1] === "api") {
       pathSegments.pop();
     }
 
-    url.pathname = `/${[...pathSegments, "actuator", "health"].join("/")}`;
+    url.pathname = `/${[...pathSegments, "actuator", "health", "liveness"].join("/")}`;
     url.search = "";
     url.hash = "";
     return { ok: true, url: url.toString() };

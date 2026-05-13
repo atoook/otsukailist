@@ -2,13 +2,13 @@
 import ContentArea from '../components/ContentArea.vue';
 import MainButton from '../components/MainButton.vue';
 import SwipeContainer from '../components/SwipeContainer.vue';
+import SwipeContainerAction from '../components/SwipeContainerAction.vue';
 import BadgeTag from '../components/BadgeTag.vue';
+import WelcomeGuideSection from '../components/WelcomeGuideSection.vue';
 import IconBbq from '../components/icons/IconBbq.vue';
-import IconPray from '../components/icons/IconPray.vue';
 import IconClipboard from '../components/icons/IconClipboard.vue';
 import { getListHistory, removeListHistoryEntry } from '@/lib/userCache';
 import { fetchListsMeta } from '@/api/list';
-import { FEEDBACK_URL } from '@/lib/appConstants';
 
 export default {
   name: 'WelcomePage',
@@ -16,9 +16,10 @@ export default {
     ContentArea,
     MainButton,
     SwipeContainer,
+    SwipeContainerAction,
     BadgeTag,
+    WelcomeGuideSection,
     IconBbq,
-    IconPray,
     IconClipboard
   },
   data() {
@@ -26,7 +27,7 @@ export default {
       listHistory: [],
       listMeta: {},
       metaLoading: false,
-      feedbackUrl: FEEDBACK_URL
+      historyActionOpen: {}
     };
   },
   async created() {
@@ -69,6 +70,20 @@ export default {
     removeHistoryEntry(listId) {
       removeListHistoryEntry(listId);
       this.listHistory = this.listHistory.filter((e) => e.listId !== listId);
+      delete this.historyActionOpen[listId];
+    },
+    handleHistoryActionStateChange(listId, isOpen) {
+      this.historyActionOpen = {
+        ...this.historyActionOpen,
+        [listId]: isOpen
+      };
+    },
+    handleHistoryLinkClick(event, listId, navigate) {
+      if (!this.historyActionOpen[listId]) {
+        navigate(event);
+        return;
+      }
+      event.preventDefault();
     },
     formatLastActivity(isoString) {
       if (!isoString) return null;
@@ -107,25 +122,9 @@ export default {
       <p class="text-charcoal-800 mb-4 leading-snug text-3xl font-bold">買い忘れも、買い過ぎも、これで終わり。</p>
       <div class="text-8xl mb-4 flex justify-center"><IconBbq /></div>
       <p class="text-charcoal-600 mb-8 leading-relaxed">
-        URLを送るだけ。みんなで作る「Otsukaiリスト」は、無料で使える買い物リストです。
+        登録・ログイン不要、URLを送るだけ。<br />「Otsukaiリスト」は、みんなで使える、無料の買い物リストです。
       </p>
       <MainButton @click="navigateToCreateList">はじめる</MainButton>
-    </div>
-
-    <!-- フィードバックリンク -->
-    <div class="mt-8 text-center">
-      <p class="text-xs text-charcoal-500">
-        ご意見・ご感想は
-        <a
-          :href="feedbackUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="underline hover:text-charcoal-700"
-          aria-label="フィードバックリストへ（別タブで開きます）"
-          >フィードバックリストへ</a
-        >
-        どうぞ <IconPray />
-      </p>
     </div>
 
     <!-- 最近見たリスト -->
@@ -135,44 +134,61 @@ export default {
       </div>
       <ul class="space-y-2">
         <li v-for="entry in listHistory" :key="entry.listId" class="rounded-lg overflow-hidden">
-          <SwipeContainer hidden-bg-color="#fef7f0">
+          <SwipeContainer
+            hidden-bg-color="#fef7f0"
+            @swipe-state-change="handleHistoryActionStateChange(entry.listId, $event)"
+          >
             <router-link
               :to="`/lists/${entry.listId}`"
-              class="flex items-center px-4 py-3 bg-white border border-charcoal-200 rounded-lg hover:bg-charcoal-50 transition-colors"
+              custom
+              v-slot="{ href, navigate }"
             >
-              <span class="text-charcoal-400 mr-3 text-base flex items-center"><IconClipboard /></span>
-              <span class="text-sm text-charcoal-700 font-medium truncate flex-1">
-                {{ listMeta[entry.listId]?.name ?? entry.name }}
-              </span>
-              <span class="flex items-center gap-2 ml-2 shrink-0">
-                <template v-if="metaLoading">
-                  <span class="text-xs text-charcoal-300 animate-pulse">···</span>
-                </template>
-                <template v-else-if="formattedListMeta[entry.listId]">
-                  <span class="text-xs text-charcoal-500">
-                    {{ formattedListMeta[entry.listId].completeCount }}/{{
-                      formattedListMeta[entry.listId].itemCount
-                    }}件
-                  </span>
-                  <span v-if="formattedListMeta[entry.listId].formattedActivity" class="text-xs text-charcoal-400">
-                    {{ formattedListMeta[entry.listId].formattedActivity }}
-                  </span>
-                </template>
-              </span>
-              <span class="text-charcoal-300 text-xs ml-2" aria-hidden="true">›</span>
+              <a
+                :href="href"
+                :aria-disabled="historyActionOpen[entry.listId] || undefined"
+                class="flex items-center px-4 py-3 border rounded-lg transition-colors"
+                :class="
+                  historyActionOpen[entry.listId]
+                    ? 'bg-wood-200 border-wood-300 cursor-default'
+                    : 'bg-white border-charcoal-200 hover:bg-charcoal-50'
+                "
+                @click="handleHistoryLinkClick($event, entry.listId, navigate)"
+              >
+                <span class="text-charcoal-400 mr-3 text-base flex items-center"><IconClipboard /></span>
+                <span class="text-sm text-charcoal-700 font-medium truncate flex-1">
+                  {{ listMeta[entry.listId]?.name ?? entry.name }}
+                </span>
+                <span class="flex items-center gap-2 ml-2 shrink-0">
+                  <template v-if="metaLoading">
+                    <span class="text-xs text-charcoal-300 animate-pulse">···</span>
+                  </template>
+                  <template v-else-if="formattedListMeta[entry.listId]">
+                    <span class="text-xs text-charcoal-500">
+                      {{ formattedListMeta[entry.listId].completeCount }}/{{
+                        formattedListMeta[entry.listId].itemCount
+                      }}件
+                    </span>
+                    <span v-if="formattedListMeta[entry.listId].formattedActivity" class="text-xs text-charcoal-400">
+                      {{ formattedListMeta[entry.listId].formattedActivity }}
+                    </span>
+                  </template>
+                </span>
+                <span class="text-charcoal-300 text-xs ml-2" aria-hidden="true">›</span>
+              </a>
             </router-link>
             <template #hiddenActions>
-              <button
-                type="button"
-                @click="removeHistoryEntry(entry.listId)"
+              <SwipeContainerAction
+                @activate="removeHistoryEntry(entry.listId)"
                 :aria-label="`${entry.name}を履歴からクリア`"
               >
                 <BadgeTag text="履歴からクリア" size="small" class="bg-ember-400 border-ember-600 text-white" />
-              </button>
+              </SwipeContainerAction>
             </template>
           </SwipeContainer>
         </li>
       </ul>
     </div>
+
+    <WelcomeGuideSection />
   </ContentArea>
 </template>

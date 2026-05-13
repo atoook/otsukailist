@@ -1,8 +1,3 @@
--- otsukailist_testデータベースの初期化スクリプト（テスト環境専用）
-
--- PostgreSQLでは接続先DB（POSTGRES_DB=otsukailist_test）に対して本スクリプトが実行される
-
--- お使いリストテーブル（ログイン不要、UUID使用）
 CREATE TABLE IF NOT EXISTS item_list (
         id UUID PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -13,7 +8,6 @@ CREATE TABLE IF NOT EXISTS item_list (
 
 CREATE INDEX IF NOT EXISTS idx_item_list_updated_at ON item_list (updated_at);
 
--- メンバー（権限制御なし：リスト内のラベル用）
 CREATE TABLE IF NOT EXISTS member (
         id UUID PRIMARY KEY,
         list_id UUID NOT NULL,
@@ -29,7 +23,6 @@ CREATE TABLE IF NOT EXISTS member (
 
 CREATE INDEX IF NOT EXISTS idx_member_list_id ON member (list_id);
 
--- アイテムテーブル
 CREATE TABLE IF NOT EXISTS item (
         id UUID PRIMARY KEY,
         name VARCHAR(255) NOT NULL,

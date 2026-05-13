@@ -1,9 +1,12 @@
 <script lang="ts">
 import { defineComponent, type PropType } from 'vue';
+import { isNavigationFailure } from 'vue-router';
 import ItemBox from './ItemBox.vue';
 import IconChevronDown from './icons/IconChevronDown.vue';
 import IconTired from './icons/IconTired.vue';
 import type { Item, ItemId } from '../types/item';
+import type { ItemCategory } from '../types/item-category';
+import type { ItemPreparationType } from '../types/item-preparation-type';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
 import { deleteItem as deleteItemApi, updateItem } from '@/api/item';
@@ -18,7 +21,18 @@ const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
     key: 'incomplete',
     label: '未完了',
     predicate: (item) => !item.completed,
-    comparator: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    comparator: (a, b) => {
+      const aBringOrder = a.preparationType === 'bring' ? 1 : 0;
+      const bBringOrder = b.preparationType === 'bring' ? 1 : 0;
+      if (aBringOrder !== bBringOrder) {
+        return aBringOrder - bBringOrder;
+      }
+      const createdAtOrder = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (createdAtOrder !== 0) {
+        return createdAtOrder;
+      }
+      return a.id.localeCompare(b.id);
+    },
     showHeader: false,
     collapsible: false,
     defaultCollapsed: false
@@ -50,15 +64,35 @@ export default defineComponent({
       type: Array as PropType<Item[]>,
       required: true
     },
-    searchQuery: {
+    emptyResultMessage: {
       type: String,
       required: true
     },
     selectedMemberId: {
       type: String as PropType<MemberId | null>,
       default: null
+    },
+    memberFilterId: {
+      type: String as PropType<MemberId | null>,
+      default: null
+    },
+    categoryFilter: {
+      type: String as PropType<ItemCategory | null>,
+      default: null
+    },
+    preparationTypeFilter: {
+      type: String as PropType<ItemPreparationType | null>,
+      default: null
     }
   },
+  emits: [
+    'member-filter',
+    'clear-member-filter',
+    'category-filter',
+    'clear-category-filter',
+    'preparation-type-filter',
+    'clear-preparation-type-filter'
+  ],
   setup() {
     const listStore = useListStore();
     const { run, loading } = useMutation();
@@ -67,12 +101,16 @@ export default defineComponent({
   data(): {
     collapsedGroups: Record<string, boolean>;
     errorMessage: string;
+    toggleLoading: Record<string, boolean>;
+    deleteLoading: Record<string, boolean>;
   } {
     return {
       collapsedGroups: Object.fromEntries(
         ITEM_GROUP_DEFINITIONS.map((def) => [def.key, def.defaultCollapsed ?? false])
       ) as Record<string, boolean>,
-      errorMessage: ''
+      errorMessage: '',
+      toggleLoading: {},
+      deleteLoading: {}
     };
   },
   computed: {
@@ -88,13 +126,20 @@ export default defineComponent({
       if (item.completed && this.selectedMemberId && item.completedByMemberId === this.selectedMemberId) {
         return 'primary';
       }
+      if (!item.completed && this.selectedMemberId && item.assignedMemberId === this.selectedMemberId) {
+        return 'primary';
+      }
       return 'secondary';
     },
-    getCompletedMemberName(item: Item): string | null {
-      if (!item.completed || !item.completedByMemberId) {
+    getItemMemberName(item: Item): string | null {
+      const memberId = this.getItemMemberId(item);
+      if (!memberId) {
         return null;
       }
-      return this.memberMap.get(item.completedByMemberId)?.displayName ?? null;
+      return this.memberMap.get(memberId)?.displayName ?? null;
+    },
+    getItemMemberId(item: Item): MemberId | null {
+      return item.completed ? item.completedByMemberId : item.assignedMemberId;
     },
     showErrorFeedback() {
       if (this.errorMessage) {
@@ -105,6 +150,9 @@ export default defineComponent({
       }
     },
     async toggleItem(item: Item) {
+      if (this.toggleLoading[item.id]) {
+        return;
+      }
       this.errorMessage = '';
       const listId = this.listStore.listId;
       if (!listId) {
@@ -118,6 +166,7 @@ export default defineComponent({
         completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null)
       };
       try {
+        this.toggleLoading = { ...this.toggleLoading, [item.id]: true };
         const result = await this.mutationRun(() => updateItem(listId, item.id, updatedItem));
         if (result.applied) {
           this.listStore.upsertItem(result.data);
@@ -126,9 +175,16 @@ export default defineComponent({
         console.error('Failed to update item', err);
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
+      } finally {
+        const toggleLoading = { ...this.toggleLoading };
+        delete toggleLoading[item.id];
+        this.toggleLoading = toggleLoading;
       }
     },
     async deleteItem(itemId: ItemId) {
+      if (this.deleteLoading[itemId]) {
+        return;
+      }
       const listId = this.listStore.listId;
       if (!listId) {
         this.errorMessage = 'リストが初期化されていません。';
@@ -136,6 +192,7 @@ export default defineComponent({
         return;
       }
       try {
+        this.deleteLoading = { ...this.deleteLoading, [itemId]: true };
         const result = await this.mutationRun(() => deleteItemApi(listId, itemId));
         if (result.applied) {
           this.listStore.removeItem(itemId);
@@ -144,6 +201,10 @@ export default defineComponent({
         console.error('Failed to delete item', err);
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの削除に失敗しました。';
         this.showErrorFeedback();
+      } finally {
+        const deleteLoading = { ...this.deleteLoading };
+        delete deleteLoading[itemId];
+        this.deleteLoading = deleteLoading;
       }
     },
     async modifyItem(updatedItem: Item) {
@@ -167,6 +228,31 @@ export default defineComponent({
       } catch (err: unknown) {
         console.error('Failed to rename item', err);
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
+        this.showErrorFeedback();
+      }
+    },
+    async editItem(item: Item): Promise<void> {
+      const listId = this.listStore.listId;
+      if (!listId) {
+        this.errorMessage = 'リストが初期化されていません。';
+        this.showErrorFeedback();
+        return;
+      }
+
+      try {
+        await this.$router.push({
+          name: 'ItemEdit',
+          params: {
+            id: listId,
+            itemId: item.id
+          }
+        });
+      } catch (err: unknown) {
+        if (isNavigationFailure(err)) {
+          return;
+        }
+        console.error('Failed to navigate to item edit page', err);
+        this.errorMessage = getErrorMessage(err) ?? 'アイテム編集画面への移動に失敗しました。';
         this.showErrorFeedback();
       }
     },
@@ -213,10 +299,23 @@ export default defineComponent({
           :key="item.id"
           :item="item"
           :memberBadgeVariant="getMemberBadgeVariant(item)"
-          :completedMemberName="getCompletedMemberName(item) || ''"
+          :memberName="getItemMemberName(item) || ''"
+          :member-id="getItemMemberId(item) || undefined"
+          :member-filter-active="getItemMemberId(item) === memberFilterId"
+          :category-filter-active="item.category === categoryFilter"
+          :preparation-type-filter-active="item.preparationType === preparationTypeFilter"
+          :is-toggle-loading="toggleLoading[item.id] ?? false"
+          :is-delete-loading="deleteLoading[item.id] ?? false"
           @toggle="toggleItem"
           @delete="deleteItem"
           @modify="modifyItem"
+          @edit="editItem"
+          @member-filter="$emit('member-filter', $event)"
+          @clear-member-filter="$emit('clear-member-filter')"
+          @category-filter="$emit('category-filter', $event)"
+          @clear-category-filter="$emit('clear-category-filter')"
+          @preparation-type-filter="$emit('preparation-type-filter', $event)"
+          @clear-preparation-type-filter="$emit('clear-preparation-type-filter')"
         />
       </template>
     </template>
@@ -228,10 +327,10 @@ export default defineComponent({
       上のフォームからアイテムを追加してください。
     </div>
 
-    <!-- 検索結果がない場合 -->
+    <!-- 絞り込み結果がない場合 -->
     <div v-else-if="filteredItems.length === 0" class="text-center text-charcoal-600 py-8">
       <div class="text-4xl mb-3 flex justify-center"><IconTired /></div>
-      「{{ searchQuery }}」に一致するアイテムが見つかりませんでした。
+      {{ emptyResultMessage }}
     </div>
   </div>
 </template>

@@ -15,9 +15,7 @@ export function formatActivityAt(isoString: string | null | undefined): string |
 
   const now = new Date();
   const isToday =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
+    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
 
   if (isToday) {
     return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit' }).format(date);
@@ -26,6 +24,6 @@ export function formatActivityAt(isoString: string | null | undefined): string |
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit',
+    minute: '2-digit'
   }).format(date);
 }

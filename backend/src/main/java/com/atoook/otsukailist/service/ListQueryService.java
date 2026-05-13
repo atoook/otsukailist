@@ -19,6 +19,7 @@ import com.atoook.otsukailist.mapper.ItemMapper;
 import com.atoook.otsukailist.mapper.MemberMapper;
 import com.atoook.otsukailist.model.Item;
 import com.atoook.otsukailist.model.ItemList;
+import com.atoook.otsukailist.model.ItemPreparationType;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.ItemRepository;
 import com.atoook.otsukailist.repository.MemberRepository;
@@ -51,7 +52,8 @@ public class ListQueryService {
     List<MemberResponse> members =
         memberRepo.findByItemListId(listId).stream().map(MemberMapper::toResponse).toList();
 
-    List<Item> itemEntities = itemRepo.findByItemListIdOrderByDisplayRules(listId);
+    List<Item> itemEntities =
+        itemRepo.findByItemListIdOrderByDisplayRules(listId, ItemPreparationType.BRING);
     List<ItemResponse> items = itemEntities.stream().map(ItemMapper::toResponse).toList();
 
     Instant lastItemActivityAt =
