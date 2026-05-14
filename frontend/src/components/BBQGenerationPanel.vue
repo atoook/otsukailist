@@ -84,6 +84,16 @@ function isGeneratedItemWithKey(item: Item): item is GeneratedItemWithKey {
   );
 }
 
+function getStaleGeneratedRowStatus(item: GeneratedItemWithKey): GenerationPreviewRow['status'] {
+  if (item.completed) {
+    return 'completed';
+  }
+  if (item.quantified.regenerationPolicy === 'locked') {
+    return 'locked';
+  }
+  return 'delete';
+}
+
 function cloneBBQGenerationConfig(config: BBQGenerationConfig): BBQGenerationConfig {
   const defaults = createDefaultBBQGenerationConfig();
   const rawBalance = (config.answers as { balance?: string }).balance;
@@ -236,7 +246,7 @@ export default defineComponent({
         .map(([generatorKey, item]): GenerationPreviewRow => ({
           key: generatorKey,
           name: item.name,
-          status: item.completed ? 'completed' : item.quantified.regenerationPolicy === 'locked' ? 'locked' : 'delete',
+          status: getStaleGeneratedRowStatus(item),
           beforeQuantity: this.displayExistingQuantity(item),
           afterQuantity: null,
           beforeRawQuantity: item.quantified.quantity,
@@ -345,10 +355,7 @@ export default defineComponent({
       if (status === 'delete') {
         return 'border border-red-200 bg-white text-red-700';
       }
-      if (status === 'locked') {
-        return 'bg-charcoal-100 text-charcoal-600';
-      }
-      if (status === 'completed') {
+      if (status === 'locked' || status === 'completed') {
         return 'bg-charcoal-100 text-charcoal-600';
       }
       return 'bg-transparent text-charcoal-500';
