@@ -98,6 +98,7 @@ public class GeneratedItemSyncCommandService {
     List<Item> deletedItems =
         existingItems.values().stream()
             .filter(item -> !generatedKeys.contains(item.getQuantified().getGeneratorKey()))
+            .filter(item -> !item.isCompleted())
             .filter(item -> item.getQuantified().getRegenerationPolicy() == RegenerationPolicy.AUTO)
             .toList();
 
@@ -121,7 +122,8 @@ public class GeneratedItemSyncCommandService {
       ItemList list, GeneratedItemUpdateCommand command, Map<String, Item> existingItems) {
     Item existingItem = existingItems.get(command.generatorKey());
     if (existingItem != null) {
-      if (existingItem.getQuantified().getRegenerationPolicy() == RegenerationPolicy.LOCKED) {
+      if (existingItem.isCompleted()
+          || existingItem.getQuantified().getRegenerationPolicy() == RegenerationPolicy.LOCKED) {
         return null;
       }
       updateExistingGeneratedAutoItem(existingItem, command);
