@@ -80,6 +80,28 @@ OtsukaiList の基本体験は「自由入力できる軽い買い物リスト�
 - `item_quantified.origin = generated`
 - `item_quantified.generator_key` は必須
 
+### SuggestionItem
+
+テンプレート生成とは別に、イベントの周辺アイテムをユーザーへ提案するための候補。
+
+```txt
+紙皿
+ウェットティッシュ
+アルミホイル
+焼肉のたれ
+```
+
+現行モデルへの保存方針:
+
+- 選択された SuggestionItem は `plain item` として追加する
+- `item.item_type = plain`
+- `item.name` が表示名
+- `item.category` は SuggestionItem 定義から付与する
+- `item_quantified` は持たない
+- `generator_key` / `regeneration_policy` は使わない
+
+SuggestionItem は「生成された item」ではなく「追加候補」である。再生成・自動更新・自動削除の対象にはしない。
+
 ### locked item
 
 自動生成後にユーザーが編集したため、再生成から保護する item。
@@ -250,6 +272,257 @@ MVP では preview 上での細かい編集は必須にしない。生成後は�
 ### Step 6: 生成完了
 
 生成 item を保存し、通常のリスト画面に戻る。保存後の item は通常 item と同じ一覧に混ざる。
+
+---
+
+## SuggestionItem による追加候補
+
+### 基本方針
+
+SuggestionItem は、テンプレート生成後に「あると便利だが、数量計算テンプレート本体へ入れると候補が増えすぎるもの」を提案するための仕組みとする。
+
+BBQ の場合、テンプレート本体は食材・飲み物などの数量計算が主目的になる。一方で、紙皿・ウェットティッシュ・アルミホイル・調味料などは、人数から厳密な単位量を計算して再生成するよりも、ユーザーが必要なものを選んで追加する体験の方が自然である。
+
+### Template と SuggestionItem の違い
+
+| 観点 | Template | SuggestionItem |
+| --- | --- | --- |
+| 主な目的 | 条件から item を自動生成する | 入れ忘れやすい周辺 item を提案する |
+| 代表例 | BBQ 食材、飲み物、焼きそば | 紙皿、紙コップ、ウェットティッシュ、アルミホイル |
+| item type | `quantified` | `plain` |
+| 数量 | 人数・回答・微調整から算出 | 持たない |
+| カテゴリ | generation rule から決定 | suggestion 定義から決定 |
+| 保存時の key | `generatorKey` を `item_quantified` に保存 | item には key を保存しない |
+| 再生成 | あり | なし |
+| 自動更新 | `generated + auto` は更新対象 | 対象外 |
+| 自動削除 | scope 内で候補から外れた `generated + auto` は削除対象 | 対象外 |
+| ユーザー編集後の保護 | `generated + locked` | 通常の plain item と同じ |
+
+Template と SuggestionItem は同じ「おすすめ」導線から見えることはあるが、永続化・再生成・削除の扱いは分ける。
+
+### ユースケース
+
+BBQ テンプレート生成後、ユーザーに以下のような周辺アイテムを提案する。
+
+- 食器: 紙皿、紙コップ、はし
+- 衛生・片付け: ウェットティッシュ、キッチンペーパー、ゴミ袋
+- 調理器具: アルミホイル、トング、キッチンばさみ、ナイフ、まな板
+- 保冷: 保冷バッグ、保冷剤、氷
+- 調味料: 食用油、塩胡椒、焼肉のたれ、バター、唐辛子
+- 火おこし・燃料: 炭、着火剤、ライター、軍手、火ばさみ
+
+これらは BBQ の食材候補とは別に表示する。テンプレート本体へ含めると、初回 preview が長くなり、食材の数量確認という主目的が薄くなるためである。
+
+### UX 方針
+
+テンプレート適用済みで、かつリストに item が存在する場合は、リスト画面から Suggestion Pack 専用ページへ遷移できる導線を常設する。周辺アイテムはテンプレート生成直後だけでなく、後から思い出して追加したくなることがあるためである。
+
+リスト作成直後の空状態では、BBQ の文脈がまだリスト上に確定していないため、Suggestion Pack の導線は表示しない。まずテンプレートから BBQ の主要 item を追加してもらう。
+
+リスト画面での表示方針:
+
+- `list_generation_config` に BBQ config があり、item が 1 件以上ある場合だけ表示する
+- item が 1 件以上ある通常リストでは、テンプレート再生成導線の近くに控えめな操作として置く
+- item が 0 件の場合は表示しない
+
+ボタン押下後は、Suggestion Pack 専用ページへ遷移する。モバイル利用を主対象にするため、テンプレート生成画面内へパネル展開せず、選択作業に集中できる画面として分ける。
+
+専用ページ:
+
+```txt
+/lists/:id/suggestions/bbq-supplies
+```
+
+Suggestion Pack 専用ページでは、正方形タイルを敷き詰めたカタログ形式の選択 UI を表示する。買い物リスト本体とは違う「候補を軽く拾う」体験にするため、リスト行ではなくタイル選択 UI を採用する。
+
+- SuggestionItem を正方形タイルのグリッドとして並べる
+- モバイルでは 2 列グリッドを基本にする
+- タイル全体をタップ対象にする
+- 選択済みタイルは背景色・枠色・チェックアイコンで区別する
+- タイル内には item 名、選択状態、追加済みバッジだけを置く
+- group はタイル内に入れず、必要に応じてセクション見出しとして表示する
+- group は開閉可能にし、会場・機材条件によって不要になりやすい group は初期状態で閉じられるようにする
+- 既にリストに存在する item は `追加済み` 表示にし、選択不可にする
+- 下部に `選択した N 件を追加` ボタンを固定表示する
+- 追加完了後はリスト画面へ戻る
+
+UI イメージ:
+
+```txt
+BBQ 周辺アイテム
+
+食器
+[ 紙皿 ] [ 紙コップ ] [ はし ]
+
+衛生・片付け
+[ ウェットティッシュ ] [ キッチンペーパー ] [ ゴミ袋 ]
+
+調理器具
+[ アルミホイル ] [ トング ] [ キッチンばさみ ] [ ナイフ ] [ まな板 ]
+
+保冷
+[ 保冷バッグ ] [ 保冷剤 ] [ 氷 ]
+
+調味料
+[ 食用油 ] [ 塩胡椒 ] [ 焼肉のたれ ] [ バター ] [ 唐辛子 ]
+
+火おこし・燃料
+[ 閉じる/開く ]
+[ 炭 ] [ 着火剤 ] [ ライター ] [ 軍手 ] [ 火ばさみ ]
+
+[選択した 4 件を追加]
+```
+
+### 重複判定
+
+初期実装では、SuggestionItem は通常の `plain item` として追加するため、追加済み判定は item 名の正規化後の完全一致で行う。
+
+```ts
+normalizeForSearch(existingItem.name) === normalizeForSearch(suggestion.name)
+```
+
+判定方針:
+
+- スペース・全角半角・大小文字ゆれは吸収する
+- 部分一致では判定しない
+- 一致した SuggestionItem は `追加済み` として選択不可にする
+
+部分一致を使わない理由:
+
+- `たれ` と `焼肉のたれ`
+- `塩` と `塩胡椒`
+- `コップ` と `紙コップ`
+- `油` と `食用油`
+
+上記のような誤判定が起きやすい。類似 item の警告が必要になった場合は、将来 `似たアイテムあり` のような弱い表示として別途設計する。
+
+同じ item を複数追加したいケースは、SuggestionItem の再追加ではなく、将来作成する item 複製機能で対応する。
+
+### 保存方針
+
+選択された SuggestionItem は通常の item 作成 API で `plain item` として追加する。
+
+```txt
+POST /api/lists/{listId}/items
+```
+
+Request イメージ:
+
+```json
+{
+  "name": "紙皿",
+  "itemType": "plain",
+  "category": "supplies"
+}
+```
+
+SuggestionItem の追加では、以下を使わない。
+
+- `POST /api/lists/{listId}/generated-items/sync`
+- `list_generation_config`
+- `item_quantified`
+- `origin`
+- `regeneration_policy`
+- `generator_key`
+
+理由は、SuggestionItem は再生成対象ではなく、ユーザーが選択して通常 item として追加する候補だからである。
+
+### Frontend 定義案
+
+SuggestionItem は frontend の定数として定義する。初期実装では backend で suggestion registry を持たない。
+
+配置案:
+
+```txt
+frontend/src/lib/suggestions/
+  bbqSuppliesSuggestions.ts
+```
+
+型イメージ:
+
+```ts
+export type SuggestionGroupDefinition = {
+  key: string;
+  label: string;
+  defaultExpanded?: boolean;
+};
+
+export type SuggestionGroupKey = SuggestionGroupDefinition['key'];
+
+export type SuggestionItemDefinition = {
+  key: string;
+  name: string;
+  category: ItemCategory;
+  group?: SuggestionGroupKey;
+};
+
+export type SuggestionPackDefinition = {
+  id: string;
+  label: string;
+  relatedTemplateId?: string;
+  groups?: SuggestionGroupDefinition[];
+  items: SuggestionItemDefinition[];
+};
+```
+
+`key` は UI 上の識別と selection state に使う。初期実装では DB に保存しないが、将来 suggestion の利用状況分析や厳密な重複管理を行う場合に備え、安定した値にしておく。
+
+`group` は表示分類のための任意メタデータであり、SuggestionItem の保存や重複判定には使わない。pack 内で分類表示したい場合だけ `groups` と item 側の `group` を定義する。`defaultExpanded` は表示上の初期開閉だけを制御する。
+
+例:
+
+```ts
+export const BBQ_SUPPLIES_SUGGESTION_PACK: SuggestionPackDefinition = {
+  id: 'bbq_supplies',
+  label: 'BBQ 周辺アイテム',
+  relatedTemplateId: 'bbq',
+  groups: [
+    { key: 'tableware', label: '食器' },
+    { key: 'cleanup', label: '衛生・片付け' },
+    { key: 'cooking', label: '調理器具' },
+    { key: 'cooling', label: '保冷' },
+    { key: 'seasonings', label: '調味料' },
+    { key: 'fire', label: '火おこし・燃料', defaultExpanded: false }
+  ],
+  items: [
+    { key: 'bbq_supply_paper_plates', name: '紙皿', category: 'supplies', group: 'tableware' },
+    { key: 'bbq_supply_paper_cups', name: '紙コップ', category: 'supplies', group: 'tableware' },
+    { key: 'bbq_supply_chopsticks', name: 'はし', category: 'supplies', group: 'tableware' },
+    { key: 'bbq_supply_wet_tissues', name: 'ウェットティッシュ', category: 'daily_goods', group: 'cleanup' },
+    { key: 'bbq_supply_kitchen_paper', name: 'キッチンペーパー', category: 'daily_goods', group: 'cleanup' },
+    { key: 'bbq_supply_aluminum_foil', name: 'アルミホイル', category: 'daily_goods', group: 'cooking' },
+    { key: 'bbq_supply_kitchen_scissors', name: 'キッチンばさみ', category: 'daily_goods', group: 'cooking' },
+    { key: 'bbq_supply_knife', name: 'ナイフ', category: 'daily_goods', group: 'cooking' },
+    { key: 'bbq_supply_cutting_board', name: 'まな板', category: 'daily_goods', group: 'cooking' },
+    { key: 'bbq_supply_cooler_bag', name: '保冷バッグ', category: 'daily_goods', group: 'cooling' },
+    { key: 'bbq_supply_ice_pack', name: '保冷剤', category: 'daily_goods', group: 'cooling' },
+    { key: 'bbq_supply_ice', name: '氷', category: 'drinks', group: 'cooling' },
+    { key: 'bbq_supply_oil', name: '食用油', category: 'seasonings', group: 'seasonings' },
+    { key: 'bbq_supply_salt_pepper', name: '塩胡椒', category: 'seasonings', group: 'seasonings' },
+    { key: 'bbq_supply_sauce', name: '焼肉のたれ', category: 'seasonings', group: 'seasonings' },
+    { key: 'bbq_supply_butter', name: 'バター', category: 'seasonings', group: 'seasonings' },
+    { key: 'bbq_supply_chili_pepper', name: '唐辛子', category: 'seasonings', group: 'seasonings' },
+    { key: 'bbq_supply_charcoal', name: '炭', category: 'daily_goods', group: 'fire' },
+    { key: 'bbq_supply_fire_starter', name: '着火剤', category: 'daily_goods', group: 'fire' },
+    { key: 'bbq_supply_lighter', name: 'ライター', category: 'daily_goods', group: 'fire' },
+    { key: 'bbq_supply_work_gloves', name: '軍手', category: 'daily_goods', group: 'fire' },
+    { key: 'bbq_supply_fire_tongs', name: '火ばさみ', category: 'daily_goods', group: 'fire' }
+  ]
+};
+```
+
+### Backend 対応方針
+
+初期実装では、SuggestionItem 専用の backend API は追加しない。
+
+理由:
+
+- 保存形式が通常の `plain item` と同じ
+- 重複判定は frontend が現在の list item を見れば判断できる
+- 再生成・自動削除の整合性管理が不要
+- backend に suggestion 定義を持たせる必要がまだない
+
+複数 item の一括追加を効率化したくなった場合は、将来 `POST /api/lists/{listId}/items/bulk` のような通常 item 用 bulk API を検討する。ただしその場合も SuggestionItem を generated item として扱わない。
 
 ---
 
@@ -780,6 +1053,7 @@ Frontend は生成体験と preview を担う。
 - リスト画面上のテンプレート追加導線
 - テンプレート選択 UI
 - テンプレート専用ページ
+- Suggestion Pack 専用ページ
 - BBQ 回答フォーム UI
 - 生成 candidate の計算
 - preview 表示
@@ -787,6 +1061,8 @@ Frontend は生成体験と preview を担う。
 - item 作成 API 呼び出し
 - 再生成時の突合更新
 - 数量の表示単位変換
+- SuggestionItem の選択 UI と追加済み判定
+- 選択された SuggestionItem の plain item 追加
 
 ---
 
@@ -964,6 +1240,53 @@ Backend:
 - 保存済み config がある場合、ボタン文言が「生成条件を調整」になる
 - `generated + locked` の preview が「変更対象外」として見える
 - 新テンプレートの pure function に unit test がある
+
+---
+
+## 新しい Suggestion Pack を追加する場合のガイド
+
+Suggestion Pack は、テンプレート本体に含めるほどではない周辺 item の提案として追加する。数量計算・再生成・自動削除が必要なものは Suggestion Pack ではなく Template として扱う。
+
+### 追加時の基本方針
+
+- SuggestionItem は `plain item` として追加する。
+- SuggestionItem には `category` を持たせる。
+- `item_quantified` は作らない。
+- `generatorKey` / `regenerationPolicy` / `list_generation_config` は使わない。
+- 追加済み判定は `normalizeForSearch(name)` の完全一致で行う。
+- 既に追加済みの item は選択不可にする。
+- 同じ item を複数追加したい場合は、SuggestionItem ではなく item 複製機能で対応する。
+
+### Frontend で追加するもの
+
+1. `frontend/src/lib/suggestions/{template}Suggestions.ts` を追加する。
+2. `SuggestionPackDefinition` に `id` / `label` / `relatedTemplateId` / `groups` / `items` を定義する。
+3. item の `key` は UI state 用の安定 ID として、pack 内で一意にする。
+4. item の `name` と `category` を定義する。
+5. テンプレート適用済みで item が 1 件以上あるリスト画面に `周辺アイテム` の導線を表示する。
+6. 専用ページ `frontend/src/pages/{SuggestionPack}SuggestionPage.vue` を追加する。
+7. 専用ページの route を `frontend/src/router/index.ts` に追加する。
+8. 正方形タイルの 2 列グリッドを基本にした選択 UI を用意する。
+9. 追加済み判定済みの item は `追加済み` と表示し、選択対象から外す。
+10. 選択された item を通常の item 作成 API で `plain` として追加する。
+11. 追加完了後はリスト画面へ戻る。
+
+### Backend で追加するもの
+
+初期実装ではなし。
+
+通常 item 作成 API で保存できるため、Suggestion Pack 専用 API や registry は不要とする。将来、suggestion 定義をサーバー管理したい、A/B テストしたい、利用状況を分析したい、複数 item を atomic に一括追加したい、といった要件が出た場合に backend 拡張を検討する。
+
+### テスト追加の目安
+
+Frontend:
+
+- suggestion 定義の `key` が pack 内で重複していない
+- suggestion 定義の `name` が空ではない
+- suggestion 定義の `category` が既存カテゴリに含まれている
+- 既存 item と正規化後に完全一致する suggestion が `追加済み` になる
+- 部分一致だけでは `追加済み` にならない
+- 選択した suggestion が `plain item` 作成 request に変換される
 
 ---
 

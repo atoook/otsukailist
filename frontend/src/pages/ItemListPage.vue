@@ -7,10 +7,12 @@ import ItemAddForm from '../components/ItemAddForm.vue';
 import ItemGroupList from '../components/ItemGroupList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import IconButton from '../components/IconButton.vue';
+import PillActionButton from '../components/PillActionButton.vue';
 import IconEdit from '../components/icons/IconEdit.vue';
 import IconRefresh from '../components/icons/IconRefresh.vue';
 import IconCelebration from '../components/icons/IconCelebration.vue';
 import IconSparkles from '../components/icons/IconSparkles.vue';
+import IconTools from '../components/icons/IconTools.vue';
 import type { Item } from '../types/item';
 import type { ItemCategory } from '../types/item-category';
 import type { ItemPreparationType } from '../types/item-preparation-type';
@@ -34,10 +36,12 @@ export default defineComponent({
     ItemGroupList,
     LoadingSpinner,
     IconButton,
+    PillActionButton,
     IconEdit,
     IconRefresh,
     IconCelebration,
-    IconSparkles
+    IconSparkles,
+    IconTools
   },
   data(): {
     currentListId: string | null;
@@ -139,6 +143,9 @@ export default defineComponent({
     },
     generationButtonDescription(): string {
       return this.hasGenerationConfig ? '条件を見直して再生成できます' : PRIMARY_LIST_TEMPLATE.description;
+    },
+    shouldShowSuggestionLink(): boolean {
+      return this.items.length > 0 && this.hasGenerationConfig && !this.generationConfigLoading;
     }
   },
   watch: {
@@ -197,6 +204,13 @@ export default defineComponent({
         params: { id: this.currentListId ?? this.$route.params.id }
       });
     },
+    openSuggestionPage(): void {
+      this.errorMessage = '';
+      this.$router.push({
+        name: 'BBQSuppliesSuggestion',
+        params: { id: this.currentListId ?? this.$route.params.id }
+      });
+    },
     handleMemberSelect(selectedId: string) {
       this.selectedMemberId = selectedId;
       if (this.currentListId) {
@@ -251,18 +265,25 @@ export default defineComponent({
           </IconButton>
         </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
-        <div v-if="items.length > 0" class="mt-2 flex justify-end">
-          <button
-            type="button"
-            class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-2 text-xs font-medium text-charcoal-500 transition-colors hover:bg-charcoal-100 hover:text-charcoal-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-charcoal-300 disabled:cursor-not-allowed disabled:opacity-40"
+        <div v-if="items.length > 0" class="mt-2 flex flex-wrap justify-end gap-2">
+          <PillActionButton
+            v-if="shouldShowSuggestionLink"
+            aria-label="周辺アイテムを確認"
+            title="周辺アイテムを確認"
+            @click="openSuggestionPage"
+          >
+            <template #icon><IconTools /></template>
+            <span>周辺アイテム</span>
+          </PillActionButton>
+          <PillActionButton
             :disabled="generationConfigLoading"
             :aria-label="generationConfigLoading ? '生成設定を確認中' : generationButtonLabel"
             :title="generationConfigLoading ? '生成設定を確認中' : generationButtonLabel"
             @click="openGenerationPage"
           >
-            <IconSparkles />
+            <template #icon><IconSparkles /></template>
             <span>{{ generationConfigLoading ? '確認中...' : generationButtonLabel }}</span>
-          </button>
+          </PillActionButton>
         </div>
       </div>
 
