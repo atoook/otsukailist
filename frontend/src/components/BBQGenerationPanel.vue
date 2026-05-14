@@ -64,7 +64,7 @@ const ADJUSTMENT_TARGETS: Array<{ key: keyof BBQGenerationConfig['adjustments'];
 type GenerationPreviewRow = {
   key: string;
   name: string;
-  status: 'new' | 'update' | 'delete' | 'unchanged' | 'locked';
+  status: 'new' | 'update' | 'delete' | 'unchanged' | 'locked' | 'completed';
   beforeQuantity: string | null;
   afterQuantity: string | null;
   beforeRawQuantity: number | null;
@@ -82,6 +82,16 @@ function isGeneratedItemWithKey(item: Item): item is GeneratedItemWithKey {
     item.quantified.origin === 'generated' &&
     item.quantified.generatorKey != null
   );
+}
+
+function getStaleGeneratedRowStatus(item: GeneratedItemWithKey): GenerationPreviewRow['status'] {
+  if (item.completed) {
+    return 'completed';
+  }
+  if (item.quantified.regenerationPolicy === 'locked') {
+    return 'locked';
+  }
+  return 'delete';
 }
 
 function cloneBBQGenerationConfig(config: BBQGenerationConfig): BBQGenerationConfig {
@@ -171,7 +181,7 @@ export default defineComponent({
     applicableCandidates(): GeneratedItemCandidate[] {
       return this.candidates.filter((candidate) => {
         const existingItem = this.existingGeneratedItemsByGeneratorKey.get(candidate.generatorKey);
-        return existingItem?.quantified?.regenerationPolicy !== 'locked';
+        return !existingItem?.completed && existingItem?.quantified?.regenerationPolicy !== 'locked';
       });
     },
     previewRows(): GenerationPreviewRow[] {
@@ -202,11 +212,11 @@ export default defineComponent({
           };
         }
 
-        if (existingItem.quantified.regenerationPolicy === 'locked') {
+        if (existingItem.completed || existingItem.quantified.regenerationPolicy === 'locked') {
           return {
             key: candidate.generatorKey,
             name: existingItem.name,
-            status: 'locked',
+            status: existingItem.completed ? 'completed' : 'locked',
             beforeQuantity: this.displayExistingQuantity(existingItem),
             afterQuantity: null,
             beforeRawQuantity: existingItem.quantified.quantity,
@@ -236,7 +246,7 @@ export default defineComponent({
         .map(([generatorKey, item]): GenerationPreviewRow => ({
           key: generatorKey,
           name: item.name,
-          status: item.quantified.regenerationPolicy === 'locked' ? 'locked' : 'delete',
+          status: getStaleGeneratedRowStatus(item),
           beforeQuantity: this.displayExistingQuantity(item),
           afterQuantity: null,
           beforeRawQuantity: item.quantified.quantity,
@@ -330,6 +340,9 @@ export default defineComponent({
       if (status === 'locked') {
         return '変更対象外';
       }
+      if (status === 'completed') {
+        return '完了済';
+      }
       return '変更なし';
     },
     previewStatusClass(status: GenerationPreviewRow['status']): string {
@@ -342,7 +355,7 @@ export default defineComponent({
       if (status === 'delete') {
         return 'border border-red-200 bg-white text-red-700';
       }
-      if (status === 'locked') {
+      if (status === 'locked' || status === 'completed') {
         return 'bg-charcoal-100 text-charcoal-600';
       }
       return 'bg-transparent text-charcoal-500';

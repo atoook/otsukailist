@@ -135,6 +135,34 @@ class GeneratedItemCommandServiceTest {
   }
 
   @Test
+  @DisplayName("既存の完了済みgenerated+auto itemは更新も重複追加もしないこと")
+  void syncGeneratedItemsSkipsExistingCompletedAutoItem() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList(listId);
+    Item existingItem = generatedCompletedAutoItem(list, "牛肉カスタム", 1000L, "beef");
+    SyncGeneratedItemsRequest request =
+        SyncGeneratedItemsRequest.builder()
+            .generatorKeysInScope(List.of("beef"))
+            .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
+            .build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
+        .thenReturn(List.of(existingItem));
+    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(2L);
+
+    var result = service.syncGeneratedItems(listId, request);
+
+    assertThat(existingItem.getQuantified().getQuantity()).isEqualTo(1000L);
+    assertThat(existingItem.getQuantified().getRegenerationPolicy())
+        .isEqualTo(RegenerationPolicy.AUTO);
+    assertThat(existingItem.isCompleted()).isTrue();
+    assertThat(result.getData().getItems()).isEmpty();
+    assertThat(result.getData().getDeletedItemIds()).isEmpty();
+  }
+
+  @Test
   @DisplayName("生成候補から外れた既存generated+auto itemは削除すること")
   void syncGeneratedItemsDeletesExistingAutoItemMissingFromCandidates() {
     UUID listId = UUID.randomUUID();
@@ -168,6 +196,33 @@ class GeneratedItemCommandServiceTest {
     UUID listId = UUID.randomUUID();
     ItemList list = itemList(listId);
     Item seafood = generatedLockedItem(list, "えび", 1L, "seafood_shrimp");
+    seafood.setId(UUID.randomUUID());
+    seafood.setCategory(ItemCategory.SEAFOOD);
+    seafood.getQuantified().setBaseUnit(BaseUnit.PACK);
+    SyncGeneratedItemsRequest request =
+        SyncGeneratedItemsRequest.builder()
+            .generatorKeysInScope(List.of("beef", "seafood_shrimp"))
+            .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
+            .build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
+        .thenReturn(List.of(seafood));
+    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(4L);
+
+    var result = service.syncGeneratedItems(listId, request);
+
+    assertThat(result.getData().getItems()).hasSize(1);
+    assertThat(result.getData().getDeletedItemIds()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("生成候補から外れた既存の完了済みgenerated+auto itemは削除しないこと")
+  void syncGeneratedItemsKeepsExistingCompletedAutoItemMissingFromCandidates() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList(listId);
+    Item seafood = generatedCompletedAutoItem(list, "えび", 1L, "seafood_shrimp");
     seafood.setId(UUID.randomUUID());
     seafood.setCategory(ItemCategory.SEAFOOD);
     seafood.getQuantified().setBaseUnit(BaseUnit.PACK);
@@ -268,6 +323,14 @@ class GeneratedItemCommandServiceTest {
       ItemList list, String name, long quantity, String generatorKey) {
     Item item = generatedAutoItem(list, name, quantity, generatorKey);
     item.getQuantified().setRegenerationPolicy(RegenerationPolicy.LOCKED);
+    return item;
+  }
+
+  private static Item generatedCompletedAutoItem(
+      ItemList list, String name, long quantity, String generatorKey) {
+    Item item = generatedAutoItem(list, name, quantity, generatorKey);
+    item.setCompleted(true);
+    item.setCompletedAt(java.time.Instant.parse("2024-01-01T00:00:00Z"));
     return item;
   }
 
