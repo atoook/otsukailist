@@ -261,10 +261,13 @@ export default defineComponent({
       }
       return this.previewRows.filter((row) => row.status === 'update' || row.status === 'new' || row.status === 'delete');
     },
+    hasApplicablePreviewChanges(): boolean {
+      return this.previewRows.some((row) => row.status === 'update' || row.status === 'new' || row.status === 'delete');
+    },
     canApply(): boolean {
       return (
         this.config.answers.adultCount + this.config.answers.childCount > 0 &&
-        (this.candidates.length > 0 || this.previewRows.some((row) => row.status === 'delete')) &&
+        (this.hasExistingConfig ? this.hasApplicablePreviewChanges : this.candidates.length > 0) &&
         !this.mutationLoading
       );
     },
