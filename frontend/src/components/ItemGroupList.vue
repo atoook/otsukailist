@@ -15,6 +15,7 @@ import { useMutation } from '@/composables/useMutation';
 import { groupItems } from '@/utils/item-grouping';
 import type { GroupDefinition, ItemGroup } from '@/utils/item-grouping';
 import { getErrorMessage } from '@/lib/http';
+import { markGeneratedItemExcludedFromBBQConfig } from '@/lib/listTemplateExclusions';
 
 const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
   {
@@ -192,10 +193,24 @@ export default defineComponent({
         return;
       }
       try {
+        const item = this.listStore.items.find((candidate) => candidate.id === itemId) ?? null;
         this.deleteLoading = { ...this.deleteLoading, [itemId]: true };
         const result = await this.mutationRun(() => deleteItemApi(listId, itemId));
         if (result.applied) {
           this.listStore.removeItem(itemId);
+        }
+        if (item) {
+          try {
+            const configResult = await markGeneratedItemExcludedFromBBQConfig(listId, item);
+            if (configResult && configResult.revision > this.listStore.revision) {
+              this.listStore.setRevision(configResult.revision);
+            }
+          } catch (err: unknown) {
+            console.error('Failed to update generated item exclusion config', err);
+            this.errorMessage =
+              getErrorMessage(err) ?? 'アイテムは削除されましたが、次回の再生成対象外設定に失敗しました。';
+            this.showErrorFeedback();
+          }
         }
       } catch (err: unknown) {
         console.error('Failed to delete item', err);

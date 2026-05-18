@@ -7,6 +7,7 @@ import MainButton from './MainButton.vue';
 import {
   createDefaultBBQGenerationConfig,
   generateBBQItems,
+  normalizeBBQGenerationConfig,
   type BBQGenerationConfig,
   type BBQGenerationLevel,
   type BBQGenerationBalance,
@@ -15,6 +16,7 @@ import {
   type BBQSeafoodLevel,
   type GeneratedItemCandidate
 } from '@/lib/generation/bbqGenerator';
+import { isGeneratorKeyExcluded, setGeneratorKeyExcluded } from '@/lib/generation/generationConfig';
 import { saveListGenerationConfig } from '@/api/listGenerationConfig';
 import { syncGeneratedItems } from '@/api/item';
 import { useListStore } from '@/stores/list';
@@ -64,7 +66,7 @@ const ADJUSTMENT_TARGETS: Array<{ key: keyof BBQGenerationConfig['adjustments'];
 type GenerationPreviewRow = {
   key: string;
   name: string;
-  status: 'new' | 'update' | 'delete' | 'unchanged' | 'locked' | 'completed';
+  status: 'new' | 'update' | 'delete' | 'excluded' | 'unchanged' | 'locked' | 'completed';
   beforeQuantity: string | null;
   afterQuantity: string | null;
   beforeRawQuantity: number | null;
@@ -95,20 +97,7 @@ function getStaleGeneratedRowStatus(item: GeneratedItemWithKey): GenerationPrevi
 }
 
 function cloneBBQGenerationConfig(config: BBQGenerationConfig): BBQGenerationConfig {
-  const defaults = createDefaultBBQGenerationConfig();
-  const rawBalance = (config.answers as { balance?: string }).balance;
-  const balance = rawBalance === 'seafood' ? defaults.answers.balance : config.answers.balance;
-  return {
-    version: 1,
-    answers: {
-      ...defaults.answers,
-      ...config.answers,
-      balance,
-      alcoholLevel: config.answers.alcoholLevel,
-      seafoodLevel: config.answers.seafoodLevel
-    },
-    adjustments: { ...defaults.adjustments, ...config.adjustments }
-  };
+  return normalizeBBQGenerationConfig(config);
 }
 
 export default defineComponent({
@@ -180,6 +169,9 @@ export default defineComponent({
     },
     applicableCandidates(): GeneratedItemCandidate[] {
       return this.candidates.filter((candidate) => {
+        if (isGeneratorKeyExcluded(this.config, candidate.generatorKey)) {
+          return false;
+        }
         const existingItem = this.existingGeneratedItemsByGeneratorKey.get(candidate.generatorKey);
         return !existingItem?.completed && existingItem?.quantified?.regenerationPolicy !== 'locked';
       });
@@ -189,7 +181,7 @@ export default defineComponent({
         return this.candidates.map((candidate) => ({
           key: candidate.generatorKey,
           name: candidate.name,
-          status: 'new',
+          status: isGeneratorKeyExcluded(this.config, candidate.generatorKey) ? 'excluded' : 'new',
           beforeQuantity: null,
           afterQuantity: this.displayQuantity(candidate),
           beforeRawQuantity: null,
@@ -200,6 +192,18 @@ export default defineComponent({
       const candidateKeys = new Set(this.candidates.map((candidate) => candidate.generatorKey));
       const candidateRows = this.candidates.map((candidate): GenerationPreviewRow => {
         const existingItem = this.existingGeneratedItemsByGeneratorKey.get(candidate.generatorKey);
+        if (isGeneratorKeyExcluded(this.config, candidate.generatorKey)) {
+          return {
+            key: candidate.generatorKey,
+            name: existingItem?.name ?? candidate.name,
+            status: 'excluded',
+            beforeQuantity: existingItem ? this.displayExistingQuantity(existingItem) : null,
+            afterQuantity: existingItem ? null : this.displayQuantity(candidate),
+            beforeRawQuantity: existingItem?.quantified.quantity ?? null,
+            afterRawQuantity: existingItem ? null : candidate.quantity
+          };
+        }
+
         if (!existingItem?.quantified) {
           return {
             key: candidate.generatorKey,
@@ -243,15 +247,17 @@ export default defineComponent({
           const [generatorKey] = entry;
           return !candidateKeys.has(generatorKey) && templateGeneratorKeys.has(generatorKey);
         })
-        .map(([generatorKey, item]): GenerationPreviewRow => ({
-          key: generatorKey,
-          name: item.name,
-          status: getStaleGeneratedRowStatus(item),
-          beforeQuantity: this.displayExistingQuantity(item),
-          afterQuantity: null,
-          beforeRawQuantity: item.quantified.quantity,
-          afterRawQuantity: null
-        }));
+        .map(
+          ([generatorKey, item]): GenerationPreviewRow => ({
+            key: generatorKey,
+            name: item.name,
+            status: getStaleGeneratedRowStatus(item),
+            beforeQuantity: this.displayExistingQuantity(item),
+            afterQuantity: null,
+            beforeRawQuantity: item.quantified.quantity,
+            afterRawQuantity: null
+          })
+        );
 
       return [...candidateRows, ...staleGeneratedRows];
     },
@@ -259,15 +265,19 @@ export default defineComponent({
       if (!this.hasExistingConfig || !this.showOnlyChangedRows) {
         return this.previewRows;
       }
-      return this.previewRows.filter((row) => row.status === 'update' || row.status === 'new' || row.status === 'delete');
+      return this.previewRows.filter(
+        (row) => row.status === 'update' || row.status === 'new' || row.status === 'delete' || row.status === 'excluded'
+      );
     },
     hasApplicablePreviewChanges(): boolean {
-      return this.previewRows.some((row) => row.status === 'update' || row.status === 'new' || row.status === 'delete');
+      return this.previewRows.some(
+        (row) => row.status === 'update' || row.status === 'new' || row.status === 'delete' || row.status === 'excluded'
+      );
     },
     canApply(): boolean {
       return (
         this.config.answers.adultCount + this.config.answers.childCount > 0 &&
-        (this.hasExistingConfig ? this.hasApplicablePreviewChanges : this.candidates.length > 0) &&
+        (this.hasExistingConfig ? this.hasApplicablePreviewChanges : this.applicableCandidates.length > 0) &&
         !this.mutationLoading
       );
     },
@@ -320,6 +330,19 @@ export default defineComponent({
     toggleShowOnlyChangedRows(): void {
       this.showOnlyChangedRows = !this.showOnlyChangedRows;
     },
+    setCandidateExcluded(generatorKey: string, excluded: boolean): void {
+      this.config = setGeneratorKeyExcluded(this.config, generatorKey, excluded);
+    },
+    shouldShowTargetToggle(row: GenerationPreviewRow): boolean {
+      return row.status === 'new' || row.status === 'update' || row.status === 'excluded';
+    },
+    targetToggleButtonClass(isActive: boolean): string[] {
+      return [
+        'min-w-12 rounded-full px-2 py-1 text-xs font-medium transition-colors',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-wood-300',
+        isActive ? 'bg-wood-200 text-charcoal-800 shadow-sm' : 'bg-charcoal-50 text-charcoal-600 hover:bg-wood-50'
+      ];
+    },
     displayQuantity(item: GeneratedItemCandidate): string {
       return formatQuantity(item);
     },
@@ -340,6 +363,9 @@ export default defineComponent({
       if (status === 'delete') {
         return '削除';
       }
+      if (status === 'excluded') {
+        return '対象外';
+      }
       if (status === 'locked') {
         return '変更対象外';
       }
@@ -358,6 +384,9 @@ export default defineComponent({
       if (status === 'delete') {
         return 'border border-red-200 bg-white text-red-700';
       }
+      if (status === 'excluded') {
+        return 'border border-charcoal-200 bg-charcoal-50 text-charcoal-600';
+      }
       if (status === 'locked' || status === 'completed') {
         return 'bg-charcoal-100 text-charcoal-600';
       }
@@ -368,13 +397,24 @@ export default defineComponent({
       if (row.status === 'delete' && position === 'before') {
         return [...baseClass, 'bg-red-50 text-red-700'];
       }
+      if (row.status === 'excluded' && position === 'before') {
+        return [...baseClass, 'bg-charcoal-100 text-charcoal-600'];
+      }
       if (row.status !== 'update' || position !== 'after') {
         return [...baseClass, position === 'after' ? 'bg-wood-100' : 'bg-charcoal-50'];
       }
-      if (row.beforeRawQuantity != null && row.afterRawQuantity != null && row.afterRawQuantity > row.beforeRawQuantity) {
+      if (
+        row.beforeRawQuantity != null &&
+        row.afterRawQuantity != null &&
+        row.afterRawQuantity > row.beforeRawQuantity
+      ) {
         return [...baseClass, 'bg-amber-100 text-amber-800'];
       }
-      if (row.beforeRawQuantity != null && row.afterRawQuantity != null && row.afterRawQuantity < row.beforeRawQuantity) {
+      if (
+        row.beforeRawQuantity != null &&
+        row.afterRawQuantity != null &&
+        row.afterRawQuantity < row.beforeRawQuantity
+      ) {
         return [...baseClass, 'bg-charcoal-100 text-charcoal-700'];
       }
       return [...baseClass, 'bg-wood-100'];
@@ -608,11 +648,7 @@ export default defineComponent({
             <IconChevronDown />
           </span>
         </button>
-        <div
-          v-if="showAdjustmentPanel"
-          id="bbq-adjustment-panel"
-          class="grid gap-3 border-t border-wood-100 p-4"
-        >
+        <div v-if="showAdjustmentPanel" id="bbq-adjustment-panel" class="grid gap-3 border-t border-wood-100 p-4">
           <div v-for="target in adjustmentTargets" :key="target.key">
             <p class="mb-1 text-xs font-medium text-charcoal-600">
               {{ target.label }}
@@ -650,24 +686,50 @@ export default defineComponent({
           <div
             v-for="row in visiblePreviewRows"
             :key="row.key"
-            class="grid gap-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto]"
+            class="px-3 py-2"
             :class="{ 'bg-charcoal-50/50': row.status === 'unchanged' }"
           >
-            <div class="flex min-w-0 items-center gap-2">
-              <span
-                class="min-w-0 truncate text-sm"
-                :class="row.status === 'unchanged' ? 'text-charcoal-500' : 'text-charcoal-800'"
+            <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+              <div class="flex min-w-0 items-center gap-2">
+                <span
+                  class="min-w-0 truncate text-sm"
+                  :class="row.status === 'unchanged' ? 'text-charcoal-500' : 'text-charcoal-800'"
+                >
+                  {{ row.name }}
+                </span>
+                <span
+                  v-if="row.status !== 'excluded'"
+                  class="shrink-0 rounded px-2 py-0.5 text-[11px] font-medium"
+                  :class="previewStatusClass(row.status)"
+                >
+                  {{ previewStatusLabel(row.status) }}
+                </span>
+              </div>
+              <div
+                v-if="shouldShowTargetToggle(row)"
+                class="inline-flex shrink-0 rounded-full border border-wood-200 bg-charcoal-50 p-0.5"
+                role="group"
+                :aria-label="`${row.name}の生成対象を切り替え`"
               >
-                {{ row.name }}
-              </span>
-              <span
-                class="shrink-0 rounded px-2 py-0.5 text-[11px] font-medium"
-                :class="previewStatusClass(row.status)"
-              >
-                {{ previewStatusLabel(row.status) }}
-              </span>
+                <button
+                  type="button"
+                  :class="targetToggleButtonClass(row.status !== 'excluded')"
+                  :aria-pressed="row.status !== 'excluded'"
+                  @click="setCandidateExcluded(row.key, false)"
+                >
+                  対象
+                </button>
+                <button
+                  type="button"
+                  :class="targetToggleButtonClass(row.status === 'excluded')"
+                  :aria-pressed="row.status === 'excluded'"
+                  @click="setCandidateExcluded(row.key, true)"
+                >
+                  対象外
+                </button>
+              </div>
             </div>
-            <div class="flex flex-wrap items-center gap-1 text-xs font-medium text-charcoal-700 sm:justify-end">
+            <div class="mt-1 flex flex-wrap items-center gap-1 text-xs font-medium text-charcoal-700">
               <span v-if="row.status === 'unchanged'" class="text-charcoal-500">
                 {{ row.beforeQuantity }}
               </span>
