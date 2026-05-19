@@ -275,11 +275,14 @@ export default defineComponent({
         </section>
       </div>
 
-      <div v-if="!errorMessage" class="fixed inset-x-0 bottom-0 z-10 border-t border-wood-200 bg-wood-50/95 px-6 py-3 backdrop-blur">
-        <div class="mx-auto flex max-w-3xl gap-3">
+      <div
+        v-if="!errorMessage"
+        class="fixed bottom-0 left-1/2 z-10 box-border w-full max-w-sm -translate-x-1/2 border-t border-wood-200 bg-wood-50/95 px-6 py-3 backdrop-blur"
+      >
+        <div class="mx-auto flex w-full min-w-0 max-w-3xl gap-3">
           <button
             type="button"
-            class="flex-1 rounded-lg border border-wood-600 bg-wood-500 px-4 py-3 text-center font-semibold text-wood-50 shadow-md transition-[background-color,box-shadow] hover:bg-wood-600 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+            class="min-w-0 flex-1 rounded-lg border border-wood-600 bg-wood-500 px-4 py-3 text-center font-semibold text-wood-50 shadow-md transition-[background-color,box-shadow] hover:bg-wood-600 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="!canAddSelected"
             @click="addSelectedItems"
           >
