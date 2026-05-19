@@ -1,6 +1,8 @@
 package com.atoook.otsukailist.config;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
@@ -52,7 +54,10 @@ public class AppRateLimitProperties {
 
   /** Number of trusted reverse proxies that append X-Forwarded-For values. */
   @Min(0)
-  private int trustedProxyCount = 1;
+  private int trustedProxyCount = 0;
+
+  /** Trusted proxy IPs or CIDR ranges allowed to supply X-Forwarded-For. */
+  private List<String> trustedProxyCidrs = new ArrayList<>();
 
   /**
    * Validate that refill period is positive.
@@ -82,6 +87,18 @@ public class AppRateLimitProperties {
   @AssertTrue(message = "cache-ttl must be positive")
   public boolean isCacheTtlPositive() {
     return isPositive(cacheTtl);
+  }
+
+  /**
+   * Validate that X-Forwarded-For is only enabled with an explicit proxy allowlist.
+   *
+   * @return true when trusted proxy settings are safe
+   */
+  @AssertTrue(message = "trusted-proxy-cidrs must be set when trusted-proxy-count is positive")
+  public boolean isTrustedProxyConfigurationValid() {
+    return trustedProxyCount <= 0
+        || trustedProxyCidrs != null
+            && trustedProxyCidrs.stream().anyMatch(value -> !value.isBlank());
   }
 
   private static boolean isPositive(Duration duration) {

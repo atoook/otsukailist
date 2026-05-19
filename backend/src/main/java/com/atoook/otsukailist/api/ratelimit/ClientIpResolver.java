@@ -4,6 +4,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -52,6 +53,9 @@ public class ClientIpResolver {
     if (trustedProxyCount <= 0) {
       return null;
     }
+    if (!isTrustedProxy(request.getRemoteAddr())) {
+      return null;
+    }
 
     List<String> forwardedIps = forwardedIps(request);
     if (forwardedIps.size() < trustedProxyCount) {
@@ -60,6 +64,22 @@ public class ClientIpResolver {
 
     String candidate = forwardedIps.get(forwardedIps.size() - trustedProxyCount);
     return isValidIpAddress(candidate) ? candidate : null;
+  }
+
+  private boolean isTrustedProxy(String remoteAddr) {
+    InetAddress remoteAddress = parseIpAddress(remoteAddr);
+    if (remoteAddress == null) {
+      return false;
+    }
+
+    List<String> trustedProxyCidrs = properties.getTrustedProxyCidrs();
+    if (trustedProxyCidrs == null) {
+      return false;
+    }
+
+    return trustedProxyCidrs.stream()
+        .filter(StringUtils::hasText)
+        .anyMatch(entry -> trustedProxyMatcher(entry.trim()).matches(remoteAddress));
   }
 
   private static List<String> forwardedIps(HttpServletRequest request) {
@@ -86,6 +106,25 @@ public class ClientIpResolver {
 
   private static boolean isValidIpAddress(String value) {
     return isValidIpv4Address(value) || isValidIpv6Address(value);
+  }
+
+  private static InetAddress parseIpAddress(String value) {
+    try {
+      if (isValidIpv4Address(value)) {
+        String[] octets = value.split("\\.");
+        byte[] address = new byte[4];
+        for (int i = 0; i < octets.length; i++) {
+          address[i] = (byte) Integer.parseInt(octets[i]);
+        }
+        return InetAddress.getByAddress(address);
+      }
+      if (isValidIpv6Address(value)) {
+        return InetAddress.getByName(value);
+      }
+      return null;
+    } catch (UnknownHostException e) {
+      return null;
+    }
   }
 
   private static boolean isValidIpv4Address(String value) {
@@ -128,5 +167,59 @@ public class ClientIpResolver {
     } catch (UnknownHostException e) {
       return false;
     }
+  }
+
+  private static TrustedProxyMatcher trustedProxyMatcher(String entry) {
+    String[] parts = entry.split("/", -1);
+    InetAddress baseAddress = parseIpAddress(parts[0]);
+    if (baseAddress == null) {
+      return TrustedProxyMatcher.NEVER;
+    }
+    if (parts.length == 1) {
+      return remoteAddress -> baseAddress.equals(remoteAddress);
+    }
+    if (parts.length != 2) {
+      return TrustedProxyMatcher.NEVER;
+    }
+
+    try {
+      int prefixLength = Integer.parseInt(parts[1]);
+      int maxPrefixLength = baseAddress.getAddress().length * Byte.SIZE;
+      if (prefixLength < 0 || prefixLength > maxPrefixLength) {
+        return TrustedProxyMatcher.NEVER;
+      }
+      return remoteAddress -> isInCidrRange(remoteAddress, baseAddress, prefixLength);
+    } catch (NumberFormatException e) {
+      return TrustedProxyMatcher.NEVER;
+    }
+  }
+
+  private static boolean isInCidrRange(
+      InetAddress remoteAddress, InetAddress baseAddress, int prefixLength) {
+    byte[] remoteBytes = remoteAddress.getAddress();
+    byte[] baseBytes = baseAddress.getAddress();
+    if (remoteBytes.length != baseBytes.length) {
+      return false;
+    }
+
+    int fullBytes = prefixLength / Byte.SIZE;
+    int remainingBits = prefixLength % Byte.SIZE;
+    if (!Arrays.equals(
+        Arrays.copyOf(remoteBytes, fullBytes), Arrays.copyOf(baseBytes, fullBytes))) {
+      return false;
+    }
+    if (remainingBits == 0) {
+      return true;
+    }
+
+    int mask = 0xFF << (Byte.SIZE - remainingBits);
+    return (remoteBytes[fullBytes] & mask) == (baseBytes[fullBytes] & mask);
+  }
+
+  @FunctionalInterface
+  private interface TrustedProxyMatcher {
+    TrustedProxyMatcher NEVER = remoteAddress -> false;
+
+    boolean matches(InetAddress remoteAddress);
   }
 }

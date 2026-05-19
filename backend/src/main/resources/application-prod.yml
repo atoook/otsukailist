@@ -36,7 +36,8 @@ app:
     mutation-refill-period: ${APP_RATE_LIMIT_MUTATION_REFILL_PERIOD:PT1M}
     cache-ttl: ${APP_RATE_LIMIT_CACHE_TTL:PT15M}
     max-clients: ${APP_RATE_LIMIT_MAX_CLIENTS:10000}
-    trusted-proxy-count: ${APP_RATE_LIMIT_TRUSTED_PROXY_COUNT:1}
+    trusted-proxy-count: ${APP_RATE_LIMIT_TRUSTED_PROXY_COUNT:0}
+    trusted-proxy-cidrs: ${APP_RATE_LIMIT_TRUSTED_PROXY_CIDRS:}
 
 management:
   server:

@@ -98,12 +98,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
           response,
           policy.capacity(rateLimitProperties),
           probe.getRemainingTokens(),
-          policy.resetSeconds(rateLimitProperties));
+          resetSeconds(probe));
       filterChain.doFilter(request, response);
       return;
     }
 
-    long retryAfterSeconds = retryAfterSeconds(probe);
+    long retryAfterSeconds = resetSeconds(probe);
     writeRateLimitHeaders(
         response,
         policy.capacity(rateLimitProperties),
@@ -148,7 +148,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     response.setHeader(RATE_LIMIT_RESET_HEADER, Long.toString(resetSeconds));
   }
 
-  private static long retryAfterSeconds(ConsumptionProbe probe) {
+  private static long resetSeconds(ConsumptionProbe probe) {
     long nanosToWait = probe.getNanosToWaitForRefill();
     long secondsToWait = (nanosToWait + 999_999_999L) / 1_000_000_000L;
     return Math.max(1L, secondsToWait);
@@ -213,15 +213,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         case API -> properties.getCapacity();
         case MUTATION -> properties.getMutationCapacity();
       };
-    }
-
-    long resetSeconds(AppRateLimitProperties properties) {
-      Duration refillPeriod =
-          switch (this) {
-            case API -> properties.getRefillPeriod();
-            case MUTATION -> properties.getMutationRefillPeriod();
-          };
-      return Math.max(1L, refillPeriod.toSeconds());
     }
   }
 }
