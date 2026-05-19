@@ -69,6 +69,9 @@ curl -i http://localhost:10000/actuator/health/liveness
 - `APP_RATE_LIMIT_CAPACITY` (default: `120`)
 - `APP_RATE_LIMIT_REFILL_TOKENS` (default: `120`)
 - `APP_RATE_LIMIT_REFILL_PERIOD` (default: `PT1M`)
+- `APP_RATE_LIMIT_MUTATION_CAPACITY` (default: `30`)
+- `APP_RATE_LIMIT_MUTATION_REFILL_TOKENS` (default: `30`)
+- `APP_RATE_LIMIT_MUTATION_REFILL_PERIOD` (default: `PT1M`)
 - `APP_RATE_LIMIT_CACHE_TTL` (default: `PT15M`)
 - `APP_RATE_LIMIT_MAX_CLIENTS` (default: `10000`)
 - `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT` (default: `1`)
@@ -78,6 +81,7 @@ curl -i http://localhost:10000/actuator/health/liveness
 - `PORT` は Render が注入するため、通常は手動設定不要
 - アプリ側は `server.port=${PORT:8080}` 前提
 - Neon を inactive に戻せるよう、本番では DB pool の idle connection を保持しない設定
+- レートリミットは読み取り系 API がIP単位で 120 req/min、更新系 API (`POST`/`PUT`/`PATCH`/`DELETE`) がIP単位で 30 req/min
 - レートリミットはメモリ内でIP単位に管理されるため、複数インスタンス化した場合は実効上限がインスタンス数倍になる
 
 ## 3. デプロイ後のスモークチェック

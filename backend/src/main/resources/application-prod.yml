@@ -29,6 +29,9 @@ app:
     capacity: ${APP_RATE_LIMIT_CAPACITY:120}
     refill-tokens: ${APP_RATE_LIMIT_REFILL_TOKENS:120}
     refill-period: ${APP_RATE_LIMIT_REFILL_PERIOD:PT1M}
+    mutation-capacity: ${APP_RATE_LIMIT_MUTATION_CAPACITY:30}
+    mutation-refill-tokens: ${APP_RATE_LIMIT_MUTATION_REFILL_TOKENS:30}
+    mutation-refill-period: ${APP_RATE_LIMIT_MUTATION_REFILL_PERIOD:PT1M}
     cache-ttl: ${APP_RATE_LIMIT_CACHE_TTL:PT15M}
     max-clients: ${APP_RATE_LIMIT_MAX_CLIENTS:10000}
     trusted-proxy-count: ${APP_RATE_LIMIT_TRUSTED_PROXY_COUNT:1}

@@ -13,17 +13,32 @@
     {
       "name": "app.rate-limit.capacity",
       "type": "java.lang.Long",
-      "description": "Maximum burst size per client."
+      "description": "Maximum burst size per client for non-mutation API requests."
     },
     {
       "name": "app.rate-limit.refill-tokens",
       "type": "java.lang.Long",
-      "description": "Number of rate-limit tokens refilled per period."
+      "description": "Number of non-mutation rate-limit tokens refilled per period."
     },
     {
       "name": "app.rate-limit.refill-period",
       "type": "java.time.Duration",
-      "description": "Duration of one rate-limit refill period."
+      "description": "Duration of one non-mutation rate-limit refill period."
+    },
+    {
+      "name": "app.rate-limit.mutation-capacity",
+      "type": "java.lang.Long",
+      "description": "Maximum burst size per client for mutation API requests."
+    },
+    {
+      "name": "app.rate-limit.mutation-refill-tokens",
+      "type": "java.lang.Long",
+      "description": "Number of mutation rate-limit tokens refilled per period."
+    },
+    {
+      "name": "app.rate-limit.mutation-refill-period",
+      "type": "java.time.Duration",
+      "description": "Duration of one mutation rate-limit refill period."
     },
     {
       "name": "app.rate-limit.cache-ttl",
