@@ -1,4 +1,9 @@
 import { BBQ_GENERATION_RULES } from '@/lib/listGenerationConstants';
+import {
+  isExcludedGeneratorKeys,
+  normalizeExcludedGeneratorKeys,
+  type ListGenerationConfigBase
+} from '@/lib/generation/generationConfig';
 import type { ItemCategory } from '@/types/item-category';
 import type { BaseUnit, UnitCode } from '@/types/list-generation';
 
@@ -29,10 +34,11 @@ export type BBQGenerationAdjustments = {
   overall: BBQGenerationLevel;
 };
 
-export type BBQGenerationConfig = {
+export type BBQGenerationConfig = ListGenerationConfigBase & {
   version: 1;
   answers: BBQGenerationAnswers;
   adjustments: BBQGenerationAdjustments;
+  excludedGeneratorKeys: string[];
 };
 
 export type GeneratedItemCandidate = {
@@ -131,7 +137,8 @@ export function createDefaultBBQGenerationConfig(): BBQGenerationConfig {
   return {
     version: 1,
     answers: { ...DEFAULT_BBQ_ANSWERS },
-    adjustments: { ...DEFAULT_BBQ_ADJUSTMENTS }
+    adjustments: { ...DEFAULT_BBQ_ADJUSTMENTS },
+    excludedGeneratorKeys: []
   };
 }
 
@@ -261,8 +268,27 @@ export function isBBQGenerationConfig(value: unknown): value is BBQGenerationCon
   return (
     candidate.version === 1 &&
     isBBQGenerationAnswers(candidate.answers) &&
-    isBBQGenerationAdjustments(candidate.adjustments)
+    isBBQGenerationAdjustments(candidate.adjustments) &&
+    isExcludedGeneratorKeys(candidate.excludedGeneratorKeys)
   );
+}
+
+export function normalizeBBQGenerationConfig(config: BBQGenerationConfig): BBQGenerationConfig {
+  const defaults = createDefaultBBQGenerationConfig();
+  const rawBalance = (config.answers as { balance?: string }).balance;
+  const balance = rawBalance === 'seafood' ? defaults.answers.balance : config.answers.balance;
+  return {
+    version: 1,
+    answers: {
+      ...defaults.answers,
+      ...config.answers,
+      balance,
+      alcoholLevel: config.answers.alcoholLevel,
+      seafoodLevel: config.answers.seafoodLevel
+    },
+    adjustments: { ...defaults.adjustments, ...config.adjustments },
+    excludedGeneratorKeys: normalizeExcludedGeneratorKeys(config.excludedGeneratorKeys)
+  };
 }
 
 function isBBQGenerationAnswers(value: unknown): value is BBQGenerationAnswers {

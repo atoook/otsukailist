@@ -3,6 +3,7 @@ import {
   createDefaultBBQGenerationConfig,
   generateBBQItems,
   isBBQGenerationConfig,
+  normalizeBBQGenerationConfig,
   type BBQGenerationAnswers,
   type BBQGenerationAdjustments
 } from './bbqGenerator';
@@ -203,5 +204,34 @@ describe('generateBBQItems', () => {
 describe('isBBQGenerationConfig', () => {
   it('デフォルト config を有効な config として判定する', () => {
     expect(isBBQGenerationConfig(createDefaultBBQGenerationConfig())).toBe(true);
+  });
+
+  it('excludedGeneratorKeys がない既存 config も有効な config として判定する', () => {
+    const legacyConfig: Partial<ReturnType<typeof createDefaultBBQGenerationConfig>> = {
+      ...createDefaultBBQGenerationConfig()
+    };
+    delete legacyConfig.excludedGeneratorKeys;
+
+    expect(isBBQGenerationConfig(legacyConfig)).toBe(true);
+  });
+
+  it('excludedGeneratorKeys が文字列配列でない場合は不正な config として判定する', () => {
+    expect(
+      isBBQGenerationConfig({
+        ...createDefaultBBQGenerationConfig(),
+        excludedGeneratorKeys: ['beef', 1]
+      })
+    ).toBe(false);
+  });
+});
+
+describe('normalizeBBQGenerationConfig', () => {
+  it('excludedGeneratorKeys を重複なしの文字列配列に正規化する', () => {
+    const normalized = normalizeBBQGenerationConfig({
+      ...createDefaultBBQGenerationConfig(),
+      excludedGeneratorKeys: ['beef', ' beef ', '', 'pork']
+    });
+
+    expect(normalized.excludedGeneratorKeys).toEqual(['beef', 'pork']);
   });
 });
