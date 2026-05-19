@@ -1,12 +1,12 @@
 import { fetchListGenerationConfig, saveListGenerationConfig } from '@/api/listGenerationConfig';
 import type { ListGenerationConfigResponse } from '@/api/listGenerationConfig';
-import {
-  isBBQGenerationConfig,
-  normalizeBBQGenerationConfig,
-  type BBQGenerationConfig
-} from '@/lib/generation/bbqGenerator';
-import { setGeneratorKeyExcluded } from '@/lib/generation/generationConfig';
+import { setGeneratorKeyExcluded, type ListGenerationConfigBase } from '@/lib/generation/generationConfig';
+import { findListTemplateConfigAdapterByGeneratorKey } from '@/lib/listTemplateConfigRegistry';
 import type { ApiError, Item, MutationResponse, UUID } from '@/types/api';
+
+export type TemplateConfigExclusionMutation = () => Promise<
+  MutationResponse<ListGenerationConfigResponse<ListGenerationConfigBase>>
+>;
 
 type GeneratedItemWithKey = Item & {
   quantified: NonNullable<Item['quantified']> & { generatorKey: string };
@@ -22,21 +22,26 @@ export function isGeneratedItemWithKey(item: Item): item is GeneratedItemWithKey
   );
 }
 
-export async function markGeneratedItemExcludedFromBBQConfig(
+export async function buildGeneratedItemExclusionConfigMutation(
   listId: UUID,
   item: Item
-): Promise<MutationResponse<ListGenerationConfigResponse<BBQGenerationConfig>> | null> {
+): Promise<TemplateConfigExclusionMutation | null> {
   if (!isGeneratedItemWithKey(item)) {
     return null;
   }
 
-  let config: BBQGenerationConfig;
+  const adapter = findListTemplateConfigAdapterByGeneratorKey(item.quantified.generatorKey);
+  if (adapter == null) {
+    return null;
+  }
+
+  let config: ListGenerationConfigBase;
   try {
-    const res = await fetchListGenerationConfig<unknown>(listId, 'bbq');
-    if (!isBBQGenerationConfig(res.configJson)) {
+    const res = await fetchListGenerationConfig<unknown>(listId, adapter.id);
+    if (!adapter.isConfig(res.configJson)) {
       return null;
     }
-    config = normalizeBBQGenerationConfig(res.configJson);
+    config = adapter.normalizeConfig(res.configJson);
   } catch (err: unknown) {
     if (isNotFoundError(err)) {
       return null;
@@ -45,7 +50,7 @@ export async function markGeneratedItemExcludedFromBBQConfig(
   }
 
   const nextConfig = setGeneratorKeyExcluded(config, item.quantified.generatorKey, true);
-  return saveListGenerationConfig(listId, 'bbq', nextConfig);
+  return () => saveListGenerationConfig(listId, adapter.id, nextConfig);
 }
 
 function isNotFoundError(err: unknown): boolean {

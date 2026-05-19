@@ -15,7 +15,7 @@ import { useMutation } from '@/composables/useMutation';
 import { groupItems } from '@/utils/item-grouping';
 import type { GroupDefinition, ItemGroup } from '@/utils/item-grouping';
 import { getErrorMessage } from '@/lib/http';
-import { markGeneratedItemExcludedFromBBQConfig } from '@/lib/listTemplateExclusions';
+import { buildGeneratedItemExclusionConfigMutation } from '@/lib/listTemplateExclusions';
 
 const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
   {
@@ -201,9 +201,9 @@ export default defineComponent({
         }
         if (item) {
           try {
-            const configResult = await markGeneratedItemExcludedFromBBQConfig(listId, item);
-            if (configResult && configResult.revision > this.listStore.revision) {
-              this.listStore.setRevision(configResult.revision);
+            const configMutation = await buildGeneratedItemExclusionConfigMutation(listId, item);
+            if (configMutation) {
+              await this.mutationRun(configMutation);
             }
           } catch (err: unknown) {
             console.error('Failed to update generated item exclusion config', err);
