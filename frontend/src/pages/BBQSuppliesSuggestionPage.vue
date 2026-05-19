@@ -1,6 +1,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import ContentArea from '../components/ContentArea.vue';
+import FixedBottomActionButton from '../components/FixedBottomActionButton.vue';
 import IconCheck from '../components/icons/IconCheck.vue';
 import IconChevronDown from '../components/icons/IconChevronDown.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
@@ -25,6 +26,7 @@ export default defineComponent({
   name: 'BBQSuppliesSuggestionPage',
   components: {
     ContentArea,
+    FixedBottomActionButton,
     IconCheck,
     IconChevronDown,
     LoadingSpinner
@@ -275,18 +277,13 @@ export default defineComponent({
         </section>
       </div>
 
-      <div v-if="!errorMessage" class="fixed inset-x-0 bottom-0 z-10 border-t border-wood-200 bg-wood-50/95 px-6 py-3 backdrop-blur">
-        <div class="mx-auto flex max-w-3xl gap-3">
-          <button
-            type="button"
-            class="flex-1 rounded-lg border border-wood-600 bg-wood-500 px-4 py-3 text-center font-semibold text-wood-50 shadow-md transition-[background-color,box-shadow] hover:bg-wood-600 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="!canAddSelected"
-            @click="addSelectedItems"
-          >
-            {{ addButtonLabel }}
-          </button>
-        </div>
-      </div>
+      <FixedBottomActionButton
+        v-if="!errorMessage"
+        :disabled="!canAddSelected"
+        @click="addSelectedItems"
+      >
+        {{ addButtonLabel }}
+      </FixedBottomActionButton>
     </div>
   </ContentArea>
 </template>

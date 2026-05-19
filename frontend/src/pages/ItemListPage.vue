@@ -268,12 +268,12 @@ export default defineComponent({
         <div v-if="items.length > 0" class="mt-2 flex flex-wrap justify-end gap-2">
           <PillActionButton
             v-if="shouldShowSuggestionLink"
-            aria-label="周辺アイテムを確認"
-            title="周辺アイテムを確認"
+            aria-label="周辺アイテムを追加"
+            title="周辺アイテムを追加"
             @click="openSuggestionPage"
           >
             <template #icon><IconTools /></template>
-            <span>周辺アイテム</span>
+            <span>周辺アイテムを追加</span>
           </PillActionButton>
           <PillActionButton
             :disabled="generationConfigLoading"
