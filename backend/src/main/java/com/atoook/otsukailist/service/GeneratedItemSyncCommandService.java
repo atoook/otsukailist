@@ -40,6 +40,7 @@ public class GeneratedItemSyncCommandService {
   private final ItemListRepository itemListRepo;
   private final MemberRepository memberRepo;
   private final ListRevisionService listRevisionService;
+  private final ListItemLimitService listItemLimitService;
 
   private static final String MSG_ASSIGNED_MEMBER_NOT_IN_LIST = "指定された担当者はリストのメンバーではありません";
   private static final String MSG_GENERATED_ITEM_DUPLICATED = "生成アイテムが重複しています";
@@ -71,7 +72,7 @@ public class GeneratedItemSyncCommandService {
       UUID listId, List<GeneratedItemUpdateCommand> commands, List<String> generatorKeysInScope) {
     ItemList list =
         itemListRepo
-            .findById(listId)
+            .findByIdForUpdate(listId)
             .orElseThrow(
                 () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
 
@@ -101,6 +102,11 @@ public class GeneratedItemSyncCommandService {
             .filter(item -> !item.isCompleted())
             .filter(item -> item.getQuantified().getRegenerationPolicy() == RegenerationPolicy.AUTO)
             .toList();
+    long newItemCount =
+        safeCommands.stream()
+            .filter(command -> !existingItems.containsKey(command.generatorKey()))
+            .count();
+    listItemLimitService.validateItemCountAfterChange(listId, newItemCount, deletedItems.size());
 
     List<Item> savedItems = itemRepo.saveAll(changedItems);
     itemRepo.deleteAll(deletedItems);

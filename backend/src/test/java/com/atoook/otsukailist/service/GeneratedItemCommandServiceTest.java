@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.atoook.otsukailist.config.AppItemProperties;
 import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.SyncGeneratedItemsRequest;
@@ -40,13 +41,16 @@ class GeneratedItemCommandServiceTest {
   @Mock private MemberRepository memberRepo;
   @Mock private ListRevisionService listRevisionService;
 
+  private AppItemProperties itemProperties;
   private GeneratedItemCommandService service;
 
   @BeforeEach
   void setUp() {
+    itemProperties = new AppItemProperties();
+    ListItemLimitService listItemLimitService = new ListItemLimitService(itemRepo, itemProperties);
     GeneratedItemSyncCommandService generatedItemSyncCommandService =
         new GeneratedItemSyncCommandService(
-            itemRepo, itemListRepo, memberRepo, listRevisionService);
+            itemRepo, itemListRepo, memberRepo, listRevisionService, listItemLimitService);
     service = new GeneratedItemCommandService(generatedItemSyncCommandService);
   }
 
@@ -62,7 +66,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
         .thenReturn(List.of(existingItem));
     when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -91,7 +95,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("焼きそば", 4L, "yakisoba")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("yakisoba")))
         .thenReturn(List.of());
     when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -108,6 +112,57 @@ class GeneratedItemCommandServiceTest {
   }
 
   @Test
+  @DisplayName("生成同期で最終アイテム数が上限を超える場合は拒否すること")
+  void syncGeneratedItemsRejectsWhenFinalItemCountWouldExceedLimit() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList(listId);
+    SyncGeneratedItemsRequest request =
+        SyncGeneratedItemsRequest.builder()
+            .generatorKeysInScope(List.of("yakisoba"))
+            .items(List.of(generatedItemRequest("焼きそば", 4L, "yakisoba")))
+            .build();
+    itemProperties.setMaxItemsPerList(100);
+
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
+    when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("yakisoba")))
+        .thenReturn(List.of());
+    when(itemRepo.countByItemListId(listId)).thenReturn(100L);
+
+    assertThatThrownBy(() -> service.syncGeneratedItems(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("リストに追加できるアイテムは100件までです");
+  }
+
+  @Test
+  @DisplayName("生成同期で削除と追加が相殺され上限内に収まる場合は許可すること")
+  void syncGeneratedItemsAllowsAddWhenDeletionKeepsFinalItemCountWithinLimit() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList(listId);
+    Item seafood = generatedAutoItem(list, "えび", 1L, "seafood_shrimp");
+    seafood.setId(UUID.randomUUID());
+    seafood.setCategory(ItemCategory.SEAFOOD);
+    seafood.getQuantified().setBaseUnit(BaseUnit.PACK);
+    SyncGeneratedItemsRequest request =
+        SyncGeneratedItemsRequest.builder()
+            .generatorKeysInScope(List.of("beef", "seafood_shrimp"))
+            .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
+            .build();
+    itemProperties.setMaxItemsPerList(100);
+
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
+    when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
+        .thenReturn(List.of(seafood));
+    when(itemRepo.countByItemListId(listId)).thenReturn(100L);
+    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(3L);
+
+    var result = service.syncGeneratedItems(listId, request);
+
+    assertThat(result.getData().getItems()).hasSize(1);
+    assertThat(result.getData().getDeletedItemIds()).containsExactly(seafood.getId());
+  }
+
+  @Test
   @DisplayName("既存のgenerated+locked itemは更新も重複追加もしないこと")
   void syncGeneratedItemsSkipsExistingLockedItem() {
     UUID listId = UUID.randomUUID();
@@ -119,7 +174,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
         .thenReturn(List.of(existingItem));
     when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -146,7 +201,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
         .thenReturn(List.of(existingItem));
     when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -177,7 +232,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
         .thenReturn(List.of(seafood));
     when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -205,7 +260,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
         .thenReturn(List.of(seafood));
     when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -232,7 +287,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
         .thenReturn(List.of(seafood));
     when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -271,7 +326,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef", memberId)))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(false);
 
     assertThatThrownBy(() -> service.syncGeneratedItems(listId, request))
@@ -292,7 +347,7 @@ class GeneratedItemCommandServiceTest {
             .items(List.of(generatedItemRequest("牛肉", 1500L, "beef")))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
         .thenReturn(List.of(first, second));
 

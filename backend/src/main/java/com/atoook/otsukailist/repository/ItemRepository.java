@@ -48,6 +48,8 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
   // リスト内のアイテム存在チェック
   boolean existsByIdAndItemListId(UUID itemId, UUID itemListId);
 
+  long countByItemListId(UUID itemListId);
+
   @EntityGraph(attributePaths = "quantified")
   @Query(
       """

@@ -6,6 +6,11 @@
       "description": "Allowed CORS origins for API endpoints."
     },
     {
+      "name": "app.item.max-items-per-list",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of items that can belong to one list."
+    },
+    {
       "name": "app.rate-limit.enabled",
       "type": "java.lang.Boolean",
       "description": "Whether API rate limiting is enabled."
