@@ -4,6 +4,41 @@
       "name": "app.cors.allowed-origins",
       "type": "java.util.List<java.lang.String>",
       "description": "Allowed CORS origins for API endpoints."
+    },
+    {
+      "name": "app.rate-limit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether API rate limiting is enabled."
+    },
+    {
+      "name": "app.rate-limit.capacity",
+      "type": "java.lang.Long",
+      "description": "Maximum burst size per client."
+    },
+    {
+      "name": "app.rate-limit.refill-tokens",
+      "type": "java.lang.Long",
+      "description": "Number of rate-limit tokens refilled per period."
+    },
+    {
+      "name": "app.rate-limit.refill-period",
+      "type": "java.time.Duration",
+      "description": "Duration of one rate-limit refill period."
+    },
+    {
+      "name": "app.rate-limit.cache-ttl",
+      "type": "java.time.Duration",
+      "description": "How long inactive client buckets stay in memory."
+    },
+    {
+      "name": "app.rate-limit.max-clients",
+      "type": "java.lang.Long",
+      "description": "Maximum number of client buckets retained in memory."
+    },
+    {
+      "name": "app.rate-limit.trusted-proxy-count",
+      "type": "java.lang.Integer",
+      "description": "Number of trusted reverse proxies that append X-Forwarded-For values."
     }
   ]
 }

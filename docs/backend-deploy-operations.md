@@ -20,6 +20,7 @@ docker run --rm \
   -e POSTGRES_PASSWORD=otsukailist_password \
   -e POSTGRES_SSL_MODE=disable \
   -e APP_CORS_ALLOWED_ORIGINS=http://localhost:5173 \
+  -e APP_RATE_LIMIT_ENABLED=true \
   -p 10000:10000 \
   otsukailist-backend:local
 ```
@@ -64,12 +65,20 @@ curl -i http://localhost:10000/actuator/health/liveness
 - `POSTGRES_PARAMS`
 - `DB_POOL_MINIMUM_IDLE` (default: `0`)
 - `DB_POOL_IDLE_TIMEOUT_MS` (default: `60000`)
+- `APP_RATE_LIMIT_ENABLED` (default: `true`)
+- `APP_RATE_LIMIT_CAPACITY` (default: `120`)
+- `APP_RATE_LIMIT_REFILL_TOKENS` (default: `120`)
+- `APP_RATE_LIMIT_REFILL_PERIOD` (default: `PT1M`)
+- `APP_RATE_LIMIT_CACHE_TTL` (default: `PT15M`)
+- `APP_RATE_LIMIT_MAX_CLIENTS` (default: `10000`)
+- `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT` (default: `1`)
 
 補足:
 
 - `PORT` は Render が注入するため、通常は手動設定不要
 - アプリ側は `server.port=${PORT:8080}` 前提
 - Neon を inactive に戻せるよう、本番では DB pool の idle connection を保持しない設定
+- レートリミットはメモリ内でIP単位に管理されるため、複数インスタンス化した場合は実効上限がインスタンス数倍になる
 
 ## 3. デプロイ後のスモークチェック
 
