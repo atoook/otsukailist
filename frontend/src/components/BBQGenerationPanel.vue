@@ -274,10 +274,13 @@ export default defineComponent({
         (row) => row.status === 'update' || row.status === 'new' || row.status === 'delete' || row.status === 'excluded'
       );
     },
+    hasRegenerationPreviewChanges(): boolean {
+      return this.previewRows.some((row) => row.status === 'update' || row.status === 'new' || row.status === 'delete');
+    },
     canApply(): boolean {
       return (
         this.config.answers.adultCount + this.config.answers.childCount > 0 &&
-        (this.hasExistingConfig ? this.hasApplicablePreviewChanges : this.applicableCandidates.length > 0) &&
+        (this.hasExistingConfig ? this.hasRegenerationPreviewChanges : this.applicableCandidates.length > 0) &&
         !this.mutationLoading
       );
     },
