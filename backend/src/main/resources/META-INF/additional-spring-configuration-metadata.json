@@ -58,12 +58,12 @@
     {
       "name": "app.rate-limit.trusted-proxy-count",
       "type": "java.lang.Integer",
-      "description": "Number of trusted reverse proxies that append X-Forwarded-For values."
+      "description": "Number of trusted reverse proxies that append X-Forwarded-For values. Keep 0 unless the immediate proxy IP/CIDR is explicitly allowlisted."
     },
     {
       "name": "app.rate-limit.trusted-proxy-cidrs",
       "type": "java.util.List<java.lang.String>",
-      "description": "Trusted proxy IPs or CIDR ranges allowed to supply X-Forwarded-For."
+      "description": "Trusted proxy IPs or CIDR ranges allowed to supply X-Forwarded-For. Do not use broad ranges such as 0.0.0.0/0."
     }
   ]
 }

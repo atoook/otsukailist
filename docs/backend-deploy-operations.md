@@ -87,6 +87,14 @@ curl -i http://localhost:10000/actuator/health/liveness
 - `X-Forwarded-For` は `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT > 0` かつ `APP_RATE_LIMIT_TRUSTED_PROXY_CIDRS` に直前proxyのIPが含まれる場合のみ採用される
 - レートリミットはメモリ内でIP単位に管理されるため、複数インスタンス化した場合は実効上限がインスタンス数倍になる
 
+### レートリミットで使うクライアントIPについて
+
+アプリが直接受け取る接続元IP (`remoteAddr`) は、Render などの reverse proxy 配下では利用者本人のIPではなく、直前の proxy のIPになることがあります。実クライアントIPは `X-Forwarded-For` に入る場合がありますが、このヘッダーはクライアントが偽装できるため、そのまま信頼すると攻撃者が任意のIPを名乗ってレートリミットを回避できます。
+
+このため、デフォルトでは `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT=0` として `X-Forwarded-For` を無視し、`remoteAddr` を使います。これは安全側の挙動です。ただし、proxy 配下では複数ユーザーが同じ proxy IP として扱われ、レートリミット枠を共有する可能性があります。
+
+本番で実クライアントIP単位にしたい場合は、直前の proxy のIPまたはCIDRが運用基盤から確認できる場合に限り、`APP_RATE_LIMIT_TRUSTED_PROXY_CIDRS` にそのIP/CIDRを設定し、通常は `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT=1` を設定します。確認できない場合は未設定のままにしてください。`0.0.0.0/0` や広すぎるCIDRを設定すると、誰からの `X-Forwarded-For` でも信頼する状態に近くなるため避けます。
+
 ## 3. デプロイ後のスモークチェック
 
 ```bash
