@@ -96,6 +96,14 @@ function getStaleGeneratedRowStatus(item: GeneratedItemWithKey): GenerationPrevi
   return 'delete';
 }
 
+function isRegenerationPreviewChangeStatus(status: GenerationPreviewRow['status']): boolean {
+  return status === 'update' || status === 'new' || status === 'delete';
+}
+
+function isApplicablePreviewChangeStatus(status: GenerationPreviewRow['status']): boolean {
+  return isRegenerationPreviewChangeStatus(status) || status === 'excluded';
+}
+
 function cloneBBQGenerationConfig(config: BBQGenerationConfig): BBQGenerationConfig {
   return normalizeBBQGenerationConfig(config);
 }
@@ -266,18 +274,19 @@ export default defineComponent({
         return this.previewRows;
       }
       return this.previewRows.filter(
-        (row) => row.status === 'update' || row.status === 'new' || row.status === 'delete' || row.status === 'excluded'
+        (row) => isApplicablePreviewChangeStatus(row.status)
       );
     },
     hasApplicablePreviewChanges(): boolean {
-      return this.previewRows.some(
-        (row) => row.status === 'update' || row.status === 'new' || row.status === 'delete' || row.status === 'excluded'
-      );
+      return this.previewRows.some((row) => isApplicablePreviewChangeStatus(row.status));
+    },
+    hasRegenerationPreviewChanges(): boolean {
+      return this.previewRows.some((row) => isRegenerationPreviewChangeStatus(row.status));
     },
     canApply(): boolean {
       return (
         this.config.answers.adultCount + this.config.answers.childCount > 0 &&
-        (this.hasExistingConfig ? this.hasApplicablePreviewChanges : this.applicableCandidates.length > 0) &&
+        (this.hasExistingConfig ? this.hasRegenerationPreviewChanges : this.applicableCandidates.length > 0) &&
         !this.mutationLoading
       );
     },
