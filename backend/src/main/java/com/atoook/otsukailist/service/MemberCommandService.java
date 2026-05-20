@@ -25,6 +25,7 @@ public class MemberCommandService {
 
   private final ItemListRepository itemListRepo;
   private final MemberRepository memberRepo;
+  private final ListMemberLimitService listMemberLimitService;
 
   /**
    * Add a member to the specified list.
@@ -37,9 +38,11 @@ public class MemberCommandService {
   public MutationResponse<MemberResponse> addMember(UUID listId, CreateMemberRequest req) {
     ItemList list =
         itemListRepo
-            .findById(listId)
+            .findByIdForUpdate(listId)
             .orElseThrow(
                 () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
+
+    listMemberLimitService.validateCanAddOne(listId);
 
     Member member = new Member();
     member.setDisplayName(req.getDisplayName().trim());

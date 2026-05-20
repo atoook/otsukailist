@@ -11,6 +11,11 @@
       "description": "Maximum number of items that can belong to one list."
     },
     {
+      "name": "app.member.max-members-per-list",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of members that can belong to one list."
+    },
+    {
       "name": "app.rate-limit.enabled",
       "type": "java.lang.Boolean",
       "description": "Whether API rate limiting is enabled."

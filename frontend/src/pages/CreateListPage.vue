@@ -16,6 +16,7 @@ import { normalizeText, normalizeInput } from '../utils/text-normalization';
 import { createItemList } from '@/api/list';
 import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
+import { MAX_MEMBERS_PER_LIST } from '@/lib/appConstants';
 
 export default defineComponent({
   name: 'CreateListPage',
@@ -93,6 +94,10 @@ export default defineComponent({
     },
     addMember(): void {
       const normalizedName = normalizeText(this.newMemberName);
+      if (this.isMemberLimitReached) {
+        this.errorMessage = `メンバーは${MAX_MEMBERS_PER_LIST}人まで追加できます。`;
+        return;
+      }
       if (normalizedName) {
         this.members.push({
           id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
@@ -118,6 +123,9 @@ export default defineComponent({
     },
     hasValidMemberName(): boolean {
       return !!normalizeText(this.newMemberName);
+    },
+    isMemberLimitReached(): boolean {
+      return this.members.length >= MAX_MEMBERS_PER_LIST;
     }
   }
 });
@@ -159,9 +167,12 @@ export default defineComponent({
           input-name="newMember"
           placeholder="メンバーを追加..."
           variant="inline"
+          :disabled="isMemberLimitReached"
         />
 
-        <MainButton @click="addMember" :disabled="!hasValidMemberName" size="small"> 追加 </MainButton>
+        <MainButton @click="addMember" :disabled="!hasValidMemberName || isMemberLimitReached" size="small">
+          追加
+        </MainButton>
       </div>
 
       <!-- メンバーバッジ表示 -->
