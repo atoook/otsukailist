@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.atoook.otsukailist.config.AppItemProperties;
 import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
@@ -40,11 +41,16 @@ class ItemCommandServiceTest {
   @Mock private MemberRepository memberRepo;
   @Mock private ListRevisionService listRevisionService;
 
+  private AppItemProperties itemProperties;
   private ItemCommandService service;
 
   @BeforeEach
   void setUp() {
-    service = new ItemCommandService(itemRepo, itemListRepo, memberRepo, listRevisionService);
+    itemProperties = new AppItemProperties();
+    ListItemLimitService listItemLimitService = new ListItemLimitService(itemRepo, itemProperties);
+    service =
+        new ItemCommandService(
+            itemRepo, itemListRepo, memberRepo, listRevisionService, listItemLimitService);
   }
 
   @Test
@@ -54,7 +60,7 @@ class ItemCommandServiceTest {
     ItemList list = itemList("買い物");
     CreateItemRequest request = CreateItemRequest.builder().name(" 牛乳 ").build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
@@ -73,7 +79,7 @@ class ItemCommandServiceTest {
     CreateItemRequest request =
         CreateItemRequest.builder().name("包丁").preparationType(ItemPreparationType.BRING).build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
@@ -95,7 +101,7 @@ class ItemCommandServiceTest {
             .assignedMemberId(memberId)
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(true);
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
@@ -107,6 +113,21 @@ class ItemCommandServiceTest {
   }
 
   @Test
+  @DisplayName("リスト内アイテム数が上限に達している場合は新規作成を拒否すること")
+  void createItemRejectsWhenListAlreadyReachedItemLimit() {
+    UUID listId = UUID.randomUUID();
+    CreateItemRequest request = CreateItemRequest.builder().name("炭").build();
+    itemProperties.setMaxItemsPerList(100);
+
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemRepo.countByItemListId(listId)).thenReturn(100L);
+
+    assertThatThrownBy(() -> service.createItem(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("リストに追加できるアイテムは100件までです");
+  }
+
+  @Test
   @DisplayName("作成時にリスト外の担当者を指定した場合は拒否すること")
   void createItemRejectsAssignedMemberOutsideList() {
     UUID listId = UUID.randomUUID();
@@ -114,7 +135,7 @@ class ItemCommandServiceTest {
     CreateItemRequest request =
         CreateItemRequest.builder().name("炭").assignedMemberId(memberId).build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
     when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(false);
 
     assertThatThrownBy(() -> service.createItem(listId, request))
@@ -129,7 +150,7 @@ class ItemCommandServiceTest {
     CreateItemRequest request =
         CreateItemRequest.builder().name("牛肉").itemType(ItemType.QUANTIFIED).build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
 
     assertThatThrownBy(() -> service.createItem(listId, request))
         .isInstanceOf(BadRequestException.class)
@@ -147,7 +168,7 @@ class ItemCommandServiceTest {
             .quantified(manualNoneQuantifiedRequest(1000L))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
 
     assertThatThrownBy(() -> service.createItem(listId, request))
         .isInstanceOf(BadRequestException.class)
@@ -165,7 +186,7 @@ class ItemCommandServiceTest {
             .quantified(generatedAutoQuantifiedRequest(1000L, "beef"))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 

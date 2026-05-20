@@ -41,6 +41,7 @@ public class ItemCommandService {
   private final MemberRepository memberRepo;
 
   private final ListRevisionService listRevisionService;
+  private final ListItemLimitService listItemLimitService;
 
   private static final String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
   private static final String MSG_ASSIGNED_MEMBER_NOT_IN_LIST = "指定された担当者はリストのメンバーではありません";
@@ -61,21 +62,25 @@ public class ItemCommandService {
     // list存在確認
     ItemList list =
         itemListRepo
-            .findById(listId)
+            .findByIdForUpdate(listId)
             .orElseThrow(
                 () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
 
     // Entity作成（ミニマム：作成時は未完了固定）
-    Item item = new Item();
     ItemType itemType = req.getItemType() == null ? ItemType.PLAIN : req.getItemType();
     validateQuantifiedCreateRequest(itemType, req);
+    String itemName = resolveItemName(req);
+    ItemCategory category = resolveCategory(req.getCategory(), req.getQuantified());
+    UUID assignedMemberId = resolveAssignedMemberId(listId, req.getAssignedMemberId());
+    listItemLimitService.validateCanAddOne(listId);
 
-    item.setName(resolveItemName(req));
+    Item item = new Item();
+    item.setName(itemName);
     item.setItemType(itemType);
-    item.setCategory(resolveCategory(req.getCategory(), req.getQuantified()));
+    item.setCategory(category);
     item.setPreparationType(req.getPreparationType());
     item.setCompleted(false);
-    item.setAssignedMemberId(resolveAssignedMemberId(listId, req.getAssignedMemberId()));
+    item.setAssignedMemberId(assignedMemberId);
     item.setCompletedByMemberId(null);
     item.setCompletedAt(null);
     item.setItemList(list);

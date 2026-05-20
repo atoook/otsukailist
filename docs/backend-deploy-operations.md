@@ -20,6 +20,7 @@ docker run --rm \
   -e POSTGRES_PASSWORD=otsukailist_password \
   -e POSTGRES_SSL_MODE=disable \
   -e APP_CORS_ALLOWED_ORIGINS=http://localhost:5173 \
+  -e APP_RATE_LIMIT_ENABLED=true \
   -p 10000:10000 \
   otsukailist-backend:local
 ```
@@ -64,12 +65,35 @@ curl -i http://localhost:10000/actuator/health/liveness
 - `POSTGRES_PARAMS`
 - `DB_POOL_MINIMUM_IDLE` (default: `0`)
 - `DB_POOL_IDLE_TIMEOUT_MS` (default: `60000`)
+- `APP_ITEM_MAX_ITEMS_PER_LIST` (default: `100`)
+- `APP_RATE_LIMIT_ENABLED` (default: `true`)
+- `APP_RATE_LIMIT_CAPACITY` (default: `120`)
+- `APP_RATE_LIMIT_REFILL_TOKENS` (default: `120`)
+- `APP_RATE_LIMIT_REFILL_PERIOD` (default: `PT1M`)
+- `APP_RATE_LIMIT_MUTATION_CAPACITY` (default: `30`)
+- `APP_RATE_LIMIT_MUTATION_REFILL_TOKENS` (default: `30`)
+- `APP_RATE_LIMIT_MUTATION_REFILL_PERIOD` (default: `PT1M`)
+- `APP_RATE_LIMIT_CACHE_TTL` (default: `PT15M`)
+- `APP_RATE_LIMIT_MAX_CLIENTS` (default: `10000`)
+- `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT` (default: `0`)
+- `APP_RATE_LIMIT_TRUSTED_PROXY_CIDRS` (default: empty; comma-separated trusted proxy IPs/CIDRs)
 
 補足:
 
 - `PORT` は Render が注入するため、通常は手動設定不要
 - アプリ側は `server.port=${PORT:8080}` 前提
 - Neon を inactive に戻せるよう、本番では DB pool の idle connection を保持しない設定
+- レートリミットは読み取り系 API がIP単位で 120 req/min、更新系 API (`POST`/`PUT`/`PATCH`/`DELETE`) がIP単位で 30 req/min
+- `X-Forwarded-For` は `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT > 0` かつ `APP_RATE_LIMIT_TRUSTED_PROXY_CIDRS` に直前proxyのIPが含まれる場合のみ採用される
+- レートリミットはメモリ内でIP単位に管理されるため、複数インスタンス化した場合は実効上限がインスタンス数倍になる
+
+### レートリミットで使うクライアントIPについて
+
+アプリが直接受け取る接続元IP (`remoteAddr`) は、Render などの reverse proxy 配下では利用者本人のIPではなく、直前の proxy のIPになることがあります。実クライアントIPは `X-Forwarded-For` に入る場合がありますが、このヘッダーはクライアントが偽装できるため、そのまま信頼すると攻撃者が任意のIPを名乗ってレートリミットを回避できます。
+
+このため、デフォルトでは `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT=0` として `X-Forwarded-For` を無視し、`remoteAddr` を使います。これは安全側の挙動です。ただし、proxy 配下では複数ユーザーが同じ proxy IP として扱われ、レートリミット枠を共有する可能性があります。
+
+本番で実クライアントIP単位にしたい場合は、直前の proxy のIPまたはCIDRが運用基盤から確認できる場合に限り、`APP_RATE_LIMIT_TRUSTED_PROXY_CIDRS` にそのIP/CIDRを設定し、通常は `APP_RATE_LIMIT_TRUSTED_PROXY_COUNT=1` を設定します。確認できない場合は未設定のままにしてください。`0.0.0.0/0` や広すぎるCIDRを設定すると、誰からの `X-Forwarded-For` でも信頼する状態に近くなるため避けます。
 
 ## 3. デプロイ後のスモークチェック
 

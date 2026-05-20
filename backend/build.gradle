@@ -38,6 +38,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.flywaydb:flyway-core'
+	implementation 'com.bucket4j:bucket4j_jdk17-core:8.18.0'
+	implementation 'com.github.ben-manes.caffeine:caffeine'
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 	compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
 	compileOnly 'org.projectlombok:lombok'

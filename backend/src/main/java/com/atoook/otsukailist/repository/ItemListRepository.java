@@ -3,7 +3,10 @@ package com.atoook.otsukailist.repository;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,6 +25,10 @@ public interface ItemListRepository extends JpaRepository<ItemList, UUID> {
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query("update ItemList l set l.revision = l.revision + 1 where l.id = :listId")
   int incrementRevision(@Param("listId") UUID listId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select l from ItemList l where l.id = :listId")
+  Optional<ItemList> findByIdForUpdate(@Param("listId") UUID listId);
 
   @Query("select l.revision from ItemList l where l.id = :listId")
   Optional<Long> findRevision(@Param("listId") UUID listId);

@@ -4,6 +4,66 @@
       "name": "app.cors.allowed-origins",
       "type": "java.util.List<java.lang.String>",
       "description": "Allowed CORS origins for API endpoints."
+    },
+    {
+      "name": "app.item.max-items-per-list",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of items that can belong to one list."
+    },
+    {
+      "name": "app.rate-limit.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether API rate limiting is enabled."
+    },
+    {
+      "name": "app.rate-limit.capacity",
+      "type": "java.lang.Long",
+      "description": "Maximum burst size per client for non-mutation API requests."
+    },
+    {
+      "name": "app.rate-limit.refill-tokens",
+      "type": "java.lang.Long",
+      "description": "Number of non-mutation rate-limit tokens refilled per period."
+    },
+    {
+      "name": "app.rate-limit.refill-period",
+      "type": "java.time.Duration",
+      "description": "Duration of one non-mutation rate-limit refill period."
+    },
+    {
+      "name": "app.rate-limit.mutation-capacity",
+      "type": "java.lang.Long",
+      "description": "Maximum burst size per client for mutation API requests."
+    },
+    {
+      "name": "app.rate-limit.mutation-refill-tokens",
+      "type": "java.lang.Long",
+      "description": "Number of mutation rate-limit tokens refilled per period."
+    },
+    {
+      "name": "app.rate-limit.mutation-refill-period",
+      "type": "java.time.Duration",
+      "description": "Duration of one mutation rate-limit refill period."
+    },
+    {
+      "name": "app.rate-limit.cache-ttl",
+      "type": "java.time.Duration",
+      "description": "How long inactive client buckets stay in memory."
+    },
+    {
+      "name": "app.rate-limit.max-clients",
+      "type": "java.lang.Long",
+      "description": "Maximum number of client buckets retained in memory."
+    },
+    {
+      "name": "app.rate-limit.trusted-proxy-count",
+      "type": "java.lang.Integer",
+      "description": "Number of trusted reverse proxies that append X-Forwarded-For values. Keep 0 unless the immediate proxy IP/CIDR is explicitly allowlisted."
+    },
+    {
+      "name": "app.rate-limit.trusted-proxy-cidrs",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Trusted proxy IPs or CIDR ranges allowed to supply X-Forwarded-For. Do not use broad ranges such as 0.0.0.0/0."
     }
   ]
 }

@@ -5,6 +5,7 @@ public enum ApiErrorCode {
   BAD_REQUEST("bad_request", "bad request"),
   VALIDATION_ERROR("validation_error", "validation error"),
   CONFLICT("conflict", "conflict"),
+  RATE_LIMITED("rate_limited", "too many requests"),
   INTERNAL_ERROR("internal_error", "internal server error");
 
   private final String code;
