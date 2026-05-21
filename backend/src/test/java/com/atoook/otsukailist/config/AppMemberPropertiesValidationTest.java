@@ -40,4 +40,16 @@ class AppMemberPropertiesValidationTest {
         .extracting(violation -> violation.getPropertyPath().toString())
         .contains("maxMembersPerList");
   }
+
+  @Test
+  void shouldRejectMaxMembersPerListAboveAbsoluteLimit() {
+    AppMemberProperties properties = new AppMemberProperties();
+    properties.setMaxMembersPerList(AppMemberProperties.ABSOLUTE_MAX_MEMBERS_PER_LIST + 1);
+
+    Set<ConstraintViolation<AppMemberProperties>> violations = validator.validate(properties);
+
+    assertThat(violations)
+        .extracting(violation -> violation.getPropertyPath().toString())
+        .contains("maxMembersPerList");
+  }
 }

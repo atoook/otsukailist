@@ -1,5 +1,7 @@
 package com.atoook.otsukailist.dto;
 
+import static com.atoook.otsukailist.config.AppMemberProperties.ABSOLUTE_MAX_MEMBERS_PER_LIST;
+
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
@@ -24,7 +26,7 @@ public class CreateItemListWithMembersRequest {
   private String name;
 
   @NotNull(message = "メンバー一覧は必須です")
-  @Size(min = 1, message = "メンバーは1名以上で指定してください")
+  @Size(min = 1, max = ABSOLUTE_MAX_MEMBERS_PER_LIST, message = "メンバーは1〜{max}名で指定してください")
   private List<
           @NotBlank(message = "メンバー名は必須です") @Size(max = 80, message = "メンバー名は80文字以下にしてください") String>
       memberNames;
