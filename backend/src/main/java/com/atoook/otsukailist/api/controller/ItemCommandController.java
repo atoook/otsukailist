@@ -18,9 +18,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.DeleteItemResponse;
 import com.atoook.otsukailist.dto.ItemResponse;
+import com.atoook.otsukailist.dto.MarkItemCompletedRequest;
 import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.service.ItemCommandService;
+import com.atoook.otsukailist.service.ItemCompletionService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +32,7 @@ import lombok.RequiredArgsConstructor;
 public class ItemCommandController {
 
   private final ItemCommandService itemCommandService;
+  private final ItemCompletionService itemCompletionService;
 
   /**
    * Creates a new item under the given list.
@@ -64,6 +67,37 @@ public class ItemCommandController {
       @PathVariable("itemId") UUID itemId,
       @Valid @RequestBody UpdateItemRequest req) {
     return ResponseEntity.ok(itemCommandService.updateItem(listId, itemId, req));
+  }
+
+  /**
+   * Marks an item as completed. This endpoint is idempotent: already-completed items are returned
+   * without changing the completion actor or revision.
+   *
+   * @param listId parent list identifier
+   * @param itemId item identifier
+   * @param req completion actor payload
+   * @return 200 current item response
+   */
+  @PatchMapping("/{itemId}/mark-completed")
+  public ResponseEntity<MutationResponse<ItemResponse>> markCompleted(
+      @PathVariable("listId") UUID listId,
+      @PathVariable("itemId") UUID itemId,
+      @Valid @RequestBody MarkItemCompletedRequest req) {
+    return ResponseEntity.ok(itemCompletionService.markCompleted(listId, itemId, req));
+  }
+
+  /**
+   * Marks an item as incomplete. This endpoint is idempotent: already-incomplete items are returned
+   * without changing the revision.
+   *
+   * @param listId parent list identifier
+   * @param itemId item identifier
+   * @return 200 current item response
+   */
+  @PatchMapping("/{itemId}/mark-incomplete")
+  public ResponseEntity<MutationResponse<ItemResponse>> markIncomplete(
+      @PathVariable("listId") UUID listId, @PathVariable("itemId") UUID itemId) {
+    return ResponseEntity.ok(itemCompletionService.markIncomplete(listId, itemId));
   }
 
   /**

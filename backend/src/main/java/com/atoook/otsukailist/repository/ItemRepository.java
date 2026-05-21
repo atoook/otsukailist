@@ -5,8 +5,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -44,6 +47,12 @@ public interface ItemRepository extends JpaRepository<Item, UUID> {
   // 特定のアイテムを取得
   @EntityGraph(attributePaths = "quantified")
   Optional<Item> findByIdAndItemListId(UUID itemId, UUID itemListId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @EntityGraph(attributePaths = "quantified")
+  @Query("select i from Item i where i.id = :itemId and i.itemList.id = :itemListId")
+  Optional<Item> findByIdAndItemListIdForUpdate(
+      @Param("itemId") UUID itemId, @Param("itemListId") UUID itemListId);
 
   // リスト内のアイテム存在チェック
   boolean existsByIdAndItemListId(UUID itemId, UUID itemListId);

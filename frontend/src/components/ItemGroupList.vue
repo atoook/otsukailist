@@ -9,7 +9,7 @@ import type { ItemCategory } from '../types/item-category';
 import type { ItemPreparationType } from '../types/item-preparation-type';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
-import { deleteItem as deleteItemApi, updateItem } from '@/api/item';
+import { deleteItem as deleteItemApi, markItemCompleted, markItemIncomplete, updateItem } from '@/api/item';
 import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { groupItems } from '@/utils/item-grouping';
@@ -162,13 +162,24 @@ export default defineComponent({
         return;
       }
       const wasCompleted = item.completed;
-      const updatedItem: Partial<Item> = {
-        completed: !wasCompleted,
-        completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null)
-      };
+      const completedByMemberId = this.selectedMemberId;
+      const completionMutation = (() => {
+        if (wasCompleted) {
+          return () => markItemIncomplete(listId, item.id);
+        }
+        if (!completedByMemberId) {
+          this.errorMessage = '買った人を選択してください。';
+          this.showErrorFeedback();
+          return null;
+        }
+        return () => markItemCompleted(listId, item.id, { completedByMemberId });
+      })();
+      if (!completionMutation) {
+        return;
+      }
       try {
         this.toggleLoading = { ...this.toggleLoading, [item.id]: true };
-        const result = await this.mutationRun(() => updateItem(listId, item.id, updatedItem));
+        const result = await this.mutationRun(completionMutation);
         if (result.applied) {
           this.listStore.upsertItem(result.data);
         }

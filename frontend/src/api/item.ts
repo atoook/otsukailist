@@ -15,6 +15,10 @@ export type UpdateItemPayload = {
   quantified?: QuantifiedItem | null;
 };
 
+export type MarkItemCompletedPayload = {
+  completedByMemberId: UUID;
+};
+
 type CreateItemPayloadBase = {
   name: string;
   category?: ItemCategory | null;
@@ -51,6 +55,16 @@ export async function createItem(listId: UUID, payload: CreateItemPayload) {
 
 export async function updateItem(listId: UUID, itemId: UUID, payload: UpdateItemPayload) {
   const res = await http.patch<MutationResponse<Item>>(`/lists/${listId}/items/${itemId}`, payload);
+  return res.data;
+}
+
+export async function markItemCompleted(listId: UUID, itemId: UUID, payload: MarkItemCompletedPayload) {
+  const res = await http.patch<MutationResponse<Item>>(`/lists/${listId}/items/${itemId}/mark-completed`, payload);
+  return res.data;
+}
+
+export async function markItemIncomplete(listId: UUID, itemId: UUID) {
+  const res = await http.patch<MutationResponse<Item>>(`/lists/${listId}/items/${itemId}/mark-incomplete`);
   return res.data;
 }
 
