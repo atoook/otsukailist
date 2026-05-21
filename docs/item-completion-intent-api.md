@@ -31,6 +31,7 @@ Response:
 ```json
 {
   "revision": 12,
+  "changed": true,
   "data": {
     "id": "item-uuid",
     "completed": true,
@@ -44,8 +45,8 @@ Response:
 
 | 現在状態 | 結果 | revision |
 | --- | --- | --- |
-| `completed=false` | `completed=true` に更新し、`completedByMemberId` と `completedAt` を設定 | 進める |
-| `completed=true` | no-op。既存の `completedByMemberId` と `completedAt` を保持 | 進めない |
+| `completed=false` | `completed=true` に更新し、`completedByMemberId` と `completedAt` を設定。`changed=true` | 進める |
+| `completed=true` | no-op。既存の `completedByMemberId` と `completedAt` を保持。`changed=false` | 進めない |
 
 ### markIncomplete
 
@@ -58,6 +59,7 @@ Response:
 ```json
 {
   "revision": 13,
+  "changed": true,
   "data": {
     "id": "item-uuid",
     "completed": false,
@@ -71,8 +73,8 @@ Response:
 
 | 現在状態 | 結果 | revision |
 | --- | --- | --- |
-| `completed=true` | `completed=false` に更新し、完了者と完了日時をクリア | 進める |
-| `completed=false` | no-op | 進めない |
+| `completed=true` | `completed=false` に更新し、完了者と完了日時をクリア。`changed=true` | 進める |
+| `completed=false` | no-op。`changed=false` | 進めない |
 
 ## エラー方針
 
@@ -97,6 +99,8 @@ Response:
 | 完了済み | 未完了に戻す | `markItemIncomplete(listId, itemId)` |
 
 `PATCH /items/{itemId}` の `completed` 更新は既存互換として残すが、一覧のチェック操作では使わない。レスポンスrevisionにギャップがある場合は既存の `useMutation` が snapshot を取り直す。
+
+`changed=false` の場合は、ユーザーの操作で状態が変わったわけではない。フロントは「この操作では変更されず、既に更新済みだった状態を表示した」ことを通知し、自分の操作として誤認されないようにする。
 
 ## 競合テスト観点
 

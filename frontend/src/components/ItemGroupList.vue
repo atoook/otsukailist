@@ -150,6 +150,13 @@ export default defineComponent({
         }, 3000);
       }
     },
+    showCompletionNoopFeedback(wasCompleted: boolean): void {
+      if (wasCompleted) {
+        alert('この操作では変更されませんでした。既に未完了になっていたため、最新の状態を表示しました。');
+        return;
+      }
+      alert('この操作では変更されませんでした。既に完了済みだったため、最新の完了者を表示しました。');
+    },
     async toggleItem(item: Item) {
       if (this.toggleLoading[item.id]) {
         return;
@@ -182,6 +189,9 @@ export default defineComponent({
         const result = await this.mutationRun(completionMutation);
         if (result.applied) {
           this.listStore.upsertItem(result.data);
+        }
+        if (result.changed === false) {
+          this.showCompletionNoopFeedback(wasCompleted);
         }
       } catch (err: unknown) {
         console.error('Failed to update item', err);

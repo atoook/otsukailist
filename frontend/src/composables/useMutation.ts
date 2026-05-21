@@ -7,6 +7,7 @@ export type MutationRunResult<T> = {
   data: T;
   applied: boolean;
   revision: number;
+  changed?: boolean;
 };
 
 export function useMutation() {
@@ -27,19 +28,19 @@ export function useMutation() {
       const gap = nextRevision - currentRevision;
 
       if (nextRevision <= currentRevision) {
-        return { data: res.data, applied: false, revision: nextRevision };
+        return { data: res.data, applied: false, revision: nextRevision, changed: res.changed };
       }
 
       if (gap > 1 && listStore.listId) {
         const snapshot = await fetchSnapshot(listStore.listId);
         listStore.applySnapshot(snapshot);
         listStore.setRevision(Math.max(listStore.revision, nextRevision));
-        return { data: res.data, applied: false, revision: nextRevision };
+        return { data: res.data, applied: false, revision: nextRevision, changed: res.changed };
       }
 
       listStore.setRevision(nextRevision);
 
-      return { data: res.data, applied: true, revision: nextRevision };
+      return { data: res.data, applied: true, revision: nextRevision, changed: res.changed };
     } catch (err) {
       error.value = err as ApiError;
       throw err;

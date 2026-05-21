@@ -68,6 +68,7 @@ function createVm(overrides: Record<string, unknown> = {}) {
 describe('ItemGroupList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('alert', vi.fn());
     vi.mocked(markItemCompleted).mockResolvedValue({
       revision: 2,
       data: createItem({ completed: true, completedByMemberId: 'member-1' })
@@ -109,5 +110,29 @@ describe('ItemGroupList', () => {
     expect(markItemIncomplete).toHaveBeenCalledWith('list-1', 'item-1');
     expect(markItemCompleted).not.toHaveBeenCalled();
     expect(updateItem).not.toHaveBeenCalled();
+  });
+
+  it('既に他の更新が反映済みだった場合はno-opとして通知する', async () => {
+    const item = createItem({ completed: false });
+    const vm = createVm({
+      mutationRun: vi.fn(async (fn: () => Promise<unknown>) => {
+        await fn();
+        return {
+          applied: true,
+          changed: false,
+          data: createItem({ completed: true, completedByMemberId: 'member-2' }),
+          revision: 3
+        };
+      })
+    });
+
+    await (vm.toggleItem as (item: Item) => Promise<void>)(item);
+
+    expect(markItemCompleted).toHaveBeenCalledWith('list-1', 'item-1', {
+      completedByMemberId: 'member-1'
+    });
+    expect(alert).toHaveBeenCalledWith(
+      'この操作では変更されませんでした。既に完了済みだったため、最新の完了者を表示しました。'
+    );
   });
 });

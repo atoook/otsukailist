@@ -7,6 +7,7 @@ export type UUID = string;
 export type MutationResponse<T> = {
   revision: number;
   data: T;
+  changed?: boolean;
 };
 
 export type ApiError = {
