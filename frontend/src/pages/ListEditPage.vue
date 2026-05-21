@@ -17,6 +17,7 @@ import { createMember, deleteMember } from '@/api/member';
 import { fetchSnapshot, renameList } from '@/api/list';
 import { getErrorMessage } from '@/lib/http';
 import { updateListHistoryName, getSelectedMemberId } from '@/lib/userCache';
+import { MAX_MEMBERS_PER_LIST } from '@/lib/appConstants';
 
 export default defineComponent({
   name: 'ListEditPage',
@@ -123,6 +124,11 @@ export default defineComponent({
 
       if (!this.currentListId) {
         this.errorMessage = 'リストIDが無効です';
+        return;
+      }
+
+      if (this.isMemberLimitReached) {
+        this.errorMessage = `メンバーは${MAX_MEMBERS_PER_LIST}人まで追加できます。`;
         return;
       }
 
@@ -238,6 +244,9 @@ export default defineComponent({
     hasValidMemberName(): boolean {
       return !!normalizeText(this.newMemberName);
     },
+    isMemberLimitReached(): boolean {
+      return this.members.length >= MAX_MEMBERS_PER_LIST;
+    },
     isLoading(): boolean {
       return this.mutationLoading || this.snapshotLoading;
     }
@@ -279,9 +288,12 @@ export default defineComponent({
           input-name="newMember"
           placeholder="メンバーを追加..."
           variant="inline"
+          :disabled="isMemberLimitReached || isLoading"
         />
 
-        <MainButton @click="addMember" :disabled="!hasValidMemberName || isLoading" size="small"> 追加 </MainButton>
+        <MainButton @click="addMember" :disabled="!hasValidMemberName || isMemberLimitReached || isLoading" size="small">
+          追加
+        </MainButton>
       </div>
 
       <!-- メンバーバッジ表示 -->

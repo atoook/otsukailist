@@ -34,6 +34,7 @@ public class ListCommandService {
   private final MemberRepository memberRepo;
 
   private final ListRevisionService listRevisionService;
+  private final ListMemberLimitService listMemberLimitService;
 
   /**
    * Create a list with its initial member set.
@@ -46,13 +47,12 @@ public class ListCommandService {
       CreateItemListWithMembersRequest req) {
     String listName = req.getName().trim();
 
-    ItemList list = new ItemList();
-    list.setName(listName);
-    ItemList savedList = itemListRepo.saveAndFlush(list);
-
     // 正規化 + 重複チェック（アプリ側で早期に分かりやすく）
     List<String> names =
         req.getMemberNames().stream().map(String::trim).filter(s -> !s.isBlank()).toList();
+    if (names.isEmpty()) {
+      throw new BadRequestException("メンバーは1人以上必要です");
+    }
 
     Set<String> seen = new HashSet<>();
     for (String n : names) {
@@ -60,6 +60,11 @@ public class ListCommandService {
         throw new BadRequestException(String.format(ErrorMessages.MEMBER_DUPLICATED, n));
       }
     }
+    listMemberLimitService.validateInitialMemberCount(names.size());
+
+    ItemList list = new ItemList();
+    list.setName(listName);
+    ItemList savedList = itemListRepo.saveAndFlush(list);
 
     List<Member> members = new ArrayList<>();
     for (String n : names) {

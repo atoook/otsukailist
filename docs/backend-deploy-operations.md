@@ -66,6 +66,7 @@ curl -i http://localhost:10000/actuator/health/liveness
 - `DB_POOL_MINIMUM_IDLE` (default: `0`)
 - `DB_POOL_IDLE_TIMEOUT_MS` (default: `60000`)
 - `APP_ITEM_MAX_ITEMS_PER_LIST` (default: `100`)
+- `APP_MEMBER_MAX_MEMBERS_PER_LIST` (default: `20`)
 - `APP_RATE_LIMIT_ENABLED` (default: `true`)
 - `APP_RATE_LIMIT_CAPACITY` (default: `120`)
 - `APP_RATE_LIMIT_REFILL_TOKENS` (default: `120`)
