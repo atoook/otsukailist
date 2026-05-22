@@ -23,6 +23,8 @@ public class ItemResponse {
 
   private String name;
 
+  private long version;
+
   private ItemType itemType;
 
   private ItemCategory category;

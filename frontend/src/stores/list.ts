@@ -5,6 +5,7 @@ type ListState = {
   listId: UUID | null;
   name: string;
   revision: number;
+  version: number;
   itemCount: number;
   lastItemActivityAt: string | null;
   members: Member[];
@@ -16,6 +17,7 @@ export const useListStore = defineStore('list', {
     listId: null,
     name: '',
     revision: 0,
+    version: 0,
     itemCount: 0,
     lastItemActivityAt: null,
     members: [],
@@ -36,6 +38,7 @@ export const useListStore = defineStore('list', {
       this.listId = snapshot.listId;
       this.name = snapshot.name;
       this.revision = snapshot.revision;
+      this.version = snapshot.version;
       this.itemCount = snapshot.itemCount;
       this.lastItemActivityAt = snapshot.lastItemActivityAt;
       this.members = [...snapshot.members];
@@ -79,11 +82,14 @@ export const useListStore = defineStore('list', {
       );
     },
 
-    updateListDetails(payload: { name: string; members: Member[]; revision?: number }) {
+    updateListDetails(payload: { name: string; members: Member[]; revision?: number; version?: number }) {
       this.name = payload.name;
       this.members = [...payload.members];
       if (payload.revision !== undefined) {
         this.revision = payload.revision;
+      }
+      if (payload.version !== undefined) {
+        this.version = payload.version;
       }
     },
 
@@ -91,6 +97,7 @@ export const useListStore = defineStore('list', {
       this.listId = null;
       this.name = '';
       this.revision = 0;
+      this.version = 0;
       this.itemCount = 0;
       this.lastItemActivityAt = null;
       this.members = [];

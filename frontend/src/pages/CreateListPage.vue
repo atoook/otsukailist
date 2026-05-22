@@ -72,6 +72,7 @@ export default defineComponent({
           listId: res.data.listId,
           name: res.data.name,
           revision: res.revision,
+          version: res.data.version,
           itemCount: 0,
           lastItemActivityAt: null,
           members: res.data.members,
@@ -101,7 +102,8 @@ export default defineComponent({
       if (normalizedName) {
         this.members.push({
           id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
-          displayName: normalizedName
+          displayName: normalizedName,
+          version: 0
         });
         this.newMemberName = '';
       }

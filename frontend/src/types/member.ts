@@ -10,7 +10,8 @@ export function isMember(value: unknown): value is Member {
     'id' in value &&
     isMemberId((value as Member).id) &&
     'displayName' in value &&
-    typeof (value as Member).displayName === 'string'
+    typeof (value as Member).displayName === 'string' &&
+    typeof (value as Member).version === 'number'
   );
 }
 

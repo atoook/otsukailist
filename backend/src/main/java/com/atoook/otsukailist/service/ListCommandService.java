@@ -79,6 +79,7 @@ public class ListCommandService {
         CreateItemListWithMembersResponse.builder()
             .listId(savedList.getId())
             .name(savedList.getName())
+            .version(savedList.getVersion())
             .members(savedMembers.stream().map(MemberMapper::toResponse).toList())
             .build();
 

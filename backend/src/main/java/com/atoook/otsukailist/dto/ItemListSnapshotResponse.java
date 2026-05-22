@@ -24,6 +24,9 @@ public class ItemListSnapshotResponse {
   /** Socket差分の基準（リスト単位） */
   private long revision;
 
+  /** リスト名など list metadata の競合制御用 version */
+  private long version;
+
   /** UI表示用 */
   private int itemCount;
 

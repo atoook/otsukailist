@@ -22,6 +22,7 @@ public class ItemMapper {
     return ItemResponse.builder()
         .id(entity.getId())
         .name(entity.getName().trim())
+        .version(entity.getVersion())
         .itemType(entity.getItemType() == null ? ItemType.PLAIN : entity.getItemType())
         .category(entity.getCategory())
         .preparationType(entity.getPreparationType())

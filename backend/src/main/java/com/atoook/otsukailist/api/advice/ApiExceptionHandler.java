@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.atoook.otsukailist.api.dto.ApiError;
 import com.atoook.otsukailist.api.dto.ApiErrorCode;
 import com.atoook.otsukailist.exception.BadRequestException;
+import com.atoook.otsukailist.exception.PreconditionFailedException;
+import com.atoook.otsukailist.exception.PreconditionRequiredException;
 import com.atoook.otsukailist.exception.ResourceNotFoundException;
 
 @RestControllerAdvice(basePackages = "com.atoook.otsukailist.api.controller")
@@ -40,6 +43,50 @@ public class ApiExceptionHandler {
   public ResponseEntity<ApiError> handleBadRequest(BadRequestException e) {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(ApiError.of(ApiErrorCode.BAD_REQUEST, e.getMessage()));
+  }
+
+  /**
+   * Handle missing If-Match preconditions.
+   *
+   * @param e thrown exception
+   * @return 428 response body
+   */
+  @ExceptionHandler(PreconditionRequiredException.class)
+  public ResponseEntity<ApiError> handlePreconditionRequired(PreconditionRequiredException e) {
+    return ResponseEntity.status(HttpStatus.PRECONDITION_REQUIRED)
+        .body(ApiError.of(ApiErrorCode.PRECONDITION_REQUIRED, e.getMessage()));
+  }
+
+  /**
+   * Handle stale resource version preconditions.
+   *
+   * @param e thrown exception
+   * @return 412 response body
+   */
+  @ExceptionHandler(PreconditionFailedException.class)
+  public ResponseEntity<ApiError> handlePreconditionFailed(PreconditionFailedException e) {
+    Map<String, Object> details =
+        Map.of(
+            "resourceType", e.getResourceType(),
+            "resourceId", e.getResourceId().toString(),
+            "expectedVersion", e.getExpectedVersion(),
+            "currentVersion", e.getCurrentVersion());
+
+    return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+        .body(ApiError.of(ApiErrorCode.PRECONDITION_FAILED, e.getMessage(), details));
+  }
+
+  /**
+   * Handle optimistic locking conflicts detected by the persistence provider.
+   *
+   * @param e thrown exception
+   * @return 412 response body
+   */
+  @ExceptionHandler(OptimisticLockingFailureException.class)
+  public ResponseEntity<ApiError> handleOptimisticLockingFailure(
+      OptimisticLockingFailureException e) {
+    return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+        .body(ApiError.of(ApiErrorCode.PRECONDITION_FAILED, "このリソースは他のメンバーにより更新されています"));
   }
 
   /**
