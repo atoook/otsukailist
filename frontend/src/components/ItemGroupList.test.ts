@@ -37,6 +37,10 @@ function createItem(overrides: Partial<Item> = {}): Item {
 function createVm(overrides: Record<string, unknown> = {}) {
   const component = ItemGroupList as unknown as ItemGroupListOptions;
   const upsertItem = vi.fn();
+  const memberMap = new Map([
+    ['member-1', { id: 'member-1', displayName: '自分' }],
+    ['member-2', { id: 'member-2', displayName: '田中' }]
+  ]);
   const mutationRun = vi.fn(async (fn: () => Promise<unknown>) => {
     await fn();
     return {
@@ -48,10 +52,11 @@ function createVm(overrides: Record<string, unknown> = {}) {
   const vm: Record<string, unknown> = {
     ...component.data(),
     selectedMemberId: 'member-1',
+    memberMap,
     listStore: {
       listId: 'list-1',
       items: [],
-      memberMap: new Map(),
+      memberMap,
       upsertItem
     },
     mutationRun,
@@ -131,8 +136,6 @@ describe('ItemGroupList', () => {
     expect(markItemCompleted).toHaveBeenCalledWith('list-1', 'item-1', {
       completedByMemberId: 'member-1'
     });
-    expect(alert).toHaveBeenCalledWith(
-      'この操作では変更されませんでした。既に完了済みだったため、最新の完了者を表示しました。'
-    );
+    expect(alert).toHaveBeenCalledWith('このアイテムは「田中」が既に完了しています。');
   });
 });

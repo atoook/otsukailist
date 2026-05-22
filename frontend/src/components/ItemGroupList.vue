@@ -150,12 +150,16 @@ export default defineComponent({
         }, 3000);
       }
     },
-    showCompletionNoopFeedback(wasCompleted: boolean): void {
-      if (wasCompleted) {
-        alert('この操作では変更されませんでした。既に未完了になっていたため、最新の状態を表示しました。');
+    showCompletionNoopFeedback(item: Item): void {
+      if (item.completed) {
+        const memberName =
+          item.completedByMemberId == null
+            ? '他のメンバー'
+            : (this.memberMap.get(item.completedByMemberId)?.displayName ?? '他のメンバー');
+        alert(`このアイテムは「${memberName}」が既に完了しています。`);
         return;
       }
-      alert('この操作では変更されませんでした。既に完了済みだったため、最新の完了者を表示しました。');
+      alert('このアイテムは既に未完了です。');
     },
     async toggleItem(item: Item) {
       if (this.toggleLoading[item.id]) {
@@ -191,7 +195,7 @@ export default defineComponent({
           this.listStore.upsertItem(result.data);
         }
         if (result.changed === false) {
-          this.showCompletionNoopFeedback(wasCompleted);
+          this.showCompletionNoopFeedback(result.data);
         }
       } catch (err: unknown) {
         console.error('Failed to update item', err);
