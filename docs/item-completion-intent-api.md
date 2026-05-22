@@ -1,4 +1,4 @@
-# Item completed intent API
+# Item completion intent API
 
 ## 背景
 
@@ -11,6 +11,8 @@
 3. 端末Aが古い表示を元にチェック解除すると、旧実装では `completed=false` のつもりがトグル値として `true` を送る可能性がある。
 
 この問題を避けるため、一覧操作は現在値トグルではなくユーザー意図別APIを呼び分ける。
+
+このドキュメントは、item完了更新を意図別APIに移行するための設計方針を定義する。現行実装にはここで使う item `version`、`ETag` / `If-Match`、`changed` を含むレスポンスDTO、`precondition_required` / `precondition_failed` エラーコードと例外ハンドラはまだ存在しないため、API導入時に合わせて追加する。
 
 ## API契約
 
@@ -97,8 +99,8 @@ Response:
 | アイテムまたはリストが存在しない | 404 | `not_found` | 既存のAPIエラー形式に合わせる |
 | `completedByMemberId` 未指定 | 400 | `bad_request` | `markCompleted` で `completed=false -> true` に遷移する場合 |
 | `completedByMemberId` がリスト外メンバー | 400 | `bad_request` | `markCompleted` で `completed=false -> true` に遷移する場合 |
-| `If-Match` 未指定 | 428 | `precondition_required` | stale state 防止のため必須 |
-| `If-Match` 不一致 | 412 | `precondition_failed` | 最新状態を再取得して再操作 |
+| `If-Match` 未指定 | 428 | `precondition_required` | stale state 防止のため必須。API導入時に `ApiErrorCode` と例外ハンドラも追加する |
+| `If-Match` 不一致 | 412 | `precondition_failed` | 最新状態を再取得して再操作。API導入時に `ApiErrorCode` と例外ハンドラも追加する |
 | DB制約違反 | 409 | `conflict` | 既存ハンドラに合わせる |
 
 競合制御の全体方針は [競合制御方針](./concurrency-control-policy.md) に従う。item完了更新も item `version` + `If-Match` による楽観ロックを使い、stale state の場合は `412 precondition_failed` を返す。
@@ -112,7 +114,7 @@ Response:
 | 未完了 | 完了にする | `markItemCompleted(listId, itemId, { completedByMemberId })` |
 | 完了済み | 未完了に戻す | `markItemIncomplete(listId, itemId)` |
 
-`PATCH /items/{itemId}` の `completed` 更新は既存互換として残すが、一覧のチェック操作では使わない。item完了APIには画面で保持していた item `ETag` を `If-Match` で送る。`412` の場合は snapshot を取り直し、最新状態を表示する。
+`PATCH /api/lists/{listId}/items/{itemId}` の `completed` 更新は既存互換として残すが、一覧のチェック操作では使わない。item完了APIには画面で保持していた item `ETag` を `If-Match` で送る。`412` の場合は snapshot を取り直し、最新状態を表示する。
 
 `changed=false` の場合は、ユーザーの操作で状態が変わったわけではない。フロントは「この操作では変更されず、既に更新済みだった状態を表示した」ことを通知し、自分の操作として誤認されないようにする。
 
