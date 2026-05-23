@@ -8,6 +8,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +44,7 @@ public class GeneratedItemSyncCommandService {
   private final MemberRepository memberRepo;
   private final ListRevisionService listRevisionService;
   private final ListItemLimitService listItemLimitService;
+  private final EntityManager entityManager;
 
   private static final String MSG_ASSIGNED_MEMBER_NOT_IN_LIST = "指定された担当者はリストのメンバーではありません";
   private static final String MSG_GENERATED_ITEM_DUPLICATED = "生成アイテムが重複しています";
@@ -108,8 +112,9 @@ public class GeneratedItemSyncCommandService {
             .count();
     listItemLimitService.validateItemCountAfterChange(listId, newItemCount, deletedItems.size());
 
-    List<Item> savedItems = itemRepo.saveAll(changedItems);
+    List<Item> savedItems = itemRepo.saveAllAndFlush(changedItems);
     itemRepo.deleteAll(deletedItems);
+    itemRepo.flush();
     long revision = listRevisionService.incrementAndGet(listId);
 
     SyncGeneratedItemsResponse data =
@@ -133,6 +138,7 @@ public class GeneratedItemSyncCommandService {
         return null;
       }
       updateExistingGeneratedAutoItem(existingItem, command);
+      entityManager.lock(existingItem, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
       return existingItem;
     }
 

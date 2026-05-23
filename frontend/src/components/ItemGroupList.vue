@@ -9,12 +9,13 @@ import type { ItemCategory } from '../types/item-category';
 import type { ItemPreparationType } from '../types/item-preparation-type';
 import type { MemberId } from '../types/member';
 import { normalizeText } from '../utils/text-normalization';
-import { deleteItem as deleteItemApi, updateItem } from '@/api/item';
+import { deleteItem as deleteItemApi, markItemCompleted, markItemIncomplete, updateItem } from '@/api/item';
+import { fetchSnapshot } from '@/api/list';
 import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { groupItems } from '@/utils/item-grouping';
 import type { GroupDefinition, ItemGroup } from '@/utils/item-grouping';
-import { getErrorMessage } from '@/lib/http';
+import { getErrorMessage, hasApiErrorCode } from '@/lib/http';
 import { buildGeneratedItemExclusionConfigMutation } from '@/lib/listTemplateExclusions';
 
 const ITEM_GROUP_DEFINITIONS: GroupDefinition<Item>[] = [
@@ -150,6 +151,17 @@ export default defineComponent({
         }, 3000);
       }
     },
+    async refreshSnapshotAfterStaleState(listId: string, err: unknown): Promise<boolean> {
+      if (!hasApiErrorCode(err, 'precondition_failed')) {
+        return false;
+      }
+
+      const snapshot = await fetchSnapshot(listId);
+      this.listStore.applySnapshot(snapshot);
+      this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+      this.showErrorFeedback();
+      return true;
+    },
     async toggleItem(item: Item) {
       if (this.toggleLoading[item.id]) {
         return;
@@ -162,18 +174,26 @@ export default defineComponent({
         return;
       }
       const wasCompleted = item.completed;
-      const updatedItem: Partial<Item> = {
-        completed: !wasCompleted,
-        completedByMemberId: wasCompleted ? null : (this.selectedMemberId ?? null)
-      };
+      if (!wasCompleted && !this.selectedMemberId) {
+        this.errorMessage = '買った人を選択してください。';
+        this.showErrorFeedback();
+        return;
+      }
       try {
         this.toggleLoading = { ...this.toggleLoading, [item.id]: true };
-        const result = await this.mutationRun(() => updateItem(listId, item.id, updatedItem));
+        const result = await this.mutationRun(() =>
+          wasCompleted
+            ? markItemIncomplete(listId, item.id, item.version)
+            : markItemCompleted(listId, item.id, { completedByMemberId: this.selectedMemberId! }, item.version)
+        );
         if (result.applied) {
           this.listStore.upsertItem(result.data);
         }
       } catch (err: unknown) {
         console.error('Failed to update item', err);
+        if (await this.refreshSnapshotAfterStaleState(listId, err)) {
+          return;
+        }
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
       } finally {
@@ -194,8 +214,13 @@ export default defineComponent({
       }
       try {
         const item = this.listStore.items.find((candidate) => candidate.id === itemId) ?? null;
+        if (!item) {
+          this.errorMessage = 'アイテムが見つかりませんでした。';
+          this.showErrorFeedback();
+          return;
+        }
         this.deleteLoading = { ...this.deleteLoading, [itemId]: true };
-        const result = await this.mutationRun(() => deleteItemApi(listId, itemId));
+        const result = await this.mutationRun(() => deleteItemApi(listId, itemId, item.version));
         if (result.applied) {
           this.listStore.removeItem(itemId);
         }
@@ -214,6 +239,9 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to delete item', err);
+        if (await this.refreshSnapshotAfterStaleState(listId, err)) {
+          return;
+        }
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの削除に失敗しました。';
         this.showErrorFeedback();
       } finally {
@@ -236,12 +264,17 @@ export default defineComponent({
         return;
       }
       try {
-        const result = await this.mutationRun(() => updateItem(listId, updatedItem.id, { name: normalizedItemName }));
+        const result = await this.mutationRun(() =>
+          updateItem(listId, updatedItem.id, { name: normalizedItemName }, updatedItem.version)
+        );
         if (result.applied) {
           this.listStore.upsertItem(result.data);
         }
       } catch (err: unknown) {
         console.error('Failed to rename item', err);
+        if (await this.refreshSnapshotAfterStaleState(listId, err)) {
+          return;
+        }
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
         this.showErrorFeedback();
       }

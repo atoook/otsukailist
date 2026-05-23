@@ -57,6 +57,10 @@ export function getErrorMessage(err: unknown): string | null {
   return null;
 }
 
+export function hasApiErrorCode(err: unknown, code: string): boolean {
+  return isApiError(err) && err.error === code;
+}
+
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
   headers: { 'Content-Type': 'application/json' },

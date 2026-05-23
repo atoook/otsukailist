@@ -1,4 +1,5 @@
 import { http } from '@/lib/http';
+import { ifMatchHeaders } from '@/api/preconditions';
 import type { DeleteResponse, Item, MutationResponse, UUID } from '@/types/api';
 import type { ItemCategory } from '@/types/item-category';
 import type { ItemPreparationType } from '@/types/item-preparation-type';
@@ -44,18 +45,52 @@ export type SyncGeneratedItemsResponse = {
   deletedItemIds: UUID[];
 };
 
+export type MarkItemCompletedPayload = {
+  completedByMemberId: UUID;
+};
+
 export async function createItem(listId: UUID, payload: CreateItemPayload) {
   const res = await http.post<MutationResponse<Item>>(`/lists/${listId}/items`, payload);
   return res.data;
 }
 
-export async function updateItem(listId: UUID, itemId: UUID, payload: UpdateItemPayload) {
-  const res = await http.patch<MutationResponse<Item>>(`/lists/${listId}/items/${itemId}`, payload);
+export async function updateItem(listId: UUID, itemId: UUID, payload: UpdateItemPayload, version: number) {
+  const res = await http.patch<MutationResponse<Item>>(
+    `/lists/${listId}/items/${itemId}`,
+    payload,
+    ifMatchHeaders(version)
+  );
   return res.data;
 }
 
-export async function deleteItem(listId: UUID, itemId: UUID) {
-  const res = await http.delete<MutationResponse<DeleteResponse>>(`/lists/${listId}/items/${itemId}`);
+export async function markItemCompleted(
+  listId: UUID,
+  itemId: UUID,
+  payload: MarkItemCompletedPayload,
+  version: number
+) {
+  const res = await http.patch<MutationResponse<Item>>(
+    `/lists/${listId}/items/${itemId}/mark-completed`,
+    payload,
+    ifMatchHeaders(version)
+  );
+  return res.data;
+}
+
+export async function markItemIncomplete(listId: UUID, itemId: UUID, version: number) {
+  const res = await http.patch<MutationResponse<Item>>(
+    `/lists/${listId}/items/${itemId}/mark-incomplete`,
+    undefined,
+    ifMatchHeaders(version)
+  );
+  return res.data;
+}
+
+export async function deleteItem(listId: UUID, itemId: UUID, version: number) {
+  const res = await http.delete<MutationResponse<DeleteResponse>>(
+    `/lists/${listId}/items/${itemId}`,
+    ifMatchHeaders(version)
+  );
   return res.data;
 }
 
