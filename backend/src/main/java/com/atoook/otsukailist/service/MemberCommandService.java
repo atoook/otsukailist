@@ -16,6 +16,7 @@ import com.atoook.otsukailist.model.Member;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.MemberRepository;
 import com.atoook.otsukailist.service.message.ErrorMessages;
+import com.atoook.otsukailist.service.validation.ResourceVersionValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -68,18 +69,20 @@ public class MemberCommandService {
    */
   @Transactional
   public MutationResponse<MemberResponse> renameMember(
-      UUID listId, UUID memberId, CreateMemberRequest req) {
+      UUID listId, UUID memberId, CreateMemberRequest req, long expectedVersion) {
     Member member =
         memberRepo
             .findByIdAndItemListId(memberId, listId)
             .orElseThrow(
                 () ->
                     new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "メンバー")));
+    ResourceVersionValidator.requireCurrentVersion(
+        "member", member.getId(), expectedVersion, member.getVersion());
 
     // Mapperでtrim含めて更新する想定
     MemberMapper.updateEntity(member, req);
 
-    Member saved = memberRepo.save(member);
+    Member saved = memberRepo.saveAndFlush(member);
 
     long revision = incrementAndGetRevision(listId);
 
@@ -97,15 +100,19 @@ public class MemberCommandService {
    * @return deletion response with the new revision number
    */
   @Transactional
-  public MutationResponse<DeleteMemberResponse> deleteMember(UUID listId, UUID memberId) {
+  public MutationResponse<DeleteMemberResponse> deleteMember(
+      UUID listId, UUID memberId, long expectedVersion) {
     Member member =
         memberRepo
             .findByIdAndItemListId(memberId, listId)
             .orElseThrow(
                 () ->
                     new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "メンバー")));
+    ResourceVersionValidator.requireCurrentVersion(
+        "member", member.getId(), expectedVersion, member.getVersion());
 
     memberRepo.delete(member);
+    memberRepo.flush();
     // DB側 FK: item.assigned_member_id / completed_by_member_id ON DELETE SET NULL が効く
 
     long revision = incrementAndGetRevision(listId);

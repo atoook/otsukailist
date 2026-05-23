@@ -5,15 +5,18 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.atoook.otsukailist.api.HttpPreconditions;
 import com.atoook.otsukailist.dto.CreateItemListWithMembersRequest;
 import com.atoook.otsukailist.dto.CreateItemListWithMembersResponse;
 import com.atoook.otsukailist.dto.ItemListResponse;
@@ -57,7 +60,10 @@ public class ItemListCommandController {
    */
   @PatchMapping("/{listId}")
   public ResponseEntity<MutationResponse<ItemListResponse>> rename(
-      @PathVariable("listId") UUID listId, @Valid @RequestBody UpdateItemListRequest req) {
-    return ResponseEntity.ok(listCommandService.renameList(listId, req));
+      @PathVariable("listId") UUID listId,
+      @RequestHeader(value = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+      @Valid @RequestBody UpdateItemListRequest req) {
+    long expectedVersion = HttpPreconditions.requireIfMatchVersion(ifMatch);
+    return ResponseEntity.ok(listCommandService.renameList(listId, req, expectedVersion));
   }
 }

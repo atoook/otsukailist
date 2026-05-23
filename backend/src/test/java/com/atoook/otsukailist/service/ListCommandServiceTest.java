@@ -1,12 +1,22 @@
 package com.atoook.otsukailist.service;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import com.atoook.otsukailist.config.AppMemberProperties;
 import com.atoook.otsukailist.dto.CreateItemListWithMembersRequest;
+import com.atoook.otsukailist.dto.UpdateItemListRequest;
 import com.atoook.otsukailist.exception.BadRequestException;
+import com.atoook.otsukailist.exception.PreconditionFailedException;
+import com.atoook.otsukailist.model.ItemList;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.MemberRepository;
 
@@ -50,5 +60,29 @@ class ListCommandServiceTest {
     assertThatThrownBy(() -> service.createListWithMembers(request))
         .isInstanceOf(BadRequestException.class)
         .hasMessage("リストに追加できるメンバーは2人までです");
+  }
+
+  @Test
+  @DisplayName("リスト名変更時にversionが一致しない場合は拒否すること")
+  void renameListRejectsWhenVersionDoesNotMatch() {
+    UUID listId = UUID.randomUUID();
+    ItemList list = itemList(listId, 4L);
+    UpdateItemListRequest request = UpdateItemListRequest.builder().name("週末の買い物").build();
+
+    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+
+    assertThatThrownBy(() -> service.renameList(listId, request, 3L))
+        .isInstanceOf(PreconditionFailedException.class);
+
+    verify(itemListRepo, never()).saveAndFlush(any(ItemList.class));
+    verifyNoInteractions(listRevisionService);
+  }
+
+  private static ItemList itemList(UUID listId, long version) {
+    ItemList list = new ItemList();
+    list.setId(listId);
+    list.setName("買い物");
+    list.setVersion(version);
+    return list;
   }
 }

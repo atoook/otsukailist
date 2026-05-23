@@ -78,7 +78,13 @@ export const useListStore = defineStore('list', {
     removeMember(memberId: UUID) {
       this.members = this.members.filter((member) => member.id !== memberId);
       this.items = this.items.map((item) =>
-        item.completedByMemberId === memberId ? { ...item, completedByMemberId: null } : item
+        item.completedByMemberId === memberId || item.assignedMemberId === memberId
+          ? {
+              ...item,
+              assignedMemberId: item.assignedMemberId === memberId ? null : item.assignedMemberId,
+              completedByMemberId: item.completedByMemberId === memberId ? null : item.completedByMemberId
+            }
+          : item
       );
     },
 
