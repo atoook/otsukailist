@@ -32,21 +32,17 @@ public class HttpPreconditions {
       throw new PreconditionRequiredException(MSG_IF_MATCH_REQUIRED);
     }
 
-    return parseVersion(stripResourcePrefix(stripWeakValidators(stripQuotes(ifMatch.trim()))));
+    return parseVersion(stripResourcePrefix(requireStrongQuotedToken(ifMatch.trim())));
   }
 
-  private static String stripWeakValidators(String token) {
+  private static String requireStrongQuotedToken(String token) {
     if (token.contains(",") || token.startsWith("W/") || "*".equals(token)) {
       throw new BadRequestException(MSG_IF_MATCH_INVALID);
     }
-    return token;
-  }
-
-  private static String stripQuotes(String token) {
-    if (token.length() >= 2 && token.startsWith("\"") && token.endsWith("\"")) {
-      return token.substring(1, token.length() - 1);
+    if (token.length() < 2 || !token.startsWith("\"") || !token.endsWith("\"")) {
+      throw new BadRequestException(MSG_IF_MATCH_INVALID);
     }
-    return token;
+    return token.substring(1, token.length() - 1);
   }
 
   private static String stripResourcePrefix(String token) {

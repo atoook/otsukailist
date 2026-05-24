@@ -36,4 +36,11 @@ class HttpPreconditionsTest {
     assertThatThrownBy(() -> HttpPreconditions.requireIfMatchVersion("W/\"7\""))
         .isInstanceOf(BadRequestException.class);
   }
+
+  @Test
+  @DisplayName("quotedでないIf-Matchは拒否すること")
+  void requireIfMatchVersionRejectsUnquotedVersion() {
+    assertThatThrownBy(() -> HttpPreconditions.requireIfMatchVersion("7"))
+        .isInstanceOf(BadRequestException.class);
+  }
 }
