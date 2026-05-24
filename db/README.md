@@ -66,8 +66,21 @@ backend/src/main/resources/db/migration/V{連番}__{説明}.sql
 | ---------- | ------------ | ---------------------------- | -------- |
 | id         | UUID         | PRIMARY KEY                  | UUID     |
 | name       | VARCHAR(100) | DEFAULT 'お買い物リスト'     | リスト名 |
-| created_at | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP    | 作成日時 |
+| revision   | BIGINT       | DEFAULT 0                    | リスト同期用の通し番号 |
+| version    | BIGINT       | DEFAULT 0                    | リストメタデータの競合制御用version |
+| created_at | TIMESTAMP(3) | DEFAULT CURRENT_TIMESTAMP(3) | 作成日時 |
 | updated_at | TIMESTAMP(3) | DEFAULT CURRENT_TIMESTAMP(3) | 更新日時 |
+
+### member
+
+| カラム名     | データ型     | 制約                  | 説明                            |
+| ------------ | ------------ | --------------------- | ------------------------------- |
+| id           | UUID         | PRIMARY KEY           | UUID                            |
+| list_id      | UUID         | NOT NULL, FOREIGN KEY | item_list への外部キー          |
+| display_name | VARCHAR(80)  | NOT NULL              | 表示名                          |
+| version      | BIGINT       | DEFAULT 0             | メンバー単体の競合制御用version |
+| created_at   | TIMESTAMP(3) | DEFAULT CURRENT_TIMESTAMP(3) | 作成日時                |
+| updated_at   | TIMESTAMP(3) | DEFAULT CURRENT_TIMESTAMP(3) | 更新日時                |
 
 ### item
 
@@ -75,8 +88,9 @@ backend/src/main/resources/db/migration/V{連番}__{説明}.sql
 | ------------ | ------------ | ---------------------------- | ---------------------- |
 | id           | UUID         | PRIMARY KEY                  | UUID                   |
 | name         | VARCHAR(255) | NOT NULL                     | アイテム名             |
+| version      | BIGINT       | DEFAULT 0                    | アイテム単体の競合制御用version |
 | is_completed | BOOLEAN      | DEFAULT FALSE                | 購入済みフラグ         |
-| created_at   | TIMESTAMP    | DEFAULT CURRENT_TIMESTAMP    | 作成日時               |
+| created_at   | TIMESTAMP(3) | DEFAULT CURRENT_TIMESTAMP(3) | 作成日時               |
 | updated_at   | TIMESTAMP(3) | DEFAULT CURRENT_TIMESTAMP(3) | 更新日時               |
 | list_id      | UUID         | NOT NULL, FOREIGN KEY        | item_list への外部キー |
 | assigned_member_id | UUID | NULL, FOREIGN KEY | 担当者 |

@@ -17,6 +17,8 @@ public class ItemListResponse {
 
   private String name;
 
+  private long version;
+
   private Instant createdAt;
 
   private Instant updatedAt;

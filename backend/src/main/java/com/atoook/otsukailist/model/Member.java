@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,6 +42,10 @@ public class Member {
 
   @Column(name = "display_name", nullable = false, length = 80)
   private String displayName;
+
+  @Version
+  @Column(name = "version", nullable = false)
+  private long version = 0L;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

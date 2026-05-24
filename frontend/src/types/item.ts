@@ -25,6 +25,7 @@ export function isItem(value: unknown): value is Item {
   return (
     isItemId(candidate.id) &&
     typeof candidate.name === 'string' &&
+    typeof candidate.version === 'number' &&
     isItemType(candidate.itemType) &&
     isItemCategory(candidate.category) &&
     isItemPreparationType(candidate.preparationType) &&

@@ -5,6 +5,7 @@ import { filterItems, getItemFilterMemberId } from './item-filtering';
 const baseItem: Item = {
   id: 'item-1',
   name: '牛肉',
+  version: 0,
   itemType: 'plain',
   category: 'meat',
   preparationType: null,

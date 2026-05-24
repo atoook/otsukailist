@@ -14,6 +14,7 @@ public class CreateItemListWithMembersResponse {
 
   private UUID listId;
   private String name;
+  private long version;
 
   private List<MemberResponse> members;
 }

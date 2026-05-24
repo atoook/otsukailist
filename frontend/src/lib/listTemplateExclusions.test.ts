@@ -16,6 +16,7 @@ function generatedItem(generatorKey: string): Item {
   return {
     id: `item-${generatorKey}`,
     name: generatorKey,
+    version: 0,
     itemType: 'quantified',
     category: 'meat',
     preparationType: null,

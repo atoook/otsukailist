@@ -7,6 +7,7 @@ function plainItem(name: string): Item {
   return {
     id: `item-${name}`,
     name,
+    version: 0,
     itemType: 'plain',
     category: null,
     preparationType: null,

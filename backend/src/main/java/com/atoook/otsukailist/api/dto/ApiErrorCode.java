@@ -5,6 +5,8 @@ public enum ApiErrorCode {
   BAD_REQUEST("bad_request", "bad request"),
   VALIDATION_ERROR("validation_error", "validation error"),
   CONFLICT("conflict", "conflict"),
+  PRECONDITION_REQUIRED("precondition_required", "precondition required"),
+  PRECONDITION_FAILED("precondition_failed", "precondition failed"),
   RATE_LIMITED("rate_limited", "too many requests"),
   INTERNAL_ERROR("internal_error", "internal server error");
 

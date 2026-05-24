@@ -17,6 +17,7 @@ export function isItemList(value: unknown): value is ItemList {
   return (
     typeof snapshot.name === 'string' &&
     typeof snapshot.revision === 'number' &&
+    typeof snapshot.version === 'number' &&
     typeof snapshot.itemCount === 'number' &&
     Array.isArray(snapshot.members) &&
     Array.isArray(snapshot.items)

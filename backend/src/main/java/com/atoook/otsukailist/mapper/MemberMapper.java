@@ -19,6 +19,7 @@ public class MemberMapper {
     return MemberResponse.builder()
         .id(entity.getId())
         .displayName(entity.getDisplayName().trim())
+        .version(entity.getVersion())
         .createdAt(entity.getCreatedAt())
         .updatedAt(entity.getUpdatedAt())
         .build();
