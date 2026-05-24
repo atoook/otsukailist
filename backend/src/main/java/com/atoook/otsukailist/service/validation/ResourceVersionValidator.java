@@ -1,4 +1,4 @@
-package com.atoook.otsukailist.service;
+package com.atoook.otsukailist.service.validation;
 
 import java.util.UUID;
 
