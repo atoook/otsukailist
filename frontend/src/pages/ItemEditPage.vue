@@ -148,16 +148,18 @@ export default defineComponent({
       }
       return 'manual_none';
     },
-    async loadSnapshot(listId: string): Promise<void> {
+    async loadSnapshot(listId: string): Promise<boolean> {
       this.snapshotLoading = true;
       this.errorMessage = '';
 
       try {
         const snapshot = await fetchSnapshot(listId);
         this.listStore.applySnapshot(snapshot);
+        return true;
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
+        return false;
       } finally {
         this.snapshotLoading = false;
       }
@@ -262,9 +264,10 @@ export default defineComponent({
       } catch (err: unknown) {
         console.error('Failed to update item', err);
         if (hasApiErrorCode(err, 'precondition_failed')) {
-          await this.loadSnapshot(this.currentListId);
-          this.applyCurrentItem();
-          this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+          if (await this.loadSnapshot(this.currentListId)) {
+            this.applyCurrentItem();
+            this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+          }
           return;
         }
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';

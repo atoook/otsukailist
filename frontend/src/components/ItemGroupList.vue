@@ -156,9 +156,14 @@ export default defineComponent({
         return false;
       }
 
-      const snapshot = await fetchSnapshot(listId);
-      this.listStore.applySnapshot(snapshot);
-      this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+      try {
+        const snapshot = await fetchSnapshot(listId);
+        this.listStore.applySnapshot(snapshot);
+        this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+      } catch (refreshErr: unknown) {
+        console.error('Failed to refresh snapshot after stale item state', refreshErr);
+        this.errorMessage = getErrorMessage(refreshErr) ?? '最新の状態を取得できませんでした。';
+      }
       this.showErrorFeedback();
       return true;
     },
