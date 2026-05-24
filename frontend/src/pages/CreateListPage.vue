@@ -10,13 +10,17 @@ import IconClipboard from '../components/icons/IconClipboard.vue';
 import IconFire from '../components/icons/IconFire.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import IconUser from '../components/icons/IconUser.vue';
-import type { Member, MemberId } from '../types/member';
 import type { ItemList } from '../types/item-list';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
 import { createItemList } from '@/api/list';
 import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
 import { MAX_MEMBERS_PER_LIST } from '@/lib/appConstants';
+
+type DraftMember = {
+  localId: string;
+  displayName: string;
+};
 
 export default defineComponent({
   name: 'CreateListPage',
@@ -34,7 +38,7 @@ export default defineComponent({
   },
   data(): {
     listName: string;
-    members: Member[];
+    members: DraftMember[];
     newMemberName: string;
     errorMessage: string;
     creating: boolean;
@@ -101,9 +105,8 @@ export default defineComponent({
       }
       if (normalizedName) {
         this.members.push({
-          id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
-          displayName: normalizedName,
-          version: 0
+          localId: crypto.randomUUID(),
+          displayName: normalizedName
         });
         this.newMemberName = '';
       }
@@ -115,8 +118,8 @@ export default defineComponent({
     onMemberNameInput(value: string): void {
       this.newMemberName = normalizeInput(value);
     },
-    removeMember(memberId: MemberId): void {
-      this.members = this.members.filter((member) => member.id !== memberId);
+    removeMember(localId: string): void {
+      this.members = this.members.filter((member) => member.localId !== localId);
     }
   },
   computed: {
@@ -182,10 +185,10 @@ export default defineComponent({
         <div class="flex flex-wrap gap-2">
           <BadgeTag
             v-for="member in members"
-            :key="member.id"
+            :key="member.localId"
             :text="member.displayName"
             :removable="true"
-            @remove="removeMember(member.id)"
+            @remove="removeMember(member.localId)"
             ><template #icon><IconUser /></template
           ></BadgeTag>
         </div>
