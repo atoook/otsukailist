@@ -23,6 +23,7 @@ import com.atoook.otsukailist.model.Member;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.MemberRepository;
 import com.atoook.otsukailist.service.message.ErrorMessages;
+import com.atoook.otsukailist.service.validation.ResourceVersionValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -97,12 +98,15 @@ public class ListCommandService {
    * @return renamed list payload with the incremented revision
    */
   @Transactional
-  public MutationResponse<ItemListResponse> renameList(UUID listId, UpdateItemListRequest req) {
+  public MutationResponse<ItemListResponse> renameList(
+      UUID listId, UpdateItemListRequest req, long expectedVersion) {
     ItemList list =
         itemListRepo
             .findById(listId)
             .orElseThrow(
                 () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
+    ResourceVersionValidator.requireCurrentVersion(
+        "list", list.getId(), expectedVersion, list.getVersion());
 
     list.setName(req.getName().trim());
 

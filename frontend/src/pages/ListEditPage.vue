@@ -15,7 +15,7 @@ import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { createMember, deleteMember } from '@/api/member';
 import { fetchSnapshot, renameList } from '@/api/list';
-import { getErrorMessage } from '@/lib/http';
+import { getErrorMessage, hasApiErrorCode } from '@/lib/http';
 import { updateListHistoryName, getSelectedMemberId } from '@/lib/userCache';
 import { MAX_MEMBERS_PER_LIST } from '@/lib/appConstants';
 
@@ -96,16 +96,18 @@ export default defineComponent({
       this.refreshMembersFromStore();
       this.refreshSelectedMember();
     },
-    async loadSnapshot(listId: string): Promise<void> {
+    async loadSnapshot(listId: string): Promise<boolean> {
       this.snapshotLoading = true;
       this.errorMessage = '';
 
       try {
         const snapshot = await fetchSnapshot(listId);
         this.listStore.applySnapshot(snapshot);
+        return true;
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
+        return false;
       } finally {
         this.snapshotLoading = false;
       }
@@ -150,9 +152,16 @@ export default defineComponent({
         this.errorMessage = 'リストIDが無効です';
         return;
       }
+      const listId = this.currentListId;
 
       try {
-        const result = await this.mutationRun(() => deleteMember(this.currentListId!, memberId));
+        const member = this.listStore.members.find((candidate) => candidate.id === memberId) ?? null;
+        if (!member) {
+          this.errorMessage = 'メンバーが見つかりませんでした。';
+          return;
+        }
+
+        const result = await this.mutationRun(() => deleteMember(listId, memberId, member.version));
         if (result.applied && result.data.deletedMemberId) {
           this.listStore.removeMember(result.data.deletedMemberId);
           this.refreshMembersFromStore();
@@ -163,6 +172,13 @@ export default defineComponent({
         this.errorMessage = '';
       } catch (err: unknown) {
         console.error('Failed to remove member', err);
+        if (hasApiErrorCode(err, 'precondition_failed')) {
+          if (await this.loadSnapshot(listId)) {
+            this.applyListFromStore();
+            this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+          }
+          return;
+        }
         this.errorMessage = getErrorMessage(err) ?? 'メンバーの削除に失敗しました。';
       }
     },
@@ -171,6 +187,7 @@ export default defineComponent({
         this.errorMessage = 'リストIDが無効です';
         return;
       }
+      const listId = this.currentListId;
 
       const normalizedListName = normalizeText(this.listName);
       if (!normalizedListName || this.members.length === 0) {
@@ -180,18 +197,28 @@ export default defineComponent({
 
       this.listName = normalizedListName;
 
-      const shouldRename = this.listStore.listId === this.currentListId && this.listStore.name !== normalizedListName;
+      const shouldRename = this.listStore.listId === listId && this.listStore.name !== normalizedListName;
 
       if (shouldRename) {
         try {
-          const result = await this.mutationRun(() => renameList(this.currentListId!, { name: normalizedListName }));
+          const result = await this.mutationRun(() =>
+            renameList(listId, { name: normalizedListName }, this.listStore.version)
+          );
           if (!result.applied) {
             this.errorMessage = 'リスト名の更新が反映されませんでした。時間をおいて再試行してください。';
             return;
           }
-          updateListHistoryName(this.currentListId!, normalizedListName);
+          this.listStore.version = result.data.version;
+          updateListHistoryName(listId, normalizedListName);
         } catch (err: unknown) {
           console.error('Failed to rename list', err);
+          if (hasApiErrorCode(err, 'precondition_failed')) {
+            if (await this.loadSnapshot(listId)) {
+              this.applyListFromStore();
+              this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+            }
+            return;
+          }
           this.errorMessage = getErrorMessage(err) ?? 'リスト名の更新に失敗しました。';
           return;
         }
@@ -199,7 +226,8 @@ export default defineComponent({
 
       this.listStore.updateListDetails({
         name: this.listName,
-        members: [...this.members]
+        members: [...this.members],
+        version: this.listStore.version
       });
       this.errorMessage = '';
       this.$router.push({

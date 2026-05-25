@@ -1,4 +1,5 @@
 import { http } from '@/lib/http';
+import { ifMatchHeaders } from '@/api/preconditions';
 import type {
   CreateItemListWithMembersResponse,
   ItemListResponse,
@@ -18,8 +19,12 @@ export async function fetchSnapshot(listId: UUID) {
   return res.data;
 }
 
-export async function renameList(listId: UUID, payload: { name: string }) {
-  const res = await http.patch<MutationResponse<ItemListResponse>>(`/lists/${listId}`, payload);
+export async function renameList(listId: UUID, payload: { name: string }, version: number) {
+  const res = await http.patch<MutationResponse<ItemListResponse>>(
+    `/lists/${listId}`,
+    payload,
+    ifMatchHeaders(version)
+  );
   return res.data;
 }
 
