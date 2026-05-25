@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.EntityManager;
+
 import com.atoook.otsukailist.config.AppItemProperties;
 import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.QuantifiedItemRequest;
@@ -40,6 +42,7 @@ class GeneratedItemCommandServiceTest {
   @Mock private ItemListRepository itemListRepo;
   @Mock private MemberRepository memberRepo;
   @Mock private ListRevisionService listRevisionService;
+  @Mock private EntityManager entityManager;
 
   private AppItemProperties itemProperties;
   private GeneratedItemCommandService service;
@@ -50,7 +53,12 @@ class GeneratedItemCommandServiceTest {
     ListItemLimitService listItemLimitService = new ListItemLimitService(itemRepo, itemProperties);
     GeneratedItemSyncCommandService generatedItemSyncCommandService =
         new GeneratedItemSyncCommandService(
-            itemRepo, itemListRepo, memberRepo, listRevisionService, listItemLimitService);
+            itemRepo,
+            itemListRepo,
+            memberRepo,
+            listRevisionService,
+            listItemLimitService,
+            entityManager);
     service = new GeneratedItemCommandService(generatedItemSyncCommandService);
   }
 
@@ -69,7 +77,7 @@ class GeneratedItemCommandServiceTest {
     when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
         .thenReturn(List.of(existingItem));
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(2L);
 
     var result = service.syncGeneratedItems(listId, request);
@@ -98,7 +106,7 @@ class GeneratedItemCommandServiceTest {
     when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("yakisoba")))
         .thenReturn(List.of());
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
     var result = service.syncGeneratedItems(listId, request);
@@ -153,7 +161,7 @@ class GeneratedItemCommandServiceTest {
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
         .thenReturn(List.of(seafood));
     when(itemRepo.countByItemListId(listId)).thenReturn(100L);
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(3L);
 
     var result = service.syncGeneratedItems(listId, request);
@@ -177,7 +185,7 @@ class GeneratedItemCommandServiceTest {
     when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
         .thenReturn(List.of(existingItem));
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(2L);
 
     var result = service.syncGeneratedItems(listId, request);
@@ -204,7 +212,7 @@ class GeneratedItemCommandServiceTest {
     when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef")))
         .thenReturn(List.of(existingItem));
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(2L);
 
     var result = service.syncGeneratedItems(listId, request);
@@ -235,7 +243,7 @@ class GeneratedItemCommandServiceTest {
     when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
         .thenReturn(List.of(seafood));
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(3L);
 
     var result = service.syncGeneratedItems(listId, request);
@@ -263,7 +271,7 @@ class GeneratedItemCommandServiceTest {
     when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
         .thenReturn(List.of(seafood));
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(4L);
 
     var result = service.syncGeneratedItems(listId, request);
@@ -290,7 +298,7 @@ class GeneratedItemCommandServiceTest {
     when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.findGeneratedItemsByGeneratorKeys(listId, List.of("beef", "seafood_shrimp")))
         .thenReturn(List.of(seafood));
-    when(itemRepo.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(itemRepo.saveAllAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(4L);
 
     var result = service.syncGeneratedItems(listId, request);

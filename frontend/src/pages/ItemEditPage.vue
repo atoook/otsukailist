@@ -18,7 +18,7 @@ import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { updateItem, type UpdateItemPayload } from '@/api/item';
 import { fetchSnapshot } from '@/api/list';
-import { getErrorMessage } from '@/lib/http';
+import { getErrorMessage, hasApiErrorCode } from '@/lib/http';
 import { GENERATION_RULES } from '@/lib/listGenerationConstants';
 import { resolveUnitLabel } from '@/lib/quantityDisplay';
 
@@ -148,16 +148,18 @@ export default defineComponent({
       }
       return 'manual_none';
     },
-    async loadSnapshot(listId: string): Promise<void> {
+    async loadSnapshot(listId: string): Promise<boolean> {
       this.snapshotLoading = true;
       this.errorMessage = '';
 
       try {
         const snapshot = await fetchSnapshot(listId);
         this.listStore.applySnapshot(snapshot);
+        return true;
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
+        return false;
       } finally {
         this.snapshotLoading = false;
       }
@@ -243,9 +245,14 @@ export default defineComponent({
         this.errorMessage = '数量付きアイテムの各項目を正しく入力してください。';
         return;
       }
+      const currentItem = this.findCurrentItem();
+      if (!currentItem) {
+        this.errorMessage = 'アイテムが見つかりませんでした。';
+        return;
+      }
       try {
         const result = await this.mutationRun(() =>
-          updateItem(this.currentListId!, this.currentItemId!, this.buildUpdatePayload(normalizedName))
+          updateItem(this.currentListId!, this.currentItemId!, this.buildUpdatePayload(normalizedName), currentItem.version)
         );
         if (result.applied) {
           this.listStore.upsertItem(result.data);
@@ -256,6 +263,13 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to update item', err);
+        if (hasApiErrorCode(err, 'precondition_failed')) {
+          if (await this.loadSnapshot(this.currentListId)) {
+            this.applyCurrentItem();
+            this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+          }
+          return;
+        }
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
       }
     },
