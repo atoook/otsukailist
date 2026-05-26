@@ -164,7 +164,7 @@ import IconTrash from './icons/IconTrash.vue';
 import type { Item, ItemId } from '../types/item';
 import { isItem, isItemCompleted } from '../types/item';
 import { normalizeText } from '../utils/text-normalization';
-import { UNIT_DEFINITIONS } from '@/types/list-generation';
+import { formatQuantity } from '@/lib/quantityDisplay';
 import { ITEM_CATEGORIES, type ItemCategory } from '@/types/item-category';
 import { ITEM_PREPARATION_TYPES, type ItemPreparationType } from '@/types/item-preparation-type';
 
@@ -272,9 +272,11 @@ export default {
       if (this.item.itemType !== 'quantified' || !this.item.quantified) {
         return '';
       }
-      const unitDefinition = UNIT_DEFINITIONS[this.item.quantified.baseUnit];
-      const unitLabel = unitDefinition?.label ?? this.item.quantified.baseUnit ?? '';
-      return `${this.item.quantified.quantity}${unitLabel}`;
+      return formatQuantity({
+        quantity: this.item.quantified.quantity,
+        baseUnit: this.item.quantified.baseUnit,
+        category: this.item.category
+      });
     },
     categoryLabel() {
       if (!this.item.category) {

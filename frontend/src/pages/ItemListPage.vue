@@ -7,9 +7,12 @@ import ItemAddForm from '../components/ItemAddForm.vue';
 import ItemGroupList from '../components/ItemGroupList.vue';
 import LoadingSpinner from '../components/LoadingSpinner.vue';
 import IconButton from '../components/IconButton.vue';
+import PillActionButton from '../components/PillActionButton.vue';
 import IconEdit from '../components/icons/IconEdit.vue';
 import IconRefresh from '../components/icons/IconRefresh.vue';
 import IconCelebration from '../components/icons/IconCelebration.vue';
+import IconSparkles from '../components/icons/IconSparkles.vue';
+import IconTools from '../components/icons/IconTools.vue';
 import type { Item } from '../types/item';
 import type { ItemCategory } from '../types/item-category';
 import type { ItemPreparationType } from '../types/item-preparation-type';
@@ -21,6 +24,7 @@ import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
 import { getSelectedMemberId, setSelectedMemberId, addOrUpdateListHistory } from '@/lib/userCache';
 import { filterItems } from '@/utils/item-filtering';
+import { PRIMARY_LIST_TEMPLATE } from '@/lib/listTemplateRegistry';
 
 export default defineComponent({
   name: 'ItemListPage',
@@ -32,9 +36,12 @@ export default defineComponent({
     ItemGroupList,
     LoadingSpinner,
     IconButton,
+    PillActionButton,
     IconEdit,
     IconRefresh,
-    IconCelebration
+    IconCelebration,
+    IconSparkles,
+    IconTools
   },
   data(): {
     currentListId: string | null;
@@ -46,6 +53,8 @@ export default defineComponent({
     errorMessage: string;
     fallbackListName: string;
     snapshotLoading: boolean;
+    hasGenerationConfig: boolean;
+    generationConfigLoading: boolean;
   } {
     return {
       currentListId: null,
@@ -56,7 +65,9 @@ export default defineComponent({
       preparationTypeFilter: null,
       errorMessage: '',
       fallbackListName: '',
-      snapshotLoading: false
+      snapshotLoading: false,
+      hasGenerationConfig: false,
+      generationConfigLoading: false
     };
   },
   setup() {
@@ -126,6 +137,15 @@ export default defineComponent({
     },
     formattedLastItemActivityAt(): string | null {
       return formatActivityAt(this.listStore.lastItemActivityAt);
+    },
+    generationButtonLabel(): string {
+      return this.hasGenerationConfig ? PRIMARY_LIST_TEMPLATE.updateLabel : PRIMARY_LIST_TEMPLATE.createLabel;
+    },
+    generationButtonDescription(): string {
+      return this.hasGenerationConfig ? '条件を見直して再生成できます' : PRIMARY_LIST_TEMPLATE.description;
+    },
+    shouldShowSuggestionLink(): boolean {
+      return this.items.length > 0 && this.hasGenerationConfig && !this.generationConfigLoading;
     }
   },
   watch: {
@@ -157,12 +177,39 @@ export default defineComponent({
         }
 
         addOrUpdateListHistory({ listId, name: snapshot.name });
+        await this.loadGenerationConfig(listId);
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
       } finally {
         this.snapshotLoading = false;
       }
+    },
+    async loadGenerationConfig(listId: string) {
+      this.generationConfigLoading = true;
+
+      try {
+        this.hasGenerationConfig = await PRIMARY_LIST_TEMPLATE.hasConfig(listId);
+      } catch (err: unknown) {
+        console.error('Failed to load generation config', err);
+        this.errorMessage = getErrorMessage(err) ?? '生成設定の取得に失敗しました。';
+      } finally {
+        this.generationConfigLoading = false;
+      }
+    },
+    openGenerationPage(): void {
+      this.errorMessage = '';
+      this.$router.push({
+        name: PRIMARY_LIST_TEMPLATE.routeName,
+        params: { id: this.currentListId ?? this.$route.params.id }
+      });
+    },
+    openSuggestionPage(): void {
+      this.errorMessage = '';
+      this.$router.push({
+        name: 'BBQSuppliesSuggestion',
+        params: { id: this.currentListId ?? this.$route.params.id }
+      });
     },
     handleMemberSelect(selectedId: string) {
       this.selectedMemberId = selectedId;
@@ -208,7 +255,7 @@ export default defineComponent({
   <ContentArea v-else>
     <div class="w-full">
       <!-- リストタイトル -->
-      <div class="mb-8">
+      <div :class="items.length > 0 ? 'mb-4' : 'mb-8'">
         <div class="flex flex-row justify-center space-x-2 items-center mb-1">
           <h2 class="text-2xl font-black text-charcoal-800 text-center">
             {{ listName }}
@@ -218,6 +265,26 @@ export default defineComponent({
           </IconButton>
         </div>
         <p class="text-sm text-charcoal-600 text-center">{{ memberNames }}</p>
+        <div v-if="items.length > 0" class="mt-2 flex flex-wrap justify-end gap-2">
+          <PillActionButton
+            v-if="shouldShowSuggestionLink"
+            aria-label="周辺アイテムを追加"
+            title="周辺アイテムを追加"
+            @click="openSuggestionPage"
+          >
+            <template #icon><IconTools /></template>
+            <span>周辺アイテムを追加</span>
+          </PillActionButton>
+          <PillActionButton
+            :disabled="generationConfigLoading"
+            :aria-label="generationConfigLoading ? '生成設定を確認中' : generationButtonLabel"
+            :title="generationConfigLoading ? '生成設定を確認中' : generationButtonLabel"
+            @click="openGenerationPage"
+          >
+            <template #icon><IconSparkles /></template>
+            <span>{{ generationConfigLoading ? '確認中...' : generationButtonLabel }}</span>
+          </PillActionButton>
+        </div>
       </div>
 
       <!-- エラーメッセージ -->
@@ -233,6 +300,29 @@ export default defineComponent({
         @error="errorMessage = $event"
       />
 
+      <div v-if="items.length === 0" class="-mt-3 mb-4">
+        <button
+          type="button"
+          class="group flex w-full items-center gap-3 rounded-lg border border-wood-200 bg-white px-3 py-2 text-left shadow-sm transition-[background-color,border-color,box-shadow] hover:border-wood-300 hover:bg-wood-50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-wood-300 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="generationConfigLoading"
+          @click="openGenerationPage"
+        >
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-wood-100 text-ember-700">
+            <IconSparkles />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold text-charcoal-800">
+              {{ generationConfigLoading ? '確認中...' : generationButtonLabel }}
+            </span>
+            <span class="mt-0.5 block truncate text-xs text-charcoal-500">
+              {{ generationConfigLoading ? '生成設定を確認しています' : generationButtonDescription }}
+            </span>
+          </span>
+          <span class="shrink-0 text-lg leading-none text-charcoal-400 transition-transform group-hover:translate-x-0.5">
+            &gt;
+          </span>
+        </button>
+      </div>
       <!-- 検索ボックス -->
       <div v-if="items.length > 0" class="mb-4">
         <div class="flex px-2 py-2 border border-charcoal-200 bg-charcoal-100 rounded-md">

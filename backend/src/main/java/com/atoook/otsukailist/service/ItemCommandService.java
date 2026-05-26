@@ -4,12 +4,16 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.atoook.otsukailist.dto.CreateItemRequest;
 import com.atoook.otsukailist.dto.DeleteItemResponse;
 import com.atoook.otsukailist.dto.ItemResponse;
+import com.atoook.otsukailist.dto.MarkItemCompletedRequest;
 import com.atoook.otsukailist.dto.MutationResponse;
 import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
@@ -29,6 +33,7 @@ import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.ItemRepository;
 import com.atoook.otsukailist.repository.MemberRepository;
 import com.atoook.otsukailist.service.message.ErrorMessages;
+import com.atoook.otsukailist.service.validation.ResourceVersionValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -41,6 +46,8 @@ public class ItemCommandService {
   private final MemberRepository memberRepo;
 
   private final ListRevisionService listRevisionService;
+  private final ListItemLimitService listItemLimitService;
+  private final EntityManager entityManager;
 
   private static final String MSG_MEMBER_NOT_IN_LIST = "指定された完了者はリストのメンバーではありません";
   private static final String MSG_ASSIGNED_MEMBER_NOT_IN_LIST = "指定された担当者はリストのメンバーではありません";
@@ -61,21 +68,25 @@ public class ItemCommandService {
     // list存在確認
     ItemList list =
         itemListRepo
-            .findById(listId)
+            .findByIdForUpdate(listId)
             .orElseThrow(
                 () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
 
     // Entity作成（ミニマム：作成時は未完了固定）
-    Item item = new Item();
     ItemType itemType = req.getItemType() == null ? ItemType.PLAIN : req.getItemType();
     validateQuantifiedCreateRequest(itemType, req);
+    String itemName = resolveItemName(req);
+    ItemCategory category = resolveCategory(req.getCategory(), req.getQuantified());
+    UUID assignedMemberId = resolveAssignedMemberId(listId, req.getAssignedMemberId());
+    listItemLimitService.validateCanAddOne(listId);
 
-    item.setName(resolveItemName(req));
+    Item item = new Item();
+    item.setName(itemName);
     item.setItemType(itemType);
-    item.setCategory(resolveCategory(req.getCategory(), req.getQuantified()));
+    item.setCategory(category);
     item.setPreparationType(req.getPreparationType());
     item.setCompleted(false);
-    item.setAssignedMemberId(resolveAssignedMemberId(listId, req.getAssignedMemberId()));
+    item.setAssignedMemberId(assignedMemberId);
     item.setCompletedByMemberId(null);
     item.setCompletedAt(null);
     item.setItemList(list);
@@ -104,19 +115,17 @@ public class ItemCommandService {
   /** Item更新（rename / setCompleted） */
   @Transactional
   public MutationResponse<ItemResponse> updateItem(
-      UUID listId, UUID itemId, UpdateItemRequest req) {
-    Item item =
-        itemRepo
-            .findByIdAndItemListId(itemId, listId)
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "アイテム")));
+      UUID listId, UUID itemId, UpdateItemRequest req, long expectedVersion) {
+    Item item = findItemInList(listId, itemId);
+    ResourceVersionValidator.requireCurrentVersion(
+        "item", item.getId(), expectedVersion, item.getVersion());
 
     updateNameCategoryAndQuantified(item, req);
     updateAssignedMember(listId, item, req);
     updateCompletion(listId, item, req);
 
-    Item saved = itemRepo.save(item);
+    forceItemVersionIncrement(item);
+    Item saved = itemRepo.saveAndFlush(item);
 
     long revision = listRevisionService.incrementAndGet(listId);
 
@@ -128,16 +137,14 @@ public class ItemCommandService {
 
   /** Item削除（listIdスコープ） */
   @Transactional
-  public MutationResponse<DeleteItemResponse> deleteItem(UUID listId, UUID itemId) {
-    // listIdスコープで存在確認
-    Item item =
-        itemRepo
-            .findByIdAndItemListId(itemId, listId)
-            .orElseThrow(
-                () ->
-                    new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "アイテム")));
+  public MutationResponse<DeleteItemResponse> deleteItem(
+      UUID listId, UUID itemId, long expectedVersion) {
+    Item item = findItemInList(listId, itemId);
+    ResourceVersionValidator.requireCurrentVersion(
+        "item", item.getId(), expectedVersion, item.getVersion());
 
     itemRepo.delete(item);
+    itemRepo.flush();
 
     long revision = listRevisionService.incrementAndGet(listId);
 
@@ -145,6 +152,75 @@ public class ItemCommandService {
         .revision(revision)
         .data(DeleteItemResponse.builder().deletedItemId(itemId).build())
         .build();
+  }
+
+  /** Mark an item as completed with an explicit user intent. */
+  @Transactional
+  public MutationResponse<ItemResponse> markCompleted(
+      UUID listId, UUID itemId, MarkItemCompletedRequest req, long expectedVersion) {
+    Item item = findItemInList(listId, itemId);
+    ResourceVersionValidator.requireCurrentVersion(
+        "item", item.getId(), expectedVersion, item.getVersion());
+
+    if (item.isCompleted()) {
+      return unchangedItemResponse(listId, item);
+    }
+
+    completeItem(listId, item, req.getCompletedByMemberId());
+    forceItemVersionIncrement(item);
+    Item saved = itemRepo.saveAndFlush(item);
+    long revision = listRevisionService.incrementAndGet(listId);
+
+    return MutationResponse.<ItemResponse>builder()
+        .revision(revision)
+        .changed(true)
+        .data(ItemMapper.toResponse(saved))
+        .build();
+  }
+
+  /** Mark an item as incomplete with an explicit user intent. */
+  @Transactional
+  public MutationResponse<ItemResponse> markIncomplete(
+      UUID listId, UUID itemId, long expectedVersion) {
+    Item item = findItemInList(listId, itemId);
+    ResourceVersionValidator.requireCurrentVersion(
+        "item", item.getId(), expectedVersion, item.getVersion());
+
+    if (!item.isCompleted()) {
+      return unchangedItemResponse(listId, item);
+    }
+
+    item.setCompleted(false);
+    item.setCompletedByMemberId(null);
+    item.setCompletedAt(null);
+    forceItemVersionIncrement(item);
+    Item saved = itemRepo.saveAndFlush(item);
+    long revision = listRevisionService.incrementAndGet(listId);
+
+    return MutationResponse.<ItemResponse>builder()
+        .revision(revision)
+        .changed(true)
+        .data(ItemMapper.toResponse(saved))
+        .build();
+  }
+
+  private MutationResponse<ItemResponse> unchangedItemResponse(UUID listId, Item item) {
+    return MutationResponse.<ItemResponse>builder()
+        .revision(listRevisionService.current(listId))
+        .changed(false)
+        .data(ItemMapper.toResponse(item))
+        .build();
+  }
+
+  private Item findItemInList(UUID listId, UUID itemId) {
+    return itemRepo
+        .findByIdAndItemListId(itemId, listId)
+        .orElseThrow(
+            () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "アイテム")));
+  }
+
+  private void forceItemVersionIncrement(Item item) {
+    entityManager.lock(item, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
   }
 
   private static void validateQuantifiedCreateRequest(ItemType itemType, CreateItemRequest req) {
@@ -161,7 +237,6 @@ public class ItemCommandService {
 
   private static void updateNameCategoryAndQuantified(Item item, UpdateItemRequest req) {
     ItemCategory requestedCategory = resolveRequestedCategory(item, req);
-    boolean categoryEdited = isUserCategoryEdit(item, req, requestedCategory);
     boolean revertingToPlain =
         item.getItemType() == ItemType.QUANTIFIED && req.getItemType() == ItemType.PLAIN;
     boolean quantifiedDetailsEdited = req.getQuantified() != null;
@@ -175,9 +250,8 @@ public class ItemCommandService {
       return;
     }
     boolean quantifiedDetailsChanged = updateQuantifiedDetails(item, req);
-    boolean shouldLockGeneratedAuto = categoryEdited || quantifiedDetailsChanged;
-    item.setCategory(resolveCategoryAfterUpdate(requestedCategory, req, shouldLockGeneratedAuto));
-    if (shouldLockGeneratedAuto) {
+    item.setCategory(resolveCategoryAfterUpdate(item, requestedCategory));
+    if (quantifiedDetailsChanged) {
       lockGeneratedAutoQuantifiedItem(item);
     }
   }
@@ -231,7 +305,7 @@ public class ItemCommandService {
       return;
     }
     if (req.getCompleted()) {
-      completeItem(listId, item, req);
+      completeItem(listId, item, req.getCompletedByMemberId());
       return;
     }
     item.setCompleted(false);
@@ -239,16 +313,16 @@ public class ItemCommandService {
     item.setCompletedAt(null);
   }
 
-  private void completeItem(UUID listId, Item item, UpdateItemRequest req) {
-    if (req.getCompletedByMemberId() == null) {
+  private void completeItem(UUID listId, Item item, UUID completedByMemberId) {
+    if (completedByMemberId == null) {
       throw new BadRequestException(MSG_COMPLETED_BY_NOT_SPECIFIED);
     }
-    boolean exists = memberRepo.existsByIdAndItemListId(req.getCompletedByMemberId(), listId);
+    boolean exists = memberRepo.existsByIdAndItemListId(completedByMemberId, listId);
     if (!exists) {
       throw new BadRequestException(MSG_MEMBER_NOT_IN_LIST);
     }
     item.setCompleted(true);
-    item.setCompletedByMemberId(req.getCompletedByMemberId());
+    item.setCompletedByMemberId(completedByMemberId);
     item.setCompletedAt(Instant.now());
   }
 
@@ -276,35 +350,15 @@ public class ItemCommandService {
     return generatedCategory == null ? requestedCategory : generatedCategory;
   }
 
-  private static boolean isUserCategoryEdit(
-      Item item, UpdateItemRequest req, ItemCategory requestedCategory) {
-    if (!req.isCategoryPresent() || Objects.equals(item.getCategory(), requestedCategory)) {
-      return false;
-    }
-    ItemCategory generatedCategory = resolveGeneratedCategory(item, req);
-    return generatedCategory == null || !Objects.equals(requestedCategory, generatedCategory);
-  }
-
-  private static ItemCategory resolveGeneratedCategory(Item item, UpdateItemRequest req) {
-    if (req.getQuantified() != null) {
-      return resolveGeneratedCategory(req.getQuantified());
-    }
-    return resolveGeneratedCategory(item.getQuantified());
-  }
-
   private static ItemCategory resolveGeneratedCategory(ItemQuantified quantified) {
-    if (quantified == null
-        || quantified.getOrigin() != Origin.GENERATED
-        || quantified.getRegenerationPolicy() != RegenerationPolicy.AUTO) {
+    if (quantified == null || quantified.getOrigin() != Origin.GENERATED) {
       return null;
     }
     return resolveGeneratedCategory(quantified.getGeneratorKey());
   }
 
   private static ItemCategory resolveGeneratedCategory(QuantifiedItemRequest quantified) {
-    if (quantified == null
-        || quantified.getOrigin() != Origin.GENERATED
-        || quantified.getRegenerationPolicy() != RegenerationPolicy.AUTO) {
+    if (quantified == null || quantified.getOrigin() != Origin.GENERATED) {
       return null;
     }
     return resolveGeneratedCategory(quantified.getGeneratorKey());
@@ -327,11 +381,9 @@ public class ItemCommandService {
   }
 
   private static ItemCategory resolveCategoryAfterUpdate(
-      ItemCategory requestedCategory, UpdateItemRequest req, boolean shouldLockGeneratedAuto) {
-    if (shouldLockGeneratedAuto) {
-      return requestedCategory;
-    }
-    return resolveCategory(requestedCategory, req.getQuantified());
+      Item item, ItemCategory requestedCategory) {
+    ItemCategory generatedCategory = resolveGeneratedCategory(item.getQuantified());
+    return generatedCategory == null ? requestedCategory : generatedCategory;
   }
 
   private static void validateQuantifiedState(QuantifiedItemRequest quantified) {

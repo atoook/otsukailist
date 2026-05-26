@@ -25,6 +25,17 @@ public class ListRevisionService {
     if (updated != 1) {
       throw new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト"));
     }
+    return current(listId);
+  }
+
+  /**
+   * Return the current list revision inside an existing transaction.
+   *
+   * @param listId target list ID
+   * @return current revision
+   */
+  @Transactional(propagation = Propagation.MANDATORY, readOnly = true)
+  public long current(UUID listId) {
     return itemListRepo
         .findRevision(listId)
         .orElseThrow(

@@ -8,10 +8,15 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.persistence.EntityManager;
+
+import com.atoook.otsukailist.config.AppItemProperties;
 import com.atoook.otsukailist.dto.CreateItemRequest;
+import com.atoook.otsukailist.dto.MarkItemCompletedRequest;
 import com.atoook.otsukailist.dto.QuantifiedItemRequest;
 import com.atoook.otsukailist.dto.UpdateItemRequest;
 import com.atoook.otsukailist.exception.BadRequestException;
+import com.atoook.otsukailist.exception.PreconditionFailedException;
 import com.atoook.otsukailist.model.BaseUnit;
 import com.atoook.otsukailist.model.Item;
 import com.atoook.otsukailist.model.ItemCategory;
@@ -39,12 +44,23 @@ class ItemCommandServiceTest {
   @Mock private ItemListRepository itemListRepo;
   @Mock private MemberRepository memberRepo;
   @Mock private ListRevisionService listRevisionService;
+  @Mock private EntityManager entityManager;
 
+  private AppItemProperties itemProperties;
   private ItemCommandService service;
 
   @BeforeEach
   void setUp() {
-    service = new ItemCommandService(itemRepo, itemListRepo, memberRepo, listRevisionService);
+    itemProperties = new AppItemProperties();
+    ListItemLimitService listItemLimitService = new ListItemLimitService(itemRepo, itemProperties);
+    service =
+        new ItemCommandService(
+            itemRepo,
+            itemListRepo,
+            memberRepo,
+            listRevisionService,
+            listItemLimitService,
+            entityManager);
   }
 
   @Test
@@ -54,7 +70,7 @@ class ItemCommandServiceTest {
     ItemList list = itemList("買い物");
     CreateItemRequest request = CreateItemRequest.builder().name(" 牛乳 ").build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
@@ -73,7 +89,7 @@ class ItemCommandServiceTest {
     CreateItemRequest request =
         CreateItemRequest.builder().name("包丁").preparationType(ItemPreparationType.BRING).build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
@@ -95,7 +111,7 @@ class ItemCommandServiceTest {
             .assignedMemberId(memberId)
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(list));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(list));
     when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(true);
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
@@ -107,6 +123,21 @@ class ItemCommandServiceTest {
   }
 
   @Test
+  @DisplayName("リスト内アイテム数が上限に達している場合は新規作成を拒否すること")
+  void createItemRejectsWhenListAlreadyReachedItemLimit() {
+    UUID listId = UUID.randomUUID();
+    CreateItemRequest request = CreateItemRequest.builder().name("炭").build();
+    itemProperties.setMaxItemsPerList(100);
+
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemRepo.countByItemListId(listId)).thenReturn(100L);
+
+    assertThatThrownBy(() -> service.createItem(listId, request))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessage("リストに追加できるアイテムは100件までです");
+  }
+
+  @Test
   @DisplayName("作成時にリスト外の担当者を指定した場合は拒否すること")
   void createItemRejectsAssignedMemberOutsideList() {
     UUID listId = UUID.randomUUID();
@@ -114,7 +145,7 @@ class ItemCommandServiceTest {
     CreateItemRequest request =
         CreateItemRequest.builder().name("炭").assignedMemberId(memberId).build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
     when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(false);
 
     assertThatThrownBy(() -> service.createItem(listId, request))
@@ -129,7 +160,7 @@ class ItemCommandServiceTest {
     CreateItemRequest request =
         CreateItemRequest.builder().name("牛肉").itemType(ItemType.QUANTIFIED).build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
 
     assertThatThrownBy(() -> service.createItem(listId, request))
         .isInstanceOf(BadRequestException.class)
@@ -147,7 +178,7 @@ class ItemCommandServiceTest {
             .quantified(manualNoneQuantifiedRequest(1000L))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
 
     assertThatThrownBy(() -> service.createItem(listId, request))
         .isInstanceOf(BadRequestException.class)
@@ -165,7 +196,7 @@ class ItemCommandServiceTest {
             .quantified(generatedAutoQuantifiedRequest(1000L, "beef"))
             .build();
 
-    when(itemListRepo.findById(listId)).thenReturn(Optional.of(itemList("買い物")));
+    when(itemListRepo.findByIdForUpdate(listId)).thenReturn(Optional.of(itemList("買い物")));
     when(itemRepo.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
@@ -177,6 +208,92 @@ class ItemCommandServiceTest {
   }
 
   @Test
+  @DisplayName("更新時にversionが一致しない場合は拒否すること")
+  void updateItemRejectsStaleVersion() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = plainItem("牛乳");
+    item.setId(itemId);
+    item.setVersion(3L);
+    UpdateItemRequest request = UpdateItemRequest.builder().name("低脂肪牛乳").build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+
+    assertThatThrownBy(() -> service.updateItem(listId, itemId, request, 2L))
+        .isInstanceOf(PreconditionFailedException.class)
+        .extracting("expectedVersion", "currentVersion")
+        .containsExactly(2L, 3L);
+  }
+
+  @Test
+  @DisplayName("意図別完了APIは未完了itemを完了に更新すること")
+  void markCompletedCompletesIncompleteItem() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    UUID memberId = UUID.randomUUID();
+    Item item = plainItem("牛乳");
+    item.setId(itemId);
+    MarkItemCompletedRequest request =
+        MarkItemCompletedRequest.builder().completedByMemberId(memberId).build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(memberRepo.existsByIdAndItemListId(memberId, listId)).thenReturn(true);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(2L);
+
+    var result = service.markCompleted(listId, itemId, request, 0L);
+
+    assertThat(result.getChanged()).isTrue();
+    assertThat(item.isCompleted()).isTrue();
+    assertThat(item.getCompletedByMemberId()).isEqualTo(memberId);
+    assertThat(item.getCompletedAt()).isNotNull();
+    assertThat(result.getRevision()).isEqualTo(2L);
+  }
+
+  @Test
+  @DisplayName("意図別完了APIはversionが一致しない場合は拒否すること")
+  void markCompletedRejectsStaleVersion() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    UUID memberId = UUID.randomUUID();
+    Item item = plainItem("牛乳");
+    item.setId(itemId);
+    item.setVersion(4L);
+    MarkItemCompletedRequest request =
+        MarkItemCompletedRequest.builder().completedByMemberId(memberId).build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+
+    assertThatThrownBy(() -> service.markCompleted(listId, itemId, request, 3L))
+        .isInstanceOf(PreconditionFailedException.class);
+  }
+
+  @Test
+  @DisplayName("意図別未完了APIは完了済みitemを未完了に戻すこと")
+  void markIncompleteClearsCompletedFields() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    UUID memberId = UUID.randomUUID();
+    Item item = plainItem("牛乳");
+    item.setId(itemId);
+    item.setCompleted(true);
+    item.setCompletedByMemberId(memberId);
+    item.setCompletedAt(java.time.Instant.parse("2024-01-01T00:00:00Z"));
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(3L);
+
+    var result = service.markIncomplete(listId, itemId, 0L);
+
+    assertThat(result.getChanged()).isTrue();
+    assertThat(item.isCompleted()).isFalse();
+    assertThat(item.getCompletedByMemberId()).isNull();
+    assertThat(item.getCompletedAt()).isNull();
+    assertThat(result.getRevision()).isEqualTo(3L);
+  }
+
+  @Test
   @DisplayName("更新時に空白のみの名前を送った場合は拒否すること")
   void updateItemRejectsBlankNameAfterTrim() {
     UUID listId = UUID.randomUUID();
@@ -185,7 +302,7 @@ class ItemCommandServiceTest {
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(plainItem("牛乳")));
 
-    assertThatThrownBy(() -> service.updateItem(listId, itemId, request))
+    assertThatThrownBy(() -> service.updateItem(listId, itemId, request, 0L))
         .isInstanceOf(BadRequestException.class)
         .hasMessage("アイテム名は必須です");
   }
@@ -208,7 +325,7 @@ class ItemCommandServiceTest {
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(plainItem("牛肉")));
 
-    assertThatThrownBy(() -> service.updateItem(listId, itemId, request))
+    assertThatThrownBy(() -> service.updateItem(listId, itemId, request, 0L))
         .isInstanceOf(BadRequestException.class)
         .hasMessage("数量付きアイテムの生成状態が不正です");
   }
@@ -225,7 +342,7 @@ class ItemCommandServiceTest {
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(plainItem("牛肉")));
 
-    assertThatThrownBy(() -> service.updateItem(listId, itemId, request))
+    assertThatThrownBy(() -> service.updateItem(listId, itemId, request, 0L))
         .isInstanceOf(BadRequestException.class)
         .hasMessage("未知の生成ルールIDです");
   }
@@ -251,10 +368,10 @@ class ItemCommandServiceTest {
             .build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
-    when(itemRepo.save(item)).thenReturn(item);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
-    var result = service.updateItem(listId, itemId, request);
+    var result = service.updateItem(listId, itemId, request, 0L);
 
     assertThat(item.getName()).isEqualTo("直接編集された名前");
     assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.LOCKED);
@@ -270,10 +387,10 @@ class ItemCommandServiceTest {
     UpdateItemRequest request = UpdateItemRequest.builder().name("直接編集された名前").build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
-    when(itemRepo.save(item)).thenReturn(item);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
-    var result = service.updateItem(listId, itemId, request);
+    var result = service.updateItem(listId, itemId, request, 0L);
 
     assertThat(item.getName()).isEqualTo("直接編集された名前");
     assertThat(item.getQuantified().getQuantity()).isEqualTo(1000L);
@@ -293,10 +410,10 @@ class ItemCommandServiceTest {
         UpdateItemRequest.builder().preparationType(ItemPreparationType.BRING).build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
-    when(itemRepo.save(item)).thenReturn(item);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
-    var result = service.updateItem(listId, itemId, request);
+    var result = service.updateItem(listId, itemId, request, 0L);
 
     assertThat(item.getPreparationType()).isEqualTo(ItemPreparationType.BRING);
     assertThat(result.getData().getPreparationType()).isEqualTo(ItemPreparationType.BRING);
@@ -320,10 +437,10 @@ class ItemCommandServiceTest {
             .build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
-    when(itemRepo.save(item)).thenReturn(item);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
-    var result = service.updateItem(listId, itemId, request);
+    var result = service.updateItem(listId, itemId, request, 0L);
 
     assertThat(item.getItemType()).isEqualTo(ItemType.QUANTIFIED);
     assertThat(item.getName()).isEqualTo("牛肉");
@@ -348,18 +465,18 @@ class ItemCommandServiceTest {
             .build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
-    when(itemRepo.save(item)).thenReturn(item);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
-    service.updateItem(listId, itemId, request);
+    service.updateItem(listId, itemId, request, 0L);
 
     assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
     assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
   }
 
   @Test
-  @DisplayName("generated auto のカテゴリを明示変更した場合は指定カテゴリを保持してロックすること")
-  void updateGeneratedAutoCategoryKeepsRequestedCategoryAndLocks() {
+  @DisplayName("generated auto のカテゴリを明示変更しても生成ルールカテゴリを保持してロックしないこと")
+  void updateGeneratedAutoCategoryKeepsGeneratedRuleCategoryWithoutLocking() {
     UUID listId = UUID.randomUUID();
     UUID itemId = UUID.randomUUID();
     Item item = quantifiedItem("牛肉", 1000L);
@@ -372,12 +489,37 @@ class ItemCommandServiceTest {
             .build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
-    when(itemRepo.save(item)).thenReturn(item);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
-    service.updateItem(listId, itemId, request);
+    service.updateItem(listId, itemId, request, 0L);
 
-    assertThat(item.getCategory()).isEqualTo(ItemCategory.SWEETS);
+    assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
+    assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
+  }
+
+  @Test
+  @DisplayName("generated locked のカテゴリを明示変更しても生成ルールカテゴリを保持すること")
+  void updateGeneratedLockedCategoryKeepsGeneratedRuleCategory() {
+    UUID listId = UUID.randomUUID();
+    UUID itemId = UUID.randomUUID();
+    Item item = quantifiedItem("牛肉", 1000L);
+    item.setCategory(ItemCategory.MEAT);
+    item.getQuantified().setRegenerationPolicy(RegenerationPolicy.LOCKED);
+    UpdateItemRequest request =
+        UpdateItemRequest.builder()
+            .category(ItemCategory.SWEETS)
+            .itemType(ItemType.QUANTIFIED)
+            .quantified(generatedLockedQuantifiedRequest(1000L, "beef"))
+            .build();
+
+    when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
+    when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
+
+    service.updateItem(listId, itemId, request, 0L);
+
+    assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
     assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.LOCKED);
   }
 
@@ -396,10 +538,10 @@ class ItemCommandServiceTest {
             .build();
 
     when(itemRepo.findByIdAndItemListId(itemId, listId)).thenReturn(Optional.of(item));
-    when(itemRepo.save(item)).thenReturn(item);
+    when(itemRepo.saveAndFlush(item)).thenReturn(item);
     when(listRevisionService.incrementAndGet(listId)).thenReturn(1L);
 
-    service.updateItem(listId, itemId, request);
+    service.updateItem(listId, itemId, request, 0L);
 
     assertThat(item.getCategory()).isEqualTo(ItemCategory.MEAT);
     assertThat(item.getQuantified().getRegenerationPolicy()).isEqualTo(RegenerationPolicy.AUTO);
@@ -452,6 +594,17 @@ class ItemCommandServiceTest {
         .baseUnit(BaseUnit.G)
         .origin(Origin.GENERATED)
         .regenerationPolicy(RegenerationPolicy.AUTO)
+        .generatorKey(generatorKey)
+        .build();
+  }
+
+  private static QuantifiedItemRequest generatedLockedQuantifiedRequest(
+      long quantity, String generatorKey) {
+    return QuantifiedItemRequest.builder()
+        .quantity(quantity)
+        .baseUnit(BaseUnit.G)
+        .origin(Origin.GENERATED)
+        .regenerationPolicy(RegenerationPolicy.LOCKED)
         .generatorKey(generatorKey)
         .build();
   }

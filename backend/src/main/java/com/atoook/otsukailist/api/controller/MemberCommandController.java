@@ -5,16 +5,19 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.atoook.otsukailist.api.HttpPreconditions;
 import com.atoook.otsukailist.dto.CreateMemberRequest;
 import com.atoook.otsukailist.dto.DeleteMemberResponse;
 import com.atoook.otsukailist.dto.MemberResponse;
@@ -61,8 +64,11 @@ public class MemberCommandController {
   public ResponseEntity<MutationResponse<MemberResponse>> rename(
       @PathVariable("listId") UUID listId,
       @PathVariable("memberId") UUID memberId,
+      @RequestHeader(value = HttpHeaders.IF_MATCH, required = false) String ifMatch,
       @Valid @RequestBody CreateMemberRequest req) {
-    return ResponseEntity.ok(memberCommandService.renameMember(listId, memberId, req));
+    long expectedVersion = HttpPreconditions.requireIfMatchVersion(ifMatch);
+    return ResponseEntity.ok(
+        memberCommandService.renameMember(listId, memberId, req, expectedVersion));
   }
 
   /**
@@ -74,7 +80,10 @@ public class MemberCommandController {
    */
   @DeleteMapping("/{memberId}")
   public ResponseEntity<MutationResponse<DeleteMemberResponse>> delete(
-      @PathVariable("listId") UUID listId, @PathVariable("memberId") UUID memberId) {
-    return ResponseEntity.ok(memberCommandService.deleteMember(listId, memberId));
+      @PathVariable("listId") UUID listId,
+      @PathVariable("memberId") UUID memberId,
+      @RequestHeader(value = HttpHeaders.IF_MATCH, required = false) String ifMatch) {
+    long expectedVersion = HttpPreconditions.requireIfMatchVersion(ifMatch);
+    return ResponseEntity.ok(memberCommandService.deleteMember(listId, memberId, expectedVersion));
   }
 }

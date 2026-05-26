@@ -10,12 +10,17 @@ import IconClipboard from '../components/icons/IconClipboard.vue';
 import IconFire from '../components/icons/IconFire.vue';
 import IconUsers from '../components/icons/IconUsers.vue';
 import IconUser from '../components/icons/IconUser.vue';
-import type { Member, MemberId } from '../types/member';
 import type { ItemList } from '../types/item-list';
 import { normalizeText, normalizeInput } from '../utils/text-normalization';
 import { createItemList } from '@/api/list';
 import { useListStore } from '@/stores/list';
 import { getErrorMessage } from '@/lib/http';
+import { MAX_MEMBERS_PER_LIST } from '@/lib/appConstants';
+
+type DraftMember = {
+  localId: string;
+  displayName: string;
+};
 
 export default defineComponent({
   name: 'CreateListPage',
@@ -33,7 +38,7 @@ export default defineComponent({
   },
   data(): {
     listName: string;
-    members: Member[];
+    members: DraftMember[];
     newMemberName: string;
     errorMessage: string;
     creating: boolean;
@@ -71,6 +76,7 @@ export default defineComponent({
           listId: res.data.listId,
           name: res.data.name,
           revision: res.revision,
+          version: res.data.version,
           itemCount: 0,
           lastItemActivityAt: null,
           members: res.data.members,
@@ -93,9 +99,13 @@ export default defineComponent({
     },
     addMember(): void {
       const normalizedName = normalizeText(this.newMemberName);
+      if (this.isMemberLimitReached) {
+        this.errorMessage = `メンバーは${MAX_MEMBERS_PER_LIST}人まで追加できます。`;
+        return;
+      }
       if (normalizedName) {
         this.members.push({
-          id: Date.now().toString(), // this to be replaced with proper unique ID generation from backend
+          localId: crypto.randomUUID(),
           displayName: normalizedName
         });
         this.newMemberName = '';
@@ -108,8 +118,8 @@ export default defineComponent({
     onMemberNameInput(value: string): void {
       this.newMemberName = normalizeInput(value);
     },
-    removeMember(memberId: MemberId): void {
-      this.members = this.members.filter((member) => member.id !== memberId);
+    removeMember(localId: string): void {
+      this.members = this.members.filter((member) => member.localId !== localId);
     }
   },
   computed: {
@@ -118,6 +128,9 @@ export default defineComponent({
     },
     hasValidMemberName(): boolean {
       return !!normalizeText(this.newMemberName);
+    },
+    isMemberLimitReached(): boolean {
+      return this.members.length >= MAX_MEMBERS_PER_LIST;
     }
   }
 });
@@ -159,9 +172,12 @@ export default defineComponent({
           input-name="newMember"
           placeholder="メンバーを追加..."
           variant="inline"
+          :disabled="isMemberLimitReached"
         />
 
-        <MainButton @click="addMember" :disabled="!hasValidMemberName" size="small"> 追加 </MainButton>
+        <MainButton @click="addMember" :disabled="!hasValidMemberName || isMemberLimitReached" size="small">
+          追加
+        </MainButton>
       </div>
 
       <!-- メンバーバッジ表示 -->
@@ -169,10 +185,10 @@ export default defineComponent({
         <div class="flex flex-wrap gap-2">
           <BadgeTag
             v-for="member in members"
-            :key="member.id"
+            :key="member.localId"
             :text="member.displayName"
             :removable="true"
-            @remove="removeMember(member.id)"
+            @remove="removeMember(member.localId)"
             ><template #icon><IconUser /></template
           ></BadgeTag>
         </div>

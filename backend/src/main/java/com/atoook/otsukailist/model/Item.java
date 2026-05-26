@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,10 @@ public class Item {
 
   @Column(name = "name", nullable = false, length = 255)
   private String name;
+
+  @Version
+  @Column(name = "version", nullable = false)
+  private long version = 0L;
 
   @Column(name = "item_type", nullable = false, length = 20)
   private ItemType itemType = ItemType.PLAIN;

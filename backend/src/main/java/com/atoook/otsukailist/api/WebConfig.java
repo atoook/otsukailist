@@ -26,7 +26,9 @@ public class WebConfig {
             .addMapping("/**")
             .allowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new))
             .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-            .allowedHeaders("*");
+            .allowedHeaders("*")
+            .exposedHeaders(
+                "Retry-After", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset");
       }
     };
   }

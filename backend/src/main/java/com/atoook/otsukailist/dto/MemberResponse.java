@@ -16,6 +16,8 @@ public class MemberResponse {
 
   private String displayName;
 
+  private long version;
+
   private Instant createdAt;
 
   private Instant updatedAt;

@@ -18,8 +18,9 @@ import { useListStore } from '@/stores/list';
 import { useMutation } from '@/composables/useMutation';
 import { updateItem, type UpdateItemPayload } from '@/api/item';
 import { fetchSnapshot } from '@/api/list';
-import { getErrorMessage } from '@/lib/http';
-import { BBQ_GENERATION_RULES } from '@/lib/listGenerationConstants';
+import { getErrorMessage, hasApiErrorCode } from '@/lib/http';
+import { GENERATION_RULES } from '@/lib/listGenerationConstants';
+import { resolveUnitLabel } from '@/lib/quantityDisplay';
 
 const UNASSIGNED_MEMBER_VALUE = '';
 const UNCATEGORIZED_VALUE = '';
@@ -147,16 +148,18 @@ export default defineComponent({
       }
       return 'manual_none';
     },
-    async loadSnapshot(listId: string): Promise<void> {
+    async loadSnapshot(listId: string): Promise<boolean> {
       this.snapshotLoading = true;
       this.errorMessage = '';
 
       try {
         const snapshot = await fetchSnapshot(listId);
         this.listStore.applySnapshot(snapshot);
+        return true;
       } catch (err: unknown) {
         console.error('Failed to load snapshot', err);
         this.errorMessage = getErrorMessage(err) ?? 'リストの取得に失敗しました。';
+        return false;
       } finally {
         this.snapshotLoading = false;
       }
@@ -168,7 +171,7 @@ export default defineComponent({
       return this.selectedMemberId || null;
     },
     getSelectedCategory(): ItemCategory | null {
-      if (this.hasSelectedBaseUnit && this.usesGeneratedCategory && this.selectedGeneratorRule) {
+      if (this.usesGeneratedCategory && this.selectedGeneratorRule) {
         return this.selectedGeneratorRule.category;
       }
       return this.selectedCategory || null;
@@ -181,19 +184,9 @@ export default defineComponent({
     },
     setBringItem(value: boolean): void {
       this.selectedPreparationType = value ? 'bring' : UNSET_PREPARATION_TYPE_VALUE;
-      if (value) {
-        this.clearPurchaseDetails();
-      }
     },
     handleBringItemChange(event: Event): void {
       this.setBringItem((event.target as HTMLInputElement).checked);
-    },
-    clearPurchaseDetails(): void {
-      this.selectedCategory = UNCATEGORIZED_VALUE;
-      this.itemEditMode = 'plain';
-      this.quantifiedQuantity = '';
-      this.quantifiedBaseUnit = UNSELECTED_BASE_UNIT_VALUE;
-      this.quantifiedGeneratorKey = UNSET_GENERATOR_KEY_VALUE;
     },
     setQuantifiedBaseUnit(value: string): void {
       this.quantifiedBaseUnit = value as BaseUnit | typeof UNSELECTED_BASE_UNIT_VALUE;
@@ -204,11 +197,11 @@ export default defineComponent({
     buildUpdatePayload(normalizedName: string): UpdateItemPayload {
       const payload: UpdateItemPayload = {
         name: normalizedName,
-        category: this.isBringItem ? null : this.getSelectedCategory(),
+        category: this.getSelectedCategory(),
         preparationType: this.getSelectedPreparationType()
       };
 
-      if (!this.isBringItem && this.hasSelectedBaseUnit) {
+      if (this.hasSelectedBaseUnit) {
         payload.itemType = 'quantified';
         payload.quantified = {
           quantity: this.parsedQuantifiedQuantity,
@@ -252,9 +245,14 @@ export default defineComponent({
         this.errorMessage = '数量付きアイテムの各項目を正しく入力してください。';
         return;
       }
+      const currentItem = this.findCurrentItem();
+      if (!currentItem) {
+        this.errorMessage = 'アイテムが見つかりませんでした。';
+        return;
+      }
       try {
         const result = await this.mutationRun(() =>
-          updateItem(this.currentListId!, this.currentItemId!, this.buildUpdatePayload(normalizedName))
+          updateItem(this.currentListId!, this.currentItemId!, this.buildUpdatePayload(normalizedName), currentItem.version)
         );
         if (result.applied) {
           this.listStore.upsertItem(result.data);
@@ -265,6 +263,13 @@ export default defineComponent({
         }
       } catch (err: unknown) {
         console.error('Failed to update item', err);
+        if (hasApiErrorCode(err, 'precondition_failed')) {
+          if (await this.loadSnapshot(this.currentListId)) {
+            this.applyCurrentItem();
+            this.errorMessage = '既に他のメンバーが更新しています。最新の状態を表示しました。';
+          }
+          return;
+        }
         this.errorMessage = getErrorMessage(err) ?? 'アイテムの更新に失敗しました。';
       }
     },
@@ -319,16 +324,13 @@ export default defineComponent({
       return (
         !!this.normalizedItemName &&
         (!this.isCompleted || !!this.getCurrentSelectedMemberId()) &&
-        (this.isBringItem || !this.hasQuantifiedDraftInput || this.hasValidQuantifiedInput)
+        (!this.hasQuantifiedDraftInput || this.hasValidQuantifiedInput)
       );
     },
     hasQuantifiedDraftInput(): boolean {
-      return !this.isBringItem && (this.hasSelectedBaseUnit || !!this.normalizedQuantifiedQuantity);
+      return this.isGeneratedMode || this.hasSelectedBaseUnit || !!this.normalizedQuantifiedQuantity;
     },
     hasValidQuantifiedInput(): boolean {
-      if (this.isBringItem) {
-        return true;
-      }
       return (
         !!this.normalizedItemName &&
         !!this.normalizedQuantifiedQuantity &&
@@ -346,7 +348,7 @@ export default defineComponent({
       return this.itemEditMode === 'generated_auto' || this.itemEditMode === 'generated_locked';
     },
     usesGeneratedCategory(): boolean {
-      return this.itemEditMode === 'generated_auto';
+      return this.isGeneratedMode;
     },
     requiresGeneratorKey(): boolean {
       return this.isGeneratedMode;
@@ -370,11 +372,20 @@ export default defineComponent({
       }
       return Object.values(ITEM_CATEGORIES).find((itemCategory) => itemCategory.code === category)?.label ?? category;
     },
-    selectedGeneratorRule(): (typeof BBQ_GENERATION_RULES)[keyof typeof BBQ_GENERATION_RULES] | undefined {
+    generatedItemNotice(): string | null {
+      if (this.itemEditMode === 'generated_auto') {
+        return '自動生成アイテムです。数量・単位を変更すると、次回の再生成では更新されなくなります。持参するだけなら自動生成情報は保持されます。';
+      }
+      if (this.itemEditMode === 'generated_locked') {
+        return '手動編集済みの自動生成アイテムです。次回の再生成では変更されません。';
+      }
+      return null;
+    },
+    selectedGeneratorRule(): (typeof GENERATION_RULES)[keyof typeof GENERATION_RULES] | undefined {
       if (!this.quantifiedGeneratorKey) {
         return undefined;
       }
-      return Object.values(BBQ_GENERATION_RULES).find((rule) => rule.generatorKey === this.quantifiedGeneratorKey);
+      return Object.values(GENERATION_RULES).find((rule) => rule.generatorKey === this.quantifiedGeneratorKey);
     },
     isLoading(): boolean {
       return this.mutationLoading || this.snapshotLoading;
@@ -394,11 +405,12 @@ export default defineComponent({
       return this.selectedPreparationType === 'bring';
     },
     baseUnitOptions(): Array<{ id: string; name: string }> {
+      const category = this.getSelectedCategory();
       return [
         { id: UNSELECTED_BASE_UNIT_VALUE, name: '未選択' },
         ...Object.values(UNIT_DEFINITIONS)
           .filter((definition) => definition.code === definition.baseUnit)
-          .map((definition) => ({ id: definition.baseUnit, name: definition.label }))
+          .map((definition) => ({ id: definition.baseUnit, name: resolveUnitLabel(definition.baseUnit, category) }))
       ];
     }
   }
@@ -445,14 +457,21 @@ export default defineComponent({
           <span class="min-w-0 truncate">持参する</span>
         </label>
 
-        <div v-if="!isBringItem">
+        <p
+          v-if="generatedItemNotice"
+          class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-relaxed text-charcoal-700"
+        >
+          {{ generatedItemNotice }}
+        </p>
+
+        <div>
           <label for="itemCategory" class="mb-2 block text-sm font-medium text-charcoal-700">
             カテゴリ
-            <span v-if="hasSelectedBaseUnit && usesGeneratedCategory" class="text-xs font-normal text-charcoal-500">
+            <span v-if="usesGeneratedCategory" class="text-xs font-normal text-charcoal-500">
               （自動設定）
             </span>
           </label>
-          <template v-if="hasSelectedBaseUnit && usesGeneratedCategory">
+          <template v-if="usesGeneratedCategory">
             <p class="rounded-lg border border-wood-200 bg-white px-3 py-2 text-sm font-semibold text-charcoal-700">
               {{ currentCategoryLabel }}
             </p>
@@ -467,7 +486,7 @@ export default defineComponent({
           />
         </div>
 
-        <div v-if="!isBringItem">
+        <div>
           <label for="quantifiedQuantity" class="mb-2 block text-sm font-medium text-charcoal-700"> 数量(単位) </label>
           <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <TextInput

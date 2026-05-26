@@ -6,6 +6,7 @@ export type UUID = string;
 
 export type MutationResponse<T> = {
   revision: number;
+  changed?: boolean;
   data: T;
 };
 
@@ -19,11 +20,13 @@ export type ApiError = {
 export type Member = {
   id: UUID;
   displayName: string;
+  version: number;
 };
 
 export type Item = {
   id: UUID;
   name: string;
+  version: number;
   itemType: ItemType;
   category: ItemCategory | null;
   preparationType: ItemPreparationType | null;
@@ -40,6 +43,7 @@ export type ItemListSnapshot = {
   listId: UUID;
   name: string;
   revision: number;
+  version: number;
   itemCount: number;
   serverTime?: string;
   lastItemActivityAt: string | null;
@@ -50,12 +54,14 @@ export type ItemListSnapshot = {
 export type CreateItemListWithMembersResponse = {
   listId: UUID;
   name: string;
+  version: number;
   members: Member[];
 };
 
 export type ItemListResponse = {
   id: UUID;
   name: string;
+  version: number;
   createdAt?: string;
   updatedAt?: string;
 };

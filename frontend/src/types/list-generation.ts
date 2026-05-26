@@ -3,12 +3,12 @@ export const ITEM_TYPE_VALUES = ['plain', 'quantified'] as const;
 export type ItemType = (typeof ITEM_TYPE_VALUES)[number];
 
 export const UNIT_DEFINITIONS = {
-  g: { code: 'g', label: 'g', baseUnit: 'g', factor: 1 },
-  kg: { code: 'kg', label: 'kg', baseUnit: 'g', factor: 1000 },
-  ml: { code: 'ml', label: 'ml', baseUnit: 'ml', factor: 1 },
-  l: { code: 'l', label: 'L', baseUnit: 'ml', factor: 1000 },
-  piece: { code: 'piece', label: '個', baseUnit: 'piece', factor: 1 },
-  pack: { code: 'pack', label: '袋', baseUnit: 'pack', factor: 1 }
+  g: { code: 'g', baseUnit: 'g', factor: 1 },
+  kg: { code: 'kg', baseUnit: 'g', factor: 1000 },
+  ml: { code: 'ml', baseUnit: 'ml', factor: 1 },
+  l: { code: 'l', baseUnit: 'ml', factor: 1000 },
+  piece: { code: 'piece', baseUnit: 'piece', factor: 1 },
+  pack: { code: 'pack', baseUnit: 'pack', factor: 1 }
 } as const;
 
 export type UnitCode = keyof typeof UNIT_DEFINITIONS;

@@ -19,6 +19,7 @@ public class ItemListMapper {
     return ItemListResponse.builder()
         .id(entity.getId())
         .name(entity.getName().trim())
+        .version(entity.getVersion())
         .createdAt(entity.getCreatedAt())
         .updatedAt(entity.getUpdatedAt())
         .build();

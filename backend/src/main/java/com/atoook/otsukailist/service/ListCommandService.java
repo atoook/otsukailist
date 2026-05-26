@@ -23,6 +23,7 @@ import com.atoook.otsukailist.model.Member;
 import com.atoook.otsukailist.repository.ItemListRepository;
 import com.atoook.otsukailist.repository.MemberRepository;
 import com.atoook.otsukailist.service.message.ErrorMessages;
+import com.atoook.otsukailist.service.validation.ResourceVersionValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,6 +35,7 @@ public class ListCommandService {
   private final MemberRepository memberRepo;
 
   private final ListRevisionService listRevisionService;
+  private final ListMemberLimitService listMemberLimitService;
 
   /**
    * Create a list with its initial member set.
@@ -46,13 +48,12 @@ public class ListCommandService {
       CreateItemListWithMembersRequest req) {
     String listName = req.getName().trim();
 
-    ItemList list = new ItemList();
-    list.setName(listName);
-    ItemList savedList = itemListRepo.saveAndFlush(list);
-
     // 正規化 + 重複チェック（アプリ側で早期に分かりやすく）
     List<String> names =
         req.getMemberNames().stream().map(String::trim).filter(s -> !s.isBlank()).toList();
+    if (names.isEmpty()) {
+      throw new BadRequestException("メンバーは1人以上必要です");
+    }
 
     Set<String> seen = new HashSet<>();
     for (String n : names) {
@@ -60,6 +61,11 @@ public class ListCommandService {
         throw new BadRequestException(String.format(ErrorMessages.MEMBER_DUPLICATED, n));
       }
     }
+    listMemberLimitService.validateInitialMemberCount(names.size());
+
+    ItemList list = new ItemList();
+    list.setName(listName);
+    ItemList savedList = itemListRepo.saveAndFlush(list);
 
     List<Member> members = new ArrayList<>();
     for (String n : names) {
@@ -74,6 +80,7 @@ public class ListCommandService {
         CreateItemListWithMembersResponse.builder()
             .listId(savedList.getId())
             .name(savedList.getName())
+            .version(savedList.getVersion())
             .members(savedMembers.stream().map(MemberMapper::toResponse).toList())
             .build();
 
@@ -91,12 +98,15 @@ public class ListCommandService {
    * @return renamed list payload with the incremented revision
    */
   @Transactional
-  public MutationResponse<ItemListResponse> renameList(UUID listId, UpdateItemListRequest req) {
+  public MutationResponse<ItemListResponse> renameList(
+      UUID listId, UpdateItemListRequest req, long expectedVersion) {
     ItemList list =
         itemListRepo
             .findById(listId)
             .orElseThrow(
                 () -> new ResourceNotFoundException(String.format(ErrorMessages.NOT_FOUND, "リスト")));
+    ResourceVersionValidator.requireCurrentVersion(
+        "list", list.getId(), expectedVersion, list.getVersion());
 
     list.setName(req.getName().trim());
 

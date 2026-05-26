@@ -11,6 +11,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,6 +36,10 @@ public class ItemList {
 
   @Column(name = "revision", nullable = false)
   private long revision = 0L;
+
+  @Version
+  @Column(name = "version", nullable = false)
+  private long version = 0L;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

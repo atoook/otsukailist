@@ -63,6 +63,7 @@ public class ListQueryService {
         .listId(list.getId())
         .name(list.getName())
         .revision(list.getRevision())
+        .version(list.getVersion())
         .itemCount(itemEntities.size())
         .serverTime(Instant.now())
         .lastItemActivityAt(lastItemActivityAt)
