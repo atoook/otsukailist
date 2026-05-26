@@ -286,7 +286,7 @@ public Optional<MutationResponse<ItemResponse>> updateItem(UUID listId, UUID ite
 
 - **トランザクション統合**: 認証・更新・保存を単一トランザクションで実行
 - **早期リターン**: 認証失敗時は即座に`Optional.empty()`で終了
-- **Revision一貫性**: `ListRevisionService` を必ず経由し、REST/WebSocket 両方で同じ revision を利用
+- **Revision一貫性**: `ListRevisionService` を必ず経由し、REST レスポンスと将来の差分同期で同じ revision 契約を利用
 - **パフォーマンス**: 同一トランザクション内での`save()`は効率的
 
 ## DTO パターン設計
@@ -437,7 +437,6 @@ public class ItemService {
 ```java
 // ✅ 推奨：リソース指向
 GET    /api/lists/{listId}/items          // アイテム一覧
-GET    /api/lists/{listId}/items/{itemId} // 特定アイテム取得
 POST   /api/lists/{listId}/items          // アイテム作成
 PATCH  /api/lists/{listId}/items/{itemId} // アイテム更新
 DELETE /api/lists/{listId}/items/{itemId} // アイテム削除
@@ -456,14 +455,14 @@ PUT /api/lists/{listId}/items
 | ---------- | -------------- | ------------------------------ |
 | **GET**    | 200 OK         | 404 Not Found                  |
 | **POST**   | 201 Created    | 400 Bad Request                |
-| **PATCH**  | 200 OK         | 404 Not Found, 400 Bad Request |
-| **DELETE** | 204 No Content | 404 Not Found                  |
+| **PATCH**  | 200 OK         | 404 Not Found, 400 Bad Request, 412 Precondition Failed, 428 Precondition Required |
+| **DELETE** | 200 OK         | 404 Not Found, 412 Precondition Failed, 428 Precondition Required |
 
 ### MutationResponse / Revision
 
 - 更新系 API は `MutationResponse<T>` を返却して `revision` と変更内容を1つにまとめる。
 - `revision` は `item_list.revision` の数値で、`ListRevisionService.incrementAndGet(listId)` で更新してからレスポンスを組み立てる。
-- WebSocket 通知も同じ `MutationResponse` を再利用し、クライアントは `revision` を比較して二重反映を避ける。
+- 将来差分同期を導入する場合も同じ `MutationResponse` 契約を再利用し、クライアントは `revision` を比較して二重反映を避ける。
 
 ### Controller 実装パターン
 
@@ -680,20 +679,16 @@ class ItemServiceTest {
 
 ## 🔗 関連ドキュメント
 
-- [📖 README.md](../README.md) - セットアップと実行方法
+- [📖 Backend README](../README.md) - セットアップと実行方法
+- [🤖 AGENTS.md](../../AGENTS.md) - AI エージェント向け作業ガイド
+- [プロジェクト企画書](../../docs/product/planning.md)
+- [システム設計](../../docs/architecture/system-design.md)
+- [競合制御方針](../../docs/architecture/concurrency-control-policy.md)
+- [データベース設計](../../db/README.md)
+- [Model / DTO / Mapper Coverage](MODEL_DTO_MAPPER_COVERAGE.md)
+- API 仕様書 _(TODO)_
 
 ---
 
-> **最終更新**: 2024 年 12 月 26 日  
-> **作成者**: Backend Development Team  
-> **レビュー**: 実装完了時に都度更新
-
-- [プロジェクト企画書](../docs/otsukailist企画書.md)
-- [設計書](../docs/otsukailist設計書.md)
-- [データベース設計](../db/README.md)
-- [API 仕様書](./API_SPECIFICATION.md) _(TODO)_
-
----
-
-**更新日: 2025-11-16**  
+**更新日: 2026-05-26**  
 **チーム: OtsukaiList Development Team**

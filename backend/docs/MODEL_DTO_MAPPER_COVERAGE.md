@@ -8,7 +8,8 @@ DB項目をどのDTO／マッパーが扱っているかをまとめた一覧。
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `id`        | 読み: `ItemListResponse.id`, `CreateItemListWithMembersResponse.listId`, `ItemListSnapshotResponse.listId`                                                                              | `ItemListMapper.toResponse` | `CreateItemListWithMembersResponse`では `listId` 名で露出。                                                |
 | `name`      | 書き: `CreateItemListRequest.name`, `CreateItemListWithMembersRequest.name`<br>読み: `ItemListResponse.name`, `CreateItemListWithMembersResponse.name`, `ItemListSnapshotResponse.name` | `ItemListMapper.toResponse` | DTOでは100文字制限。作成/更新時の `trim()` は `ListCommandService` が実施。                                |
-| `revision`  | 読み: `ItemListResponse.revision`, `CreateItemListWithMembersResponse.revision`, `ItemListSnapshotResponse.revision`                                                                    | `ItemListMapper.toResponse` | DBが管理。更新は `ListRevisionService` 経由。                                                              |
+| `revision`  | 読み: `ItemListSnapshotResponse.revision`                                                                                                                                               | （なし）                    | DBが管理。更新は `ListRevisionService` 経由。MutationResponse の `revision` としても返す。                 |
+| `version`   | 読み: `ItemListResponse.version`, `CreateItemListWithMembersResponse.version`, `ItemListSnapshotResponse.version`                                                                       | `ItemListMapper.toResponse` | リスト名など list metadata の競合制御用。                                                                 |
 | `createdAt` | 読み: `ItemListResponse.createdAt`                                                                                                                                                      | `ItemListMapper.toResponse` |                                                                                                            |
 | `updatedAt` | 読み: `ItemListResponse.updatedAt`                                                                                                                                                      | `ItemListMapper.toResponse` |                                                                                                            |
 | `items`     | 読み: `ItemListSnapshotResponse.items`（`ItemResponse` のList）                                                                                                                         | （なし）                    | 個々のItemは `ItemResponse` / `ItemMapper` で扱う前提。リスト単位でのアイテム展開は Service 層で制御する。 |
@@ -26,9 +27,12 @@ DB項目をどのDTO／マッパーが扱っているかをまとめた一覧。
 | --------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------- |
 | `id`                  | 読み: `ItemResponse.id`                                                                   | `ItemMapper.toResponse`                            |                                                                  |
 | `name`                | 書き: `CreateItemRequest.name`, `UpdateItemRequest.name`<br>読み: `ItemResponse.name`     | `ItemMapper.toResponse`                            | 作成・更新時は `ItemCommandService` が `trim()` と未完了初期化を担当。`plain` / `quantified` 共通の唯一の名称フィールド。 |
+| `version`             | 読み: `ItemResponse.version`                                                              | `ItemMapper.toResponse`                            | item 更新・削除・完了/未完了 API の `If-Match` に使う。             |
 | `itemType`            | 書き: `CreateItemRequest.itemType`, `UpdateItemRequest.itemType`<br>読み: `ItemResponse.itemType` | `ItemMapper.toResponse`                            | `plain` / `quantified` を区別する。未指定時は `plain`。 |
 | `category`            | 書き: `CreateItemRequest.category`, `UpdateItemRequest.category`<br>読み: `ItemResponse.category` | `ItemMapper.toResponse`                            | plain / quantified 共通の分類。更新時は `ItemCommandService` が生成ルール補正と `locked` 判定を含めて反映する。`generated + auto` のルール由来カテゴリはユーザー編集扱いにしない。 |
+| `preparationType`     | 書き: `CreateItemRequest.preparationType`, `UpdateItemRequest.preparationType`<br>読み: `ItemResponse.preparationType` | `ItemMapper.toResponse`                            | 用途・準備状態の分類。                                               |
 | `completed`           | 書き: `UpdateItemRequest.completed`<br>読み: `ItemResponse.completed`                     | `ItemMapper.toResponse`                            | 作成時は常に未完了。完了/未完了切替はサービス層の責務。          |
+| `assignedMemberId`    | 書き: `CreateItemRequest.assignedMemberId`, `UpdateItemRequest.assignedMemberId`<br>読み: `ItemResponse.assignedMemberId` | `ItemMapper.toResponse`                            | 担当者。リスト内メンバー存在チェックは Service 層で実施。             |
 | `completedByMemberId` | 書き: `UpdateItemRequest.completedByMemberId`<br>読み: `ItemResponse.completedByMemberId` | `ItemMapper.toResponse`                            | 完了時のメンバー存在チェックは `ItemCommandService` で実施。     |
 | `completedAt`         | 読み: `ItemResponse.completedAt`                                                          | `ItemMapper.toResponse`                            |                                                                  |
 | `createdAt`           | 読み: `ItemResponse.createdAt`                                                            | `ItemMapper.toResponse`                            |                                                                  |
@@ -52,12 +56,12 @@ DB項目をどのDTO／マッパーが扱っているかをまとめた一覧。
 
 | Field        | DTO (読み/書き) | Mapper | Notes |
 | ------------ | --------------- | ------ | ----- |
-| `id`         | （未公開）      | （なし） | 生成設定レコード ID。 |
-| `itemList`   | （未公開）      | （なし） | 親リスト。 |
-| `configType` | （未公開）      | （なし） | `bbq` / `camping` / `hotpot` / `travel`。 |
-| `configJson` | （未公開）      | （なし） | テンプレート生成条件を JSONB で保存する想定。 |
-| `createdAt`  | （未公開）      | （なし） | 監査用。 |
-| `updatedAt`  | （未公開）      | （なし） | 監査用。 |
+| `id`         | 読み: `ListGenerationConfigResponse.id`         | （なし） | 生成設定レコード ID。 |
+| `itemList`   | 読み: `ListGenerationConfigResponse.listId`     | （なし） | 親リスト。 |
+| `configType` | 書き: path variable<br>読み: `ListGenerationConfigResponse.configType` | （なし） | `bbq` / `camping` / `hotpot` / `travel`。 |
+| `configJson` | 書き: `ListGenerationConfigRequest.configJson`<br>読み: `ListGenerationConfigResponse.configJson` | （なし） | テンプレート生成条件を JSONB で保存する。 |
+| `createdAt`  | 読み: `ListGenerationConfigResponse.createdAt`  | （なし） | 監査用。 |
+| `updatedAt`  | 読み: `ListGenerationConfigResponse.updatedAt`  | （なし） | 監査用。 |
 
 ## Member (`backend/src/main/java/com/atoook/otsukailist/model/Member.java`)
 
@@ -65,6 +69,7 @@ DB項目をどのDTO／マッパーが扱っているかをまとめた一覧。
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------- |
 | `id`          | 読み: `MemberResponse.id`                                                                                                     | `MemberMapper.toResponse`                              |                                                                        |
 | `displayName` | 書き: `CreateMemberRequest.displayName`, `CreateItemListWithMembersRequest.memberNames`<br>読み: `MemberResponse.displayName` | `MemberMapper.toResponse`, `MemberMapper.updateEntity` | 追加・一括作成はサービス層で `trim()` 済み、更新時のみ Mapper を利用。 |
+| `version`     | 読み: `MemberResponse.version`                                                                                                | `MemberMapper.toResponse`                              | member 名変更・削除 API の `If-Match` に使う。                         |
 | `createdAt`   | 読み: `MemberResponse.createdAt`                                                                                              | `MemberMapper.toResponse`                              |                                                                        |
 | `updatedAt`   | 読み: `MemberResponse.updatedAt`                                                                                              | `MemberMapper.toResponse`                              |                                                                        |
 | `itemList`    | （DTOなし）                                                                                                                   | （なし）                                               | 親リストはサービス層で取得してセット。                                 |

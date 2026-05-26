@@ -1,6 +1,6 @@
 # 競合制御方針
 
-このドキュメントは、今後導入する競合制御の設計方針を定義する。現行実装には item / member / list metadata の `version`、APIレスポンスの `ETag`、`If-Match` 検証、`412` / `428` 用のエラーコードと例外ハンドラはまだ存在しないため、実装時に合わせて追加する。
+このドキュメントは、OtsukaiList の競合制御方針を定義する。現行実装では item / member / list metadata の `version`、`If-Match` 検証、`412` / `428` 用のエラーコードと例外ハンドラを導入済み。HTTP レスポンスヘッダとしての `ETag` 返却は必須契約にせず、DTO の `version` をクライアントが `If-Match` に入れて送る。
 
 ## 目的
 
@@ -14,7 +14,7 @@
 | --- | --- |
 | `revision` | リスト全体の snapshot 同期用の通し番号 |
 | `version` | item / member / list metadata など、対象リソース単体の版 |
-| `ETag` | APIが返す対象リソースの版表現 |
+| `ETag` | `If-Match` で送る quoted version token。現行実装では DTO の `version` から生成する |
 | `If-Match` | クライアントが「この版と一致する場合だけ変更して」と伝えるHTTPヘッダ |
 
 `revision` は同期用であり、更新・削除の事前条件には使わない。別itemの追加や完了で `revision` が進むため、対象リソースが変わっていない操作まで過剰に拒否してしまうため。
@@ -23,12 +23,14 @@
 
 既存リソースへの上書き・破壊的操作は、対象リソースの `version` を使った楽観ロックで守る。
 
-APIは対象リソース取得時に `version` 由来の `ETag` を返す。クライアントは更新・削除時に、その時点で見えていた `ETag` を `If-Match` で送る。
+API は対象リソースの DTO に `version` を含める。クライアントは更新・削除時に、その時点で見えていた `version` を quoted token として `If-Match` で送る。
 
 ```http
 DELETE /api/lists/{listId}/items/{itemId}
-If-Match: "item-123-v7"
+If-Match: "7"
 ```
+
+サーバ側の parser は `"7"`、`"v7"`、`"item:v7"` 形式を受け付けるが、フロントエンドの標準は `"7"` とする。
 
 サーバはDBの現在 `version` と `If-Match` を比較する。
 
