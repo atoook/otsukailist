@@ -2,6 +2,8 @@
 
 ## 📚 Docs
 
-- [企画書](docs/otsukailist企画書.md)
-- [設計書](docs/otsukailist設計書.md)
-- [リスト自動生成基盤の方針](docs/list-generation-automation.md)
+- [AI エージェント向け作業ガイド](AGENTS.md)
+- [ドキュメント索引](docs/README.md)
+- [企画書](docs/product/planning.md)
+- [システム設計](docs/architecture/system-design.md)
+- [リスト自動生成機能 設計書](docs/features/list-generation-automation.md)

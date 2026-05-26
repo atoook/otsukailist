@@ -16,6 +16,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 ## アーキテクチャ概要
 
 - フロント → REST API → DB の 3 層構成。更新系 API は `MutationResponse<T>` で `revision` を返し、フロントは `revision` を使って整合性を保つ。
+- 既存リソースの更新・削除は、対象リソースの `version` を `If-Match` で送る楽観ロックを使う。
 - Command と Query のサービスを分離し、Mapper は DTO と Entity の変換に特化。業務ルールは Service 層で吸収する。
 - 初期ロードは `GET /api/lists/{listId}/snapshot` で全体状態を取得し、その後は更新系 API のレスポンスで状態を更新する。
 
@@ -37,20 +38,27 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 | ----------------------------------------------- | ------------------------------------------------------------ | -------- |
 | `POST /api/lists`                               | リストと初期メンバーをまとめて作成する。                     |
 | `GET /api/lists/{listId}/snapshot`              | リスト、メンバー、アイテムをまとめたスナップショットを返す。 |
+| `GET /api/lists/meta`                           | 複数リストのメタ情報を取得する。                             |
 | `PATCH /api/lists/{listId}`                     | リスト名を変更し、`revision` を更新する。                    |
 | `POST /api/lists/{listId}/members`              | メンバーを追加する。                                         |
 | `PATCH /api/lists/{listId}/members/{memberId}`  | メンバー名を変更する。                                       |
 | `DELETE /api/lists/{listId}/members/{memberId}` | メンバーを削除する。                                         |
 | `POST /api/lists/{listId}/items`                | アイテムを追加する（作成時は未完了固定）。                   |
-| `PATCH /api/lists/{listId}/items/{itemId}`      | アイテム名や完了状態を更新する。                             |
+| `PATCH /api/lists/{listId}/items/{itemId}`      | アイテム名・分類・担当者などを更新する。                     |
+| `PATCH /api/lists/{listId}/items/{itemId}/mark-completed` | アイテムを完了にする。                             |
+| `PATCH /api/lists/{listId}/items/{itemId}/mark-incomplete` | アイテムを未完了に戻す。                           |
 | `DELETE /api/lists/{listId}/items/{itemId}`     | アイテムを削除する。                                         |
+| `GET /api/lists/{listId}/generation-configs/{configType}` | 生成設定を取得する。                              |
+| `PUT /api/lists/{listId}/generation-configs/{configType}` | 生成設定を保存する。                              |
+| `POST /api/lists/{listId}/generated-items/sync` | 自動生成 item を同期する。                                   |
 
 ---
 
-## リアルタイム同期
+## 同期方針
 
-- 現在は WebSocket 未導入。
-- `revision` を前提にした API 契約を維持し、将来的な差分同期導入に備える。
+- 現在は REST + snapshot 再取得を同期の基本とする。
+- `revision` はリスト全体の状態同期、`version` は item / member / list metadata 単体の競合制御に使う。
+- 将来的に WebSocket 差分同期を導入する場合も、同じ `revision` 契約を維持する。
 
 ---
 
@@ -61,7 +69,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 - `Item` : 名前・完了フラグ・完了者 ID・完了日時を保持する。`plain` / `quantified` を `item_type` で区別し、カテゴリは plain / quantified 共通で `category` に保持する。完了時は必ずメンバー存在チェックを行う。
 - `ItemQuantified` : 数量付き item の詳細情報を `item` と 1:1 で保持する。`quantity` / `base_unit` / `origin` / `regeneration_policy` / `generator_key` を持つ。名称は `Item.name` に一本化する。
 - `ListGenerationConfig` : テンプレート生成条件をリスト単位で保持する将来拡張用テーブル。生成条件は `item_list` へ直接持たせず分離する。
-- 数量付き item の設計方針は `docs/list-generation-automation.md` を参照。
+- 数量付き item の設計方針は [リスト自動生成機能 設計書](../features/list-generation-automation.md) を参照。
 - 正式な DDL は `backend/src/main/resources/db/migration` 配下の Flyway SQL を参照（UUID は `UUID` 型）。
 - 監査系タイムスタンプ（`created_at` / `updated_at`）は **Hibernate 側で更新を管理** し、DDL では `DEFAULT CURRENT_TIMESTAMP(3)` のみを使う。`ON UPDATE CURRENT_TIMESTAMP` のような DB 依存の自動更新句は採用しない。
 
@@ -71,7 +79,7 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 - アイテム入力欄と登録ボタン、アイテム一覧（チェックボックス + 名前 + 削除）が基本構成。
 - 完了済みアイテムは打ち消し線で表示。メンバー名はドロップダウンで選択予定。
-- Vue + Tailwind を前提に、デザインシステムは `docs/design-system.md` を参照。
+- Vue + Tailwind を前提に、デザインシステムは [Design System](../../frontend/docs/DESIGN_SYSTEM.md) を参照。
 
 ---
 
@@ -84,18 +92,18 @@ OtsukaiList は「ログイン不要で共有できる共同おつかいリス�
 
 ## Docker / 開発フロー
 
-1. `cd db && docker compose up -d` で PostgreSQL を起動（初期化 SQL 自動実行）。
-2. `cd backend && ./gradlew bootRun` で API を起動。
-3. `cd frontend && npm install && npm run dev` でフロントを起動。
-4. 静的解析: `./gradlew checkstyleMain pmdMain spotbugsMain`。
+1. リポジトリルートで `./env.sh dev up` を実行して PostgreSQL を起動する。
+2. `backend/` で `./gradlew bootRun` を実行して API を起動する。スキーマ変更は Flyway が適用する。
+3. `frontend/` で `npm run dev` を実行してフロントを起動する。
+4. 品質チェックは `backend/` の `./gradlew check` / `./gradlew staticAnalysis`、`frontend/` の `npm run lint` / `npm run build` を使う。
 
 ---
 
 ## ロードマップ
 
 - **Phase 0**: Backend とは切り離した状態で UI プロトタイプを作成し、主要画面の体験を固める。
-- **Phase 1**: WebSocket 前提のデータモデルと REST API を完成させた暫定版を提供し、以降の実装基盤とする。
-- **Phase 2**: WebSocket を用いたリアルタイム同期を導入し、同時に UI/UX を磨き込む。
+- **Phase 1**: `revision` / `version` を前提にした REST API と画面状態管理を完成させ、以降の実装基盤とする。
+- **Phase 2**: 必要に応じて WebSocket などの差分同期を導入し、同時に UI/UX を磨き込む。
 - **Phase 3**: README や Docker Compose を含む周辺ドキュメントと環境整備を整え、MVP を継続運用できる品質へ仕上げる。
 
 上記レベルを現状の正とし、必要に応じて各ドキュメントや実装を同期していく。

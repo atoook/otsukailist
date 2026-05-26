@@ -6,6 +6,7 @@ export type UUID = string;
 
 export type MutationResponse<T> = {
   revision: number;
+  changed?: boolean;
   data: T;
 };
 

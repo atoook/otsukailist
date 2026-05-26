@@ -120,6 +120,7 @@ curl -i https://<your-render-service>/api/lists/<listId>/snapshot
 
 ## 5. 関連ドキュメント
 
-- `backend/docs/TEST_CONFIGURATION.md`
-- `docs/otsukailist設計書.md`
-- `backend/README.md`
+- [TEST_CONFIGURATION.md](TEST_CONFIGURATION.md)
+- [システム設計](../../docs/architecture/system-design.md)
+- [backend/README.md](../README.md)
+- [AGENTS.md](../../AGENTS.md)

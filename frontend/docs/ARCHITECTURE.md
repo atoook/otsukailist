@@ -20,6 +20,7 @@
 ```json
 {
   "revision": 12,
+  "changed": true,
   "data": { ... }
 }
 ```
@@ -29,6 +30,7 @@ TypeScript 型:
 ```ts
 export type MutationResponse<T> = {
   revision: number;
+  changed?: boolean;
   data: T;
 };
 ```
@@ -36,7 +38,7 @@ export type MutationResponse<T> = {
 ### 目的
 
 - revision をフロントが保持
-- 将来 WebSocket 差分同期に対応
+- REST + snapshot 再取得による同期を安定させ、将来の差分同期にも同じ契約を使えるようにする
 
 ---
 
@@ -92,6 +94,7 @@ export type UUID = string;
 
 export type MutationResponse<T> = {
   revision: number;
+  changed?: boolean;
   data: T;
 };
 
@@ -105,13 +108,16 @@ export type ApiError = {
 export type Member = {
   id: UUID;
   displayName: string;
+  version: number;
 };
 
 export type Item = {
   id: UUID;
   name: string;
+  version: number;
   itemType: "plain" | "quantified";
   category: ItemCategory | null;
+  preparationType: ItemPreparationType | null;
   quantified: QuantifiedItem | null;
   completed: boolean;
   assignedMemberId: UUID | null;
@@ -133,6 +139,7 @@ export type ItemListSnapshot = {
   listId: UUID;
   name: string;
   revision: number;
+  version: number;
   itemCount: number;
   serverTime?: string;
   lastItemActivityAt: string | null;
@@ -143,7 +150,7 @@ export type ItemListSnapshot = {
 export type CreateItemListWithMembersResponse = {
   listId: UUID;
   name: string;
-  revision: number;
+  version: number;
   members: Member[];
 };
 
@@ -153,7 +160,7 @@ export type DeleteResponse = {
 };
 ```
 
-数量付き item とテンプレート自動生成の方針は `docs/list-generation-automation.md` を参照。
+数量付き item とテンプレート自動生成の方針は [リスト自動生成機能 設計書](../../docs/features/list-generation-automation.md) を参照。
 
 ---
 

@@ -5,25 +5,29 @@ Spring Boot ベースのお使いリスト共有アプリケーションのバ�
 ## 🚀 クイックスタート
 
 ```bash
+# リポジトリルートからデータベース起動
+./env.sh dev up
+
+cd backend
+
 # 環境変数設定
 cp .env.example .env  # または cp ../db/.env .env
-
-# データベース起動
-cd ../db && docker-compose up -d
 
 # アプリケーション起動（FlywayがDBマイグレーションを適用）
 ./gradlew bootRun
 
-# テスト実行
+# テストDB起動後にテスト実行
+./gradlew setupTestEnv
 ./gradlew test
+./gradlew cleanTestEnv
 ```
 
 ## 📋 主要機能
 
-- **リスト管理**: 買い物リストの作成・更新・削除
+- **リスト管理**: 買い物リストの作成・更新・snapshot 取得
 - **アイテム管理**: リストアイテムの追加・更新・削除・チェック
 - **UUID 共有**: ログイン不要のシンプルな URL 共有
-- **リアルタイム同期**: WebSocket による即座な状態同期
+- **Revision同期**: 更新系 API の `revision` と snapshot 再取得による整合性維持
 
 ## 🏗️ アーキテクチャ
 
@@ -45,12 +49,15 @@ cd ../db && docker-compose up -d
 
 ## 📚 ドキュメント
 
-| ドキュメント                                                                    | 説明                           |
-| ------------------------------------------------------------------------------- | ------------------------------ |
-| [📋 docs/CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md)                     | コーディング規約・設計パターン |
-| [🚢 ../docs/backend-deploy-operations.md](../docs/backend-deploy-operations.md) | Docker/Render 運用チェック     |
-| [🏢 企画書](../docs/otsukailist企画書.md)                                       | プロジェクト概要・要件定義     |
-| [🎨 設計書](../docs/otsukailist設計書.md)                                       | システム設計・API 仕様         |
+| ドキュメント                                                              | 説明                           |
+| ------------------------------------------------------------------------- | ------------------------------ |
+| [📋 docs/CODING_GUIDELINES.md](./docs/CODING_GUIDELINES.md)               | コーディング規約・設計パターン |
+| [🧪 docs/TEST_CONFIGURATION.md](./docs/TEST_CONFIGURATION.md)              | テストDBと実行コマンド         |
+| [🚢 docs/DEPLOY_OPERATIONS.md](./docs/DEPLOY_OPERATIONS.md)                | Docker/Render 運用チェック     |
+| [🧭 docs/MODEL_DTO_MAPPER_COVERAGE.md](./docs/MODEL_DTO_MAPPER_COVERAGE.md) | Model / DTO / Mapper 対応表    |
+| [🏢 企画書](../docs/product/planning.md)                                  | プロジェクト概要・要件定義     |
+| [🎨 システム設計](../docs/architecture/system-design.md)                  | システム設計・API 仕様         |
+| [🤖 AGENTS.md](../AGENTS.md)                                               | AI エージェント向け作業ガイド  |
 
 ## 🛠️ 開発環境設定
 
@@ -96,21 +103,36 @@ open build/reports/tests/test/index.html
 ### Item List
 
 ```
-GET    /api/lists/{id}           # リスト取得
-POST   /api/lists                # リスト作成
-PUT    /api/lists/{id}           # リスト更新
-DELETE /api/lists/{id}           # リスト削除
+POST   /api/lists                # リストと初期メンバー作成
+GET    /api/lists/{id}/snapshot  # リスト・メンバー・アイテムのsnapshot取得
+GET    /api/lists/meta           # 複数リストのメタ情報取得
+PATCH  /api/lists/{id}           # リスト名更新（If-Match必須）
 ```
 
 ### Item
 
 ```
-GET    /api/lists/{listId}/items              # アイテム一覧
-GET    /api/lists/{listId}/items/{itemId}     # アイテム取得
-POST   /api/lists/{listId}/items              # アイテム作成
-PUT    /api/lists/{listId}/items/{itemId}     # アイテム更新
-DELETE /api/lists/{listId}/items/{itemId}     # アイテム削除
-PATCH  /api/lists/{listId}/items/{itemId}/toggle  # チェック状態切り替え
+POST   /api/lists/{listId}/items                     # アイテム作成
+PATCH  /api/lists/{listId}/items/{itemId}             # アイテム更新（If-Match必須）
+PATCH  /api/lists/{listId}/items/{itemId}/mark-completed   # 完了化（If-Match必須）
+PATCH  /api/lists/{listId}/items/{itemId}/mark-incomplete  # 未完了化（If-Match必須）
+DELETE /api/lists/{listId}/items/{itemId}             # アイテム削除（If-Match必須）
+```
+
+### Member
+
+```
+POST   /api/lists/{listId}/members             # メンバー追加
+PATCH  /api/lists/{listId}/members/{memberId}  # メンバー名更新（If-Match必須）
+DELETE /api/lists/{listId}/members/{memberId}  # メンバー削除（If-Match必須）
+```
+
+### Generation Config
+
+```
+GET    /api/lists/{listId}/generation-configs/{configType}
+PUT    /api/lists/{listId}/generation-configs/{configType}
+POST   /api/lists/{listId}/generated-items/sync
 ```
 
 ## 🔧 設定
@@ -132,8 +154,8 @@ spring.jpa.properties.hibernate.format_sql=true
 spring.flyway.enabled=true
 spring.flyway.baseline-on-migrate=true
 
-# WebSocket
-spring.websocket.allowed-origins=http://localhost:3000
+# App
+app.cors.allowed-origins=http://localhost:5173
 ```
 
 ### DBマイグレーション
@@ -143,7 +165,10 @@ spring.websocket.allowed-origins=http://localhost:3000
 ```text
 V1__create_tables.sql
 V2__add_item_assigned_member_id.sql
-V3__example_next_change.sql
+V3__add_quantified_items.sql
+V4__add_item_category.sql
+V5__add_item_preparation_type.sql
+V6__add_resource_versions.sql
 ```
 
 Dockerの初期化SQLではなく、Spring Boot起動時のFlyway実行を正とします。Hibernateは `ddl-auto=validate` で、マイグレーション後のDBとEntityの整合性だけを検証します。
@@ -191,10 +216,12 @@ style: フォーマット変更
 
 ```bash
 # PostgreSQL コンテナの状態確認
-cd ../db && docker compose ps
+cd ..
+./env.sh dev status
 
 # ログ確認
-cd ../db && docker compose logs postgres
+./env.sh dev logs
+cd backend
 ```
 
 **Q: ビルドエラー**
@@ -217,4 +244,4 @@ Private Project - OtsukaiList Development Team
 
 ---
 
-**最終更新: 2025-11-16**
+**最終更新: 2026-05-26**
